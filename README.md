@@ -1,2 +1,2 @@
 # abxrlib-for-unreal
-Unreal Plugin for AbxrLib
+ArborXR Insights AbxrLib package for Unreal
