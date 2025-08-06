@@ -44,6 +44,3 @@ void UAbxr::SendEvent(const FString& Endpoint, const FString& EventName, const F
     });
     Request->ProcessRequest();
 }
-
-#include "Modules/ModuleManager.h"
-IMPLEMENT_MODULE(FDefaultModuleImpl, AbxrLib)
