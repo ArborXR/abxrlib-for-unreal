@@ -1,4 +1,4 @@
-#include "AbxrLibBPLibrary.h"
+#include "Abxr.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
@@ -6,7 +6,7 @@
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
 
-void UAbxrLibBPLibrary::SendEvent(const FString& Endpoint, const FString& EventName, const FString& PayloadJson)
+void UAbxr::SendEvent(const FString& Endpoint, const FString& EventName, const FString& PayloadJson)
 {
     TSharedRef<FJsonObject> RootObject = MakeShared<FJsonObject>();
     RootObject->SetStringField("event", EventName);

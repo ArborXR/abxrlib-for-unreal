@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "AbxrLibBPLibrary.generated.h"
+#include "Abxr.generated.h"
 
 UCLASS()
-class ABXRLIB_API UAbxrLibBPLibrary : public UBlueprintFunctionLibrary
+class ABXRLIB_API UAbxr : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 

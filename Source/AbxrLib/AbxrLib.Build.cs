@@ -6,8 +6,8 @@ public class AbxrLib : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicDependencyModuleNames.AddRange(new string[] {
+        PublicDependencyModuleNames.AddRange([
             "Core", "CoreUObject", "Engine", "HTTP", "Json", "JsonUtilities"
-        });
+        ]);
     }
 }
