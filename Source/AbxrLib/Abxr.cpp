@@ -1,46 +1,37 @@
 #include "Abxr.h"
-#include "HttpModule.h"
-#include "Interfaces/IHttpRequest.h"
-#include "Interfaces/IHttpResponse.h"
-#include "Dom/JsonObject.h"
-#include "Serialization/JsonWriter.h"
-#include "Serialization/JsonSerializer.h"
 
-void UAbxr::SendEvent(const FString& Endpoint, const FString& EventName, const FString& PayloadJson)
+
+void UAbxr::LogDebug(const FString& text, const TMap<FString, FString>& meta)
 {
-    TSharedRef<FJsonObject> RootObject = MakeShared<FJsonObject>();
-    RootObject->SetStringField("event", EventName);
+    
+}
 
-    TSharedPtr<FJsonObject> PayloadObject;
-    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(PayloadJson);
-    if (FJsonSerializer::Deserialize(Reader, PayloadObject) && PayloadObject.IsValid())
-    {
-        RootObject->SetObjectField("payload", PayloadObject);
-    }
-    else
-    {
-        RootObject->SetStringField("payload_raw", PayloadJson);
-    }
+void UAbxr::LogInfo(const FString& text, const TMap<FString, FString>& meta)
+{
+    
+}
 
-    FString OutputString;
-    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
-    FJsonSerializer::Serialize(RootObject, Writer);
+void UAbxr::LogWarn(const FString& text, const TMap<FString, FString>& meta)
+{
+    
+}
 
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-    Request->SetURL(Endpoint);
-    Request->SetVerb("POST");
-    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
-    Request->SetContentAsString(OutputString);
-    Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr Req, FHttpResponsePtr Resp, bool bSuccess)
-    {
-        if (bSuccess && Resp.IsValid())
-        {
-            UE_LOG(LogTemp, Log, TEXT("Event sent successfully: %s"), *Resp->GetContentAsString());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Failed to send event"));
-        }
-    });
-    Request->ProcessRequest();
+void UAbxr::LogError(const FString& text, const TMap<FString, FString>& meta)
+{
+    
+}
+
+void UAbxr::LogCritical(const FString& text, const TMap<FString, FString>& meta)
+{
+    
+}
+
+void UAbxr::Event(const FString& name, const TMap<FString, FString>& meta)
+{
+    
+}
+
+void UAbxr::TelemetryEntry(const FString& name, const TMap<FString, FString>& meta)
+{
+    
 }
