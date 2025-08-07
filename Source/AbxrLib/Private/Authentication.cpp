@@ -10,25 +10,23 @@
 
 void Authentication::Authenticate()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Authenticate CALLED!!!"));
-	
-	/*FAuthPayload Payload;
-	Payload.appId = TEXT("appid");
-	Payload.orgId = TEXT("orgid");
-	Payload.authSecret = TEXT("authsecret");
-	Payload.deviceId = TEXT("deviceid");
+	FAuthPayload Payload;
+	Payload.appId = TEXT("d301143a-1481-41f2-b7ae-db3c55e18a35");
+	Payload.orgId = TEXT("08183be6-efd4-4814-83d1-ed88db8b4918");
+	Payload.authSecret = TEXT("WXOg9L0v2O9cah3jI1JsQKDBddX9kmd0B_M6-UmzobmwJGgxWV6iU6IQWky5JQ2Q");
+	Payload.deviceId = TEXT("34f9f880-8360-47a2-89c8-ddccb6652f82");
 	Payload.userId = TEXT("userid");
-	Payload.tags = { TEXT("Admin"), TEXT("User"), TEXT("Editor") };
-	Payload.sessionId = TEXT("sessionid");
-	Payload.partner = TEXT("partner");
-	Payload.ipAddress = TEXT("ipaddress");
-	Payload.deviceModel = TEXT("devicemodel");
+	Payload.tags = { };
+	Payload.sessionId = TEXT("25b34140-62c9-4c33-b3e6-3fe9cabd50d4");
+	Payload.partner = TEXT("none");
+	Payload.ipAddress = TEXT("");
+	Payload.deviceModel = TEXT("");
 	Payload.geolocation = TMap<FString, FString>();
-	Payload.osVersion = TEXT("osversion");
-	Payload.xrdmVersion = TEXT("xrdmversion");
-	Payload.appVersion = TEXT("appversion");
-	Payload.unrealVersion = TEXT("unrealversion");
-	Payload.abxrLibVersion = TEXT("abxrlibversion");
+	Payload.osVersion = TEXT("1.0");
+	Payload.xrdmVersion = TEXT("1.0");
+	Payload.appVersion = TEXT("1.0");
+	Payload.unrealVersion = TEXT("1.0");
+	Payload.abxrLibVersion = TEXT("1.0");
 	Payload.authMechanism = CreateAuthMechanismDict();
 
 	FString Json;
@@ -37,7 +35,7 @@ void Authentication::Authenticate()
 	UE_LOG(LogTemp, Warning, TEXT("JSON Output: %s"), *Json);
 	
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("https://lib-backend.xrdm.app/"));
+	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/auth/token"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
@@ -50,25 +48,22 @@ void Authentication::Authenticate()
 			return;
 		}
 
-		// ✅ Response code (e.g., 200 OK)
-		int32 StatusCode = Response->GetResponseCode();
-		UE_LOG(LogTemp, Log, TEXT("Response Code: %d"), StatusCode);
-
-		// ✅ Response body (as string)
-		FString Body = Response->GetContentAsString();
-		UE_LOG(LogTemp, Log, TEXT("Response Body: %s"), *Body);
-
-		// ✅ Optional: Parse as JSON
+		const FString Body = Response->GetContentAsString();
 		TSharedPtr<FJsonObject> JsonObject;
 		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
 		if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 		{
-			FString Token = JsonObject->GetStringField("access_token");
-			UE_LOG(LogTemp, Log, TEXT("Access Token: %s"), *Token);
+			const TSharedPtr<FJsonValue>* ValuePtr = JsonObject->Values.Find("token");
+			FString Token = (*ValuePtr)->AsString();
+			UE_LOG(LogTemp, Log, TEXT("Token: %s"), *Token);
+
+			ValuePtr = JsonObject->Values.Find("secret");
+			FString Secret = (*ValuePtr)->AsString();
+			UE_LOG(LogTemp, Log, TEXT("Secret: %s"), *Secret);
 		}
 	});
 	
-	Request->ProcessRequest();*/
+	Request->ProcessRequest();
 }
 
 TMap<FString, FString> Authentication::CreateAuthMechanismDict()

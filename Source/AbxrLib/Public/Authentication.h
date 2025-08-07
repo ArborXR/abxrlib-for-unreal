@@ -12,6 +12,13 @@ private:
 	static TMap<FString, FString> CreateAuthMechanismDict();
 };
 
+UENUM(BlueprintType)
+enum class EPartner : uint8
+{
+	None,
+	ArborXR
+};
+
 USTRUCT()
 struct FAuthPayload
 {
@@ -67,18 +74,6 @@ struct FAuthPayload
 
 	UPROPERTY()
 	TMap<FString, FString> authMechanism;
-};
-
-USTRUCT()
-struct FAuthResponse
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	FString Token;
-
-	UPROPERTY()
-	FString Secret;
 };
 
 USTRUCT()
