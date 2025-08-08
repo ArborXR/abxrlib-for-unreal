@@ -7,11 +7,14 @@
 UCLASS()
 class ABXRLIB_API UAbxr : public UBlueprintFunctionLibrary
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-    static void LogDebug(const FString& text, const TMap<FString, FString>& meta);
+	static void Authenticate();
+	
+	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
+	static void LogDebug(const FString& text, const TMap<FString, FString>& meta);
 	static void LogDebug(const FString& text) { LogDebug(text, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
@@ -30,8 +33,8 @@ public:
 	static void LogCritical(const FString& text, const TMap<FString, FString>& meta);
 	static void LogCritical(const FString& text) { LogCritical(text, TMap<FString, FString>()); }
 
-    UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-    static void Event(const FString& name, const TMap<FString, FString>& meta);
+	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
+	static void Event(const FString& name, const TMap<FString, FString>& meta);
 	static void Event(const FString& name) { Event(name, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
