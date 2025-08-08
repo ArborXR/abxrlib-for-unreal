@@ -10,6 +10,11 @@ public:
 
 private:
 	static TMap<FString, FString> CreateAuthMechanismDict();
+
+	static FString AuthToken;
+	static FString ApiSecret;
+	static FString SessionId;
+	static int TokenExpiry;
 };
 
 UENUM(BlueprintType)

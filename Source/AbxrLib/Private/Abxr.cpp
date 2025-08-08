@@ -1,8 +1,9 @@
 #include "Abxr.h"
+#include "Authentication.h"
 
 void UAbxr::Authenticate()
 {
-    
+    Authentication::Authenticate();
 }
 
 void UAbxr::LogDebug(const FString& text, const TMap<FString, FString>& meta)

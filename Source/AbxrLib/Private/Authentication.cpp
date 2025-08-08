@@ -7,6 +7,10 @@
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
 
+FString Authentication::AuthToken;
+FString Authentication::ApiSecret;
+FString Authentication::SessionId;
+int Authentication::TokenExpiry;
 
 void Authentication::Authenticate()
 {
@@ -54,12 +58,29 @@ void Authentication::Authenticate()
 		if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 		{
 			const TSharedPtr<FJsonValue>* ValuePtr = JsonObject->Values.Find("token");
-			FString Token = (*ValuePtr)->AsString();
-			UE_LOG(LogTemp, Log, TEXT("Token: %s"), *Token);
+			AuthToken = (*ValuePtr)->AsString();
 
 			ValuePtr = JsonObject->Values.Find("secret");
-			FString Secret = (*ValuePtr)->AsString();
-			UE_LOG(LogTemp, Log, TEXT("Secret: %s"), *Secret);
+			ApiSecret = (*ValuePtr)->AsString();
+
+			TArray<FString> Parts;
+			AuthToken.ParseIntoArray(Parts, TEXT("."));
+			FString PayloadBase64 = Parts[1];
+
+			FString DecodedPayloadJson;
+			FBase64::Decode(PayloadBase64, DecodedPayloadJson);
+
+			TSharedPtr<FJsonObject> PayloadJson;
+			Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
+			if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
+			{
+				ValuePtr = PayloadJson->Values.Find("exp");
+				FString Expiry = (*ValuePtr)->AsString();
+				TokenExpiry = FCString::Atoi(*Expiry);
+			}
+
+			UE_LOG(LogTemp, Log, TEXT("Token: %s"), *AuthToken);
+			UE_LOG(LogTemp, Log, TEXT("Epiry: %i"), TokenExpiry);
 		}
 	});
 	
