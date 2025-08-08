@@ -6,6 +6,7 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
+#include "Misc/Base64.h"
 
 FString Authentication::AuthToken;
 FString Authentication::ApiSecret;
