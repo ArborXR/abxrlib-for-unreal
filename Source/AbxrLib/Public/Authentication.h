@@ -1,12 +1,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interfaces/IHttpRequest.h"
 #include "Authentication.generated.h"
 
 class Authentication
 {
 public:
 	static void Authenticate();
+	
+	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
+	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request)
+	{
+		SetAuthHeaders(Request, TEXT(""));
+	}
 
 private:
 	static TMap<FString, FString> CreateAuthMechanismDict();

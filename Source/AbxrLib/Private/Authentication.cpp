@@ -1,7 +1,7 @@
-#include "AbxrLib/Public/Authentication.h"
+#include "Authentication.h"
+#include "Utils.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
-#include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
@@ -38,14 +38,14 @@ void Authentication::Authenticate()
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
 
 	UE_LOG(LogTemp, Warning, TEXT("JSON Output: %s"), *Json);
-	
-	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
+
+	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/auth/token"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
 
-	Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr, FHttpResponsePtr Response, bool bWasSuccessful)
+	Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 	{
 		if (!bWasSuccessful || !Response.IsValid())
 		{
@@ -66,7 +66,7 @@ void Authentication::Authenticate()
 
 			TArray<FString> Parts;
 			AuthToken.ParseIntoArray(Parts, TEXT("."));
-			FString PayloadBase64 = Parts[1];
+			const FString PayloadBase64 = Parts[1];
 
 			FString DecodedPayloadJson;
 			FBase64::Decode(PayloadBase64, DecodedPayloadJson);
@@ -79,13 +79,47 @@ void Authentication::Authenticate()
 				FString Expiry = (*ValuePtr)->AsString();
 				TokenExpiry = FCString::Atoi(*Expiry);
 			}
+			
+			TSharedRef<IHttpRequest> ConfigRequest = FHttpModule::Get().CreateRequest();
+			ConfigRequest->SetURL("https://lib-backend.xrdm.app/v1/storage/config");
+			ConfigRequest->SetVerb("GET");
+			ConfigRequest->SetHeader("Content-Type", "application/json");
+			SetAuthHeaders(ConfigRequest);
 
-			UE_LOG(LogTemp, Log, TEXT("Token: %s"), *AuthToken);
-			UE_LOG(LogTemp, Log, TEXT("Epiry: %i"), TokenExpiry);
+			ConfigRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
+			{
+				if (bOk && Resp.IsValid())
+				{
+					UE_LOG(LogTemp, Log, TEXT("Second response: %s"), *Resp->GetContentAsString());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("AbxrLib - GetConfiguration failed: %s"), *Resp->GetContentAsString());
+				}
+			});
+
+			ConfigRequest->ProcessRequest();
 		}
 	});
 	
 	Request->ProcessRequest();
+}
+
+void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json)
+{
+	Request->SetHeader("Authorization", "Bearer " + AuthToken);
+
+	FString UnixTime = LexToString(FDateTime::UtcNow().ToUnixTimestamp());
+	Request->SetHeader("x-abxrlib-timestamp", UnixTime);
+
+	FString HashString = AuthToken + ApiSecret + UnixTime;
+	if (!Json.IsEmpty())
+	{
+		//uint crc = Utils.ComputeCRC(json);
+		//HashString += crc;
+	}
+	
+	Request->SetHeader("x-abxrlib-hash", Utils::ComputeSHA256(HashString));
 }
 
 TMap<FString, FString> Authentication::CreateAuthMechanismDict()

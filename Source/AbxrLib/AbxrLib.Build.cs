@@ -7,7 +7,12 @@ public class AbxrLib : ModuleRules
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange([
-            "Core", "CoreUObject", "Engine", "HTTP", "Json", "JsonUtilities"
+            "Core", "CoreUObject", "Engine", "HTTP", "Json", "JsonUtilities", "OpenSSL"
         ]);
+        
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            PublicSystemLibraries.Add("Advapi32.lib");
+        }
     }
 }
