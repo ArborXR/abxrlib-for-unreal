@@ -8,6 +8,12 @@ class Authentication
 {
 public:
 	static void Authenticate();
+	static bool Authenticated()
+	{
+		const FDateTime Now = FDateTime::UtcNow();
+		const int64 UnixMillis = Now.ToUnixTimestamp() * 1000 + Now.GetMillisecond();
+		return UnixMillis <= TokenExpiry;
+	}
 	
 	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
 	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request)

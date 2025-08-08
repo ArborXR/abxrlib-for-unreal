@@ -34,7 +34,7 @@ public:
 	static void LogCritical(const FString& text) { LogCritical(text, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-	static void Event(const FString& name, const TMap<FString, FString>& meta);
+	static void Event(const FString& Name, const TMap<FString, FString>& Meta);
 	static void Event(const FString& name) { Event(name, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")

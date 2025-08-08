@@ -49,7 +49,7 @@ void Authentication::Authenticate()
 	{
 		if (!bWasSuccessful || !Response.IsValid())
 		{
-			UE_LOG(LogTemp, Error, TEXT("Request failed."));
+			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Authentication failed : %s"), *Response->GetContentAsString());
 			return;
 		}
 
@@ -90,7 +90,7 @@ void Authentication::Authenticate()
 			{
 				if (bOk && Resp.IsValid())
 				{
-					UE_LOG(LogTemp, Log, TEXT("Second response: %s"), *Resp->GetContentAsString());
+					UE_LOG(LogTemp, Log, TEXT("Second response: %s"), *Resp->GetContentAsString()); //TODO do something with this
 				}
 				else
 				{
@@ -115,10 +115,10 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 	FString HashString = AuthToken + ApiSecret + UnixTime;
 	if (!Json.IsEmpty())
 	{
-		//uint crc = Utils.ComputeCRC(json);
-		//HashString += crc;
+		uint32 CRC = Utils::ComputeCRC32(Json);
+		HashString += FString::FromInt(CRC);
 	}
-	
+	UE_LOG(LogTemp, Error, TEXT("AbxrLib - TEST!!! %s"), *Utils::ComputeSHA256(TEXT("TESTTEST!!!")));
 	Request->SetHeader("x-abxrlib-hash", Utils::ComputeSHA256(HashString));
 }
 
