@@ -1,4 +1,5 @@
 #include "TelemetryBatcher.h"
+#include "AbxrLibConfiguration.h"
 #include "Authentication.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
@@ -16,10 +17,11 @@ TArray<FAbxrTelemetryPayload> TelemetryBatcher::Payloads;
 int64 TelemetryBatcher::LastCallTime = 0;
 int TelemetryBatcher::Timer;
 FTimerHandle TelemetryBatcher::TimerHandle;
+const UAbxrLibConfiguration* Settings = GetDefault<UAbxrLibConfiguration>();
 
 void TelemetryBatcher::Init(const UWorld* World)
 {
-	Timer = 10;
+	Timer = Settings->SendNextBatchWaitSeconds;
 	World->GetTimerManager().SetTimer(
 		TimerHandle,
 		[]
@@ -49,7 +51,7 @@ void TelemetryBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 	{
 		FScopeLock Lock(&Mutex);
 		Payloads.Add(Payload);
-		if (Payloads.Num() >= 3) // TODO get from Configuration.Instance.telemetryEntriesPerSendAttempt
+		if (Payloads.Num() >= Settings->TelemetryEntriesPerSendAttempt)
 		{
 			// Set timer to 0 so it triggers a send
 			Timer = 0;
@@ -63,7 +65,7 @@ void TelemetryBatcher::Send()
 	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
 		
 	LastCallTime = UnixSeconds;
-	Timer = 10; // reset timer  TODO Configuration.Instance.sendNextBatchWaitSeconds
+	Timer = Settings->SendNextBatchWaitSeconds; // reset timer
 	if (!Authentication::Authenticated()) return;
 	
 	{
@@ -95,7 +97,7 @@ void TelemetryBatcher::Send()
 		if (!bWasSuccessful || !Response.IsValid())
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Telemetry POST Request failed : %s"), *Response->GetContentAsString());
-			Timer = 10;// TODO Configuration.Instance.sendRetryIntervalSeconds;
+			Timer = Settings->SendRetryIntervalSeconds;
 			{
 				FScopeLock Lock(&Mutex);
 				Payloads.Insert(TelemetriesToSend, 0);

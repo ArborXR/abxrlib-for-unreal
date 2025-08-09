@@ -1,4 +1,5 @@
 #include "LogBatcher.h"
+#include "AbxrLibConfiguration.h"
 #include "Authentication.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
@@ -16,10 +17,11 @@ TArray<FAbxrLogPayload> LogBatcher::Payloads;
 int64 LogBatcher::LastCallTime = 0;
 int LogBatcher::Timer;
 FTimerHandle LogBatcher::TimerHandle;
+const UAbxrLibConfiguration* Settings = GetDefault<UAbxrLibConfiguration>();
 
 void LogBatcher::Init(const UWorld* World)
 {
-	Timer = 10; //TODO config
+	Timer = Settings->SendNextBatchWaitSeconds;
 	World->GetTimerManager().SetTimer(
 		TimerHandle,
 		[]
@@ -50,7 +52,7 @@ void LogBatcher::Add(FString Level, FString Text, const TMap<FString, FString>& 
 	{
 		FScopeLock Lock(&Mutex);
 		Payloads.Add(Payload);
-		if (Payloads.Num() >= 3) // TODO get from Configuration.Instance.logsPerSendAttempt
+		if (Payloads.Num() >= Settings->LogsPerSendAttempt)
 		{
 			// Set timer to 0 so it triggers a send
 			Timer = 0;
@@ -64,7 +66,7 @@ void LogBatcher::Send()
 	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
 	
 	LastCallTime = UnixSeconds;
-	Timer = 10; // reset timer  TODO Configuration.Instance.sendNextBatchWaitSeconds
+	Timer = Settings->SendNextBatchWaitSeconds; // reset timer
 	if (!Authentication::Authenticated()) return;
 	
 	{
@@ -96,7 +98,7 @@ void LogBatcher::Send()
 		if (!bWasSuccessful || !Response.IsValid())
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Log POST Request failed : %s"), *Response->GetContentAsString());
-			Timer = 10;// TODO Configuration.Instance.sendRetryIntervalSeconds;
+			Timer = Settings->SendRetryIntervalSeconds;
 			{
 				FScopeLock Lock(&Mutex);
 				Payloads.Insert(LogsToSend, 0);

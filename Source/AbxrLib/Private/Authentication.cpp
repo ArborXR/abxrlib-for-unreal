@@ -1,4 +1,5 @@
 #include "Authentication.h"
+#include "AbxrLibConfiguration.h"
 #include "Utils.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
@@ -12,13 +13,14 @@ FString Authentication::AuthToken;
 FString Authentication::ApiSecret;
 FString Authentication::SessionId;
 int Authentication::TokenExpiry;
+const UAbxrLibConfiguration* Settings = GetDefault<UAbxrLibConfiguration>();
 
 void Authentication::Authenticate()
 {
 	FAuthPayload Payload;
-	Payload.appId = TEXT("d301143a-1481-41f2-b7ae-db3c55e18a35");
-	Payload.orgId = TEXT("08183be6-efd4-4814-83d1-ed88db8b4918");
-	Payload.authSecret = TEXT("WXOg9L0v2O9cah3jI1JsQKDBddX9kmd0B_M6-UmzobmwJGgxWV6iU6IQWky5JQ2Q");
+	Payload.appId = Settings->AppId;
+	Payload.orgId = Settings->OrgId;
+	Payload.authSecret = Settings->AuthSecret;
 	Payload.deviceId = TEXT("34f9f880-8360-47a2-89c8-ddccb6652f82");
 	Payload.userId = TEXT("userid");
 	Payload.tags = { };
@@ -36,6 +38,7 @@ void Authentication::Authenticate()
 
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
+	UE_LOG(LogTemp, Error, TEXT("AbxrLib - JSON: %s"), *Json);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/auth/token"));
