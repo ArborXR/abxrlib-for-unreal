@@ -11,15 +11,15 @@
 #include "HAL/CriticalSection.h"
 #include "Engine/World.h"
 
-static FCriticalSection Mutex;
-static TArray<FAbxrLogPayload> Payloads;
-static double LastCallTime = 0;
-static constexpr double MaxCallFrequencySeconds = 1;
-static int Timer;
+FCriticalSection LogBatcher::Mutex;
+TArray<FAbxrLogPayload> LogBatcher::Payloads;
+int64 LogBatcher::LastCallTime = 0;
+int LogBatcher::Timer;
+FTimerHandle LogBatcher::TimerHandle;
 
 void LogBatcher::Init(const UWorld* World)
 {
-	static FTimerHandle TimerHandle;
+	Timer = 10; //TODO config
 	World->GetTimerManager().SetTimer(
 		TimerHandle,
 		[]
@@ -60,9 +60,10 @@ void LogBatcher::Add(FString Level, FString Text, const TMap<FString, FString>& 
 
 void LogBatcher::Send()
 {
-	if (FPlatformTime::Seconds() - LastCallTime < MaxCallFrequencySeconds) return;
-		
-	LastCallTime = FPlatformTime::Seconds();
+	const int64 UnixSeconds = FDateTime::UtcNow().ToUnixTimestamp();
+	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
+	
+	LastCallTime = UnixSeconds;
 	Timer = 10; // reset timer  TODO Configuration.Instance.sendNextBatchWaitSeconds
 	if (!Authentication::Authenticated()) return;
 	

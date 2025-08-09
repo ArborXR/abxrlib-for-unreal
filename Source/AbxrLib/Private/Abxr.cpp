@@ -2,6 +2,7 @@
 #include "Authentication.h"
 #include "EventBatcher.h"
 #include "LogBatcher.h"
+#include "TelemetryBatcher.h"
 
 void UAbxr::Authenticate()
 {
@@ -40,5 +41,5 @@ void UAbxr::Event(const FString& Name, const TMap<FString, FString>& Meta)
 
 void UAbxr::TelemetryEntry(const FString& name, const TMap<FString, FString>& meta)
 {
-    
+    TelemetryBatcher::Add(name, meta);
 }

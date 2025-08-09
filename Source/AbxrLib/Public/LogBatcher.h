@@ -3,17 +3,6 @@
 #include "TimerManager.h"
 #include "LogBatcher.generated.h"
 
-class LogBatcher
-{
-public:
-	static void Init(const UWorld* World);
-	static void Add(FString LogLevel, FString Text, const TMap<FString, FString>& Meta);
-	static void Send();
-
-private:
-	FTimerHandle TimerHandle;
-};
-
 USTRUCT()
 struct FAbxrLogPayload
 {
@@ -39,4 +28,20 @@ struct FAbxrLogPayloadWrapper
 
 	UPROPERTY()
 	TArray<FAbxrLogPayload> data;
+};
+
+class LogBatcher
+{
+public:
+	static void Init(const UWorld* World);
+	static void Add(FString LogLevel, FString Text, const TMap<FString, FString>& Meta);
+	static void Send();
+
+private:
+	static FTimerHandle TimerHandle;
+	static int Timer;
+	static FCriticalSection Mutex;
+	static TArray<FAbxrLogPayload> Payloads;
+	static int64 LastCallTime;
+	static constexpr double MaxCallFrequencySeconds = 1;
 };

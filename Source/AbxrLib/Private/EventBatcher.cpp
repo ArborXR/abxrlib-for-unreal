@@ -11,15 +11,15 @@
 #include "HAL/CriticalSection.h"
 #include "Engine/World.h"
 
-static FCriticalSection Mutex;
-static TArray<FAbxrEventPayload> Payloads;
-static double LastCallTime = 0;
-static constexpr double MaxCallFrequencySeconds = 1;
-static int Timer;
+FCriticalSection EventBatcher::Mutex;
+TArray<FAbxrEventPayload> EventBatcher::Payloads;
+int64 EventBatcher::LastCallTime = 0;
+int EventBatcher::Timer;
+FTimerHandle EventBatcher::TimerHandle;
 
 void EventBatcher::Init(const UWorld* World)
 {
-	static FTimerHandle TimerHandle;
+	Timer = 10; //TODO config
 	World->GetTimerManager().SetTimer(
 		TimerHandle,
 		[]
@@ -59,9 +59,10 @@ void EventBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 
 void EventBatcher::Send()
 {
-	if (FPlatformTime::Seconds() - LastCallTime < MaxCallFrequencySeconds) return;
-		
-	LastCallTime = FPlatformTime::Seconds();
+	const int64 UnixSeconds = FDateTime::UtcNow().ToUnixTimestamp();
+	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
+	
+	LastCallTime = UnixSeconds;
 	Timer = 10; // reset timer  TODO Configuration.Instance.sendNextBatchWaitSeconds
 	if (!Authentication::Authenticated()) return;
 	

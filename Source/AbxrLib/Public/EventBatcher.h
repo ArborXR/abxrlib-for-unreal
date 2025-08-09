@@ -3,17 +3,6 @@
 #include "TimerManager.h"
 #include "EventBatcher.generated.h"
 
-class EventBatcher
-{
-public:
-	static void Init(const UWorld* World);
-	static void Add(FString Name, const TMap<FString, FString>& Meta);
-	static void Send();
-
-private:
-	FTimerHandle TimerHandle;
-};
-
 USTRUCT()
 struct FAbxrEventPayload
 {
@@ -36,4 +25,20 @@ struct FAbxrEventPayloadWrapper
 
 	UPROPERTY()
 	TArray<FAbxrEventPayload> data;
+};
+
+class EventBatcher
+{
+public:
+	static void Init(const UWorld* World);
+	static void Add(FString Name, const TMap<FString, FString>& Meta);
+	static void Send();
+
+private:
+	static FTimerHandle TimerHandle;
+	static int Timer;
+	static FCriticalSection Mutex;
+	static TArray<FAbxrEventPayload> Payloads;
+	static int64 LastCallTime;
+	static constexpr double MaxCallFrequencySeconds = 1;
 };
