@@ -9,10 +9,31 @@
 #include "Misc/Base64.h"
 #include "Containers/Array.h"
 #include "HAL/CriticalSection.h"
+#include "Engine/World.h"
 
 FCriticalSection Mutex;
 
-TArray<FPayload> Payloads;
+static TArray<FPayload> Payloads;
+static double LastCallTime = 0;
+static constexpr double MaxCallFrequencySeconds = 1;
+static int Timer;
+
+void EventBatcher::Init(UWorld* World)
+{
+	static FTimerHandle TimerHandle;
+	World->GetTimerManager().SetTimer(
+		TimerHandle,
+		[]
+		{
+			if (Timer <= 0)
+			{
+				Send();
+			}
+		},
+		1.0f,  // Interval
+		true   // Loop
+	);
+}
 
 void EventBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 {
@@ -28,20 +49,21 @@ void EventBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 	{
 		FScopeLock Lock(&Mutex);
 		Payloads.Add(Payload);
-		if (Payloads.Num() >= 5) // TODO get from config
+		if (Payloads.Num() >= 3) // TODO get from Configuration.Instance.eventsPerSendAttempt
 		{
 			// Set timer to 0 so it triggers a send
+			Timer = 0;
 		}
 	}
 }
 
 void EventBatcher::Send()
 {
-	//if (Time.time - _lastCallTime < MaxCallFrequencySeconds) yield break;
+	if (FPlatformTime::Seconds() - LastCallTime < MaxCallFrequencySeconds) return;
 		
-	//_lastCallTime = Time.time;
-	//_timer = Configuration.Instance.sendNextBatchWaitSeconds; // reset timer
-	//if (!Authentication::Authenticated()) return;
+	LastCallTime = FPlatformTime::Seconds();
+	Timer = 10; // reset timer  TODO Configuration.Instance.sendNextBatchWaitSeconds
+	if (!Authentication::Authenticated()) return;
 	
 	{
 		FScopeLock Lock(&Mutex);
@@ -72,7 +94,7 @@ void EventBatcher::Send()
 		if (!bWasSuccessful || !Response.IsValid())
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Event POST Request failed : %s"), *Response->GetContentAsString());
-			//_timer = Configuration.Instance.sendRetryIntervalSeconds;
+			Timer = 10;// TODO Configuration.Instance.sendRetryIntervalSeconds;
 			{
 				FScopeLock Lock(&Mutex);
 				Payloads.Insert(EventsToSend, 0);

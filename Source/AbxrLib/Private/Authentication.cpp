@@ -118,7 +118,7 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 		uint32 CRC = Utils::ComputeCRC32(Json);
 		HashString += FString::FromInt(CRC);
 	}
-	UE_LOG(LogTemp, Error, TEXT("AbxrLib - TEST!!! %s"), *Utils::ComputeSHA256(TEXT("TESTTEST!!!")));
+	
 	Request->SetHeader("x-abxrlib-hash", Utils::ComputeSHA256(HashString));
 }
 

@@ -11,8 +11,7 @@ public:
 	static bool Authenticated()
 	{
 		const FDateTime Now = FDateTime::UtcNow();
-		const int64 UnixMillis = Now.ToUnixTimestamp() * 1000 + Now.GetMillisecond();
-		return UnixMillis <= TokenExpiry;
+		return Now.ToUnixTimestamp() <= TokenExpiry;
 	}
 	
 	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);

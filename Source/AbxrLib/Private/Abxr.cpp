@@ -35,8 +35,6 @@ void UAbxr::LogCritical(const FString& text, const TMap<FString, FString>& meta)
 void UAbxr::Event(const FString& Name, const TMap<FString, FString>& Meta)
 {
 	EventBatcher::Add(Name, Meta);
-	EventBatcher::Add("SomeOtherEvent", Meta);
-	EventBatcher::Send();
 }
 
 void UAbxr::TelemetryEntry(const FString& name, const TMap<FString, FString>& meta)
