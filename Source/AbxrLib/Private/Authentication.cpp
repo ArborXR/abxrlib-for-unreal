@@ -37,8 +37,6 @@ void Authentication::Authenticate()
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
 
-	UE_LOG(LogTemp, Warning, TEXT("JSON Output: %s"), *Json);
-
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/auth/token"));
 	Request->SetVerb(TEXT("POST"));

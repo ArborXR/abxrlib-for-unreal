@@ -7,7 +7,7 @@ public class AbxrLib : ModuleRules
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange([
-            "Core", "CoreUObject", "Engine", "HTTP", "Json", "JsonUtilities", "OpenSSL"
+            "Core", "CoreUObject", "Engine", "HTTP", "Json", "JsonUtilities", "OpenSSL", "DeveloperSettings"
         ]);
         
         if (Target.Platform == UnrealTargetPlatform.Win64)

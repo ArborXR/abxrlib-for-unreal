@@ -9,29 +9,29 @@ void UAbxr::Authenticate()
     Authentication::Authenticate();
 }
 
-void UAbxr::LogDebug(const FString& text, const TMap<FString, FString>& meta)
+void UAbxr::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("debug", text, meta);
+    LogBatcher::Add("debug", Text, Meta);
 }
 
-void UAbxr::LogInfo(const FString& text, const TMap<FString, FString>& meta)
+void UAbxr::LogInfo(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("info", text, meta);
+    LogBatcher::Add("info", Text, Meta);
 }
 
-void UAbxr::LogWarn(const FString& text, const TMap<FString, FString>& meta)
+void UAbxr::LogWarn(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("warn", text, meta);
+    LogBatcher::Add("warn", Text, Meta);
 }
 
-void UAbxr::LogError(const FString& text, const TMap<FString, FString>& meta)
+void UAbxr::LogError(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("error", text, meta);
+    LogBatcher::Add("error", Text, Meta);
 }
 
-void UAbxr::LogCritical(const FString& text, const TMap<FString, FString>& meta)
+void UAbxr::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("critical", text, meta);
+    LogBatcher::Add("critical", Text, Meta);
 }
 
 void UAbxr::Event(const FString& Name, const TMap<FString, FString>& Meta)
@@ -39,7 +39,7 @@ void UAbxr::Event(const FString& Name, const TMap<FString, FString>& Meta)
 	EventBatcher::Add(Name, Meta);
 }
 
-void UAbxr::TelemetryEntry(const FString& name, const TMap<FString, FString>& meta)
+void UAbxr::TelemetryEntry(const FString& Name, const TMap<FString, FString>& Meta)
 {
-    TelemetryBatcher::Add(name, meta);
+    TelemetryBatcher::Add(Name, Meta);
 }
