@@ -11,20 +11,20 @@
 #include "HAL/CriticalSection.h"
 #include "Engine/World.h"
 
-FCriticalSection Mutex;
-
-static TArray<FPayload> Payloads;
+static FCriticalSection Mutex;
+static TArray<FAbxrEventPayload> Payloads;
 static double LastCallTime = 0;
 static constexpr double MaxCallFrequencySeconds = 1;
 static int Timer;
 
-void EventBatcher::Init(UWorld* World)
+void EventBatcher::Init(const UWorld* World)
 {
 	static FTimerHandle TimerHandle;
 	World->GetTimerManager().SetTimer(
 		TimerHandle,
 		[]
 		{
+			Timer--;
 			if (Timer <= 0)
 			{
 				Send();
@@ -41,7 +41,7 @@ void EventBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 	int64 UnixMillis = Now.ToUnixTimestamp() * 1000 + Now.GetMillisecond();
 	FString PreciseTimestamp = FString::Printf(TEXT("%lld"), UnixMillis);
 
-	FPayload Payload;
+	FAbxrEventPayload Payload;
 	Payload.preciseTimestamp = PreciseTimestamp;
 	Payload.name = Name;
 	Payload.meta = Meta;
@@ -70,17 +70,17 @@ void EventBatcher::Send()
 		if (Payloads.Num() == 0) return;
 	}
 
-	TArray<FPayload> EventsToSend;
+	TArray<FAbxrEventPayload> EventsToSend;
 	{
 		FScopeLock Lock(&Mutex);
 		EventsToSend = MoveTemp(Payloads);
 	}
 
-	FPayloadWrapper Wrapper;
+	FAbxrEventPayloadWrapper Wrapper;
 	Wrapper.data = EventsToSend;
 
 	FString Json;
-	FJsonObjectConverter::UStructToJsonObjectString(FPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
+	FJsonObjectConverter::UStructToJsonObjectString(FAbxrEventPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/collect/event"));

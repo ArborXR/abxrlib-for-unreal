@@ -1,7 +1,42 @@
 #pragma once
+#include "CoreMinimal.h"
+#include "TimerManager.h"
+#include "LogBatcher.generated.h"
 
 class LogBatcher
 {
 public:
-	
+	static void Init(const UWorld* World);
+	static void Add(FString LogLevel, FString Text, const TMap<FString, FString>& Meta);
+	static void Send();
+
+private:
+	FTimerHandle TimerHandle;
+};
+
+USTRUCT()
+struct FAbxrLogPayload
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString preciseTimestamp;
+
+	UPROPERTY()
+	FString logLevel;
+
+	UPROPERTY()
+	FString text;
+
+	UPROPERTY()
+	TMap<FString, FString> meta;
+};
+
+USTRUCT()
+struct FAbxrLogPayloadWrapper
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<FAbxrLogPayload> data;
 };
