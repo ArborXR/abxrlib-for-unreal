@@ -3,6 +3,7 @@
 #include "Authentication.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
+#include "Utils.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
@@ -17,11 +18,10 @@ TArray<FAbxrEventPayload> EventBatcher::Payloads;
 int64 EventBatcher::LastCallTime = 0;
 int EventBatcher::Timer;
 FTimerHandle EventBatcher::TimerHandle;
-const UAbxrLibConfiguration* Settings = GetDefault<UAbxrLibConfiguration>();
 
 void EventBatcher::Init(const UWorld* World)
 {
-	Timer = Settings->SendNextBatchWaitSeconds;
+	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
 	World->GetTimerManager().SetTimer(
 		TimerHandle,
 		[]
@@ -51,7 +51,7 @@ void EventBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 	{
 		FScopeLock Lock(&Mutex);
 		Payloads.Add(Payload);
-		if (Payloads.Num() >= Settings->EventsPerSendAttempt)
+		if (Payloads.Num() >= GetDefault<UAbxrLibConfiguration>()->EventsPerSendAttempt)
 		{
 			// Set timer to 0 so it triggers a send
 			Timer = 0;
@@ -65,7 +65,7 @@ void EventBatcher::Send()
 	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
 	
 	LastCallTime = UnixSeconds;
-	Timer = Settings->SendNextBatchWaitSeconds; // reset timer
+	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds; // reset timer
 	if (!Authentication::Authenticated()) return;
 	
 	{
@@ -86,7 +86,7 @@ void EventBatcher::Send()
 	FJsonObjectConverter::UStructToJsonObjectString(FAbxrEventPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/collect/event"));
+	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/collect/event")));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
@@ -97,7 +97,7 @@ void EventBatcher::Send()
 		if (!bWasSuccessful || !Response.IsValid())
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Event POST Request failed : %s"), *Response->GetContentAsString());
-			Timer = Settings->SendRetryIntervalSeconds;
+			Timer = GetDefault<UAbxrLibConfiguration>()->SendRetryIntervalSeconds;
 			{
 				FScopeLock Lock(&Mutex);
 				Payloads.Insert(EventsToSend, 0);

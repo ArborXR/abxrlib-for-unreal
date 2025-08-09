@@ -8,19 +8,21 @@
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
 #include "Misc/Base64.h"
+#include "HAL/PlatformMisc.h"
+#include "Interfaces/IPluginManager.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 FString Authentication::AuthToken;
 FString Authentication::ApiSecret;
 FString Authentication::SessionId;
 int Authentication::TokenExpiry;
-const UAbxrLibConfiguration* Settings = GetDefault<UAbxrLibConfiguration>();
 
 void Authentication::Authenticate()
 {
 	FAuthPayload Payload;
-	Payload.appId = Settings->AppId;
-	Payload.orgId = Settings->OrgId;
-	Payload.authSecret = Settings->AuthSecret;
+	Payload.appId = GetDefault<UAbxrLibConfiguration>()->AppId;
+	Payload.orgId = GetDefault<UAbxrLibConfiguration>()->OrgId;
+	Payload.authSecret = GetDefault<UAbxrLibConfiguration>()->AuthSecret;
 	Payload.deviceId = TEXT("34f9f880-8360-47a2-89c8-ddccb6652f82");
 	Payload.userId = TEXT("userid");
 	Payload.tags = { };
@@ -29,11 +31,11 @@ void Authentication::Authenticate()
 	Payload.ipAddress = TEXT("");
 	Payload.deviceModel = TEXT("");
 	Payload.geolocation = TMap<FString, FString>();
-	Payload.osVersion = TEXT("1.0");
+	Payload.osVersion = FPlatformMisc::GetOSVersion();
 	Payload.xrdmVersion = TEXT("1.0");
 	Payload.appVersion = TEXT("1.0");
-	Payload.unrealVersion = TEXT("1.0");
-	Payload.abxrLibVersion = TEXT("1.0");
+	Payload.unrealVersion = FString::Printf(TEXT("%d.%d.%d"), ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION, ENGINE_PATCH_VERSION);
+	Payload.abxrLibVersion = IPluginManager::Get().FindPlugin(TEXT("AbxrLib"))->GetDescriptor().VersionName;
 	Payload.authMechanism = CreateAuthMechanismDict();
 
 	FString Json;
@@ -41,7 +43,7 @@ void Authentication::Authenticate()
 	UE_LOG(LogTemp, Error, TEXT("AbxrLib - JSON: %s"), *Json);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/auth/token"));
+	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/auth/token")));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);

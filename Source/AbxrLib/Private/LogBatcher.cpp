@@ -3,6 +3,7 @@
 #include "Authentication.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
+#include "Utils.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
@@ -17,11 +18,10 @@ TArray<FAbxrLogPayload> LogBatcher::Payloads;
 int64 LogBatcher::LastCallTime = 0;
 int LogBatcher::Timer;
 FTimerHandle LogBatcher::TimerHandle;
-const UAbxrLibConfiguration* Settings = GetDefault<UAbxrLibConfiguration>();
 
 void LogBatcher::Init(const UWorld* World)
 {
-	Timer = Settings->SendNextBatchWaitSeconds;
+	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
 	World->GetTimerManager().SetTimer(
 		TimerHandle,
 		[]
@@ -52,7 +52,7 @@ void LogBatcher::Add(FString Level, FString Text, const TMap<FString, FString>& 
 	{
 		FScopeLock Lock(&Mutex);
 		Payloads.Add(Payload);
-		if (Payloads.Num() >= Settings->LogsPerSendAttempt)
+		if (Payloads.Num() >= GetDefault<UAbxrLibConfiguration>()->LogsPerSendAttempt)
 		{
 			// Set timer to 0 so it triggers a send
 			Timer = 0;
@@ -66,7 +66,7 @@ void LogBatcher::Send()
 	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
 	
 	LastCallTime = UnixSeconds;
-	Timer = Settings->SendNextBatchWaitSeconds; // reset timer
+	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds; // reset timer
 	if (!Authentication::Authenticated()) return;
 	
 	{
@@ -87,7 +87,7 @@ void LogBatcher::Send()
 	FJsonObjectConverter::UStructToJsonObjectString(FAbxrLogPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("https://lib-backend.xrdm.app/v1/collect/log"));
+	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/collect/log")));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
@@ -98,7 +98,7 @@ void LogBatcher::Send()
 		if (!bWasSuccessful || !Response.IsValid())
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Log POST Request failed : %s"), *Response->GetContentAsString());
-			Timer = Settings->SendRetryIntervalSeconds;
+			Timer = GetDefault<UAbxrLibConfiguration>()->SendRetryIntervalSeconds;
 			{
 				FScopeLock Lock(&Mutex);
 				Payloads.Insert(LogsToSend, 0);

@@ -99,3 +99,17 @@ uint32 Utils::ComputeCRC32(const FString& Input)
 
 	return ~Crc;
 }
+
+FString Utils::CombineUrl(const FString& Base, const FString& Path)
+{
+	FString NormalizedBase = Base;
+	FString NormalizedPath = Path;
+
+	// Ensure base ends with exactly one slash
+	NormalizedBase.RemoveFromEnd(TEXT("/"));
+	
+	// Ensure path doesn't start with slash
+	NormalizedPath.RemoveFromStart(TEXT("/"));
+
+	return NormalizedBase + TEXT("/") + NormalizedPath;
+}
