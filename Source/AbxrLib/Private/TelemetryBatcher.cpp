@@ -105,7 +105,7 @@ void TelemetryBatcher::Send()
 			return;
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("AbxrLib - Telemetry POST Request successful"));
+		UE_LOG(LogTemp, Log, TEXT("AbxrLib - Telemetry POST Request successful: %s"), *Response->GetContentAsString());
 	});
 	
 	Request->ProcessRequest();

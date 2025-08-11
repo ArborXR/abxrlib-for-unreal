@@ -118,8 +118,8 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 	FString HashString = AuthToken + ApiSecret + UnixTime;
 	if (!Json.IsEmpty())
 	{
-		uint32 CRC = Utils::ComputeCRC32(Json);
-		HashString += FString::FromInt(CRC);
+		const uint32 CRC = Utils::ComputeCRC32(Json);
+		HashString += LexToString(CRC);
 	}
 	
 	Request->SetHeader("x-abxrlib-hash", Utils::ComputeSHA256(HashString));

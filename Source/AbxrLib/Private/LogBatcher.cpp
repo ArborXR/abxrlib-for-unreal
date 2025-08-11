@@ -106,7 +106,7 @@ void LogBatcher::Send()
 			return;
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("AbxrLib - Log POST Request successful"));
+		UE_LOG(LogTemp, Log, TEXT("AbxrLib - Log POST Request successful: %s"), *Response->GetContentAsString());
 	});
 	
 	Request->ProcessRequest();
