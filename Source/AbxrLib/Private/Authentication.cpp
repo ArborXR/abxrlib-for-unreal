@@ -16,6 +16,7 @@ FString Authentication::AuthToken;
 FString Authentication::ApiSecret;
 FString Authentication::SessionId;
 int Authentication::TokenExpiry;
+FAuthMechanism Authentication::AuthMechanism;
 
 void Authentication::Authenticate()
 {
@@ -79,7 +80,7 @@ void Authentication::Authenticate()
 			if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
 			{
 				ValuePtr = PayloadJson->Values.Find("exp");
-				FString Expiry = (*ValuePtr)->AsString();
+				const FString Expiry = (*ValuePtr)->AsString();
 				TokenExpiry = FCString::Atoi(*Expiry);
 			}
 			
@@ -93,7 +94,13 @@ void Authentication::Authenticate()
 			{
 				if (bOk && Resp.IsValid())
 				{
-					UE_LOG(LogTemp, Log, TEXT("Second response: %s"), *Resp->GetContentAsString()); //TODO do something with this
+					FConfigPayload Config;
+					FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
+					AuthMechanism = Config.authMechanism;
+					if (!AuthMechanism.prompt.IsEmpty())
+					{
+						KeyboardAuthenticate();
+					}
 				}
 				else
 				{
@@ -107,6 +114,17 @@ void Authentication::Authenticate()
 	
 	Request->ProcessRequest();
 }
+
+void Authentication::KeyboardAuthenticate()
+{
+	
+}
+
+void Authentication::KeyboardAuthenticate(const FString& Input)
+{
+	
+}
+
 
 void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json)
 {
@@ -127,12 +145,10 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 
 TMap<FString, FString> Authentication::CreateAuthMechanismDict()
 {
-	TMap<FString, FString> dict;
-	//if (_authMechanism == null) return dict;
-        
-	//if (!string.IsNullOrEmpty(_authMechanism.type)) dict["type"] = _authMechanism.type;
-	//if (!string.IsNullOrEmpty(_authMechanism.prompt)) dict["prompt"] = _authMechanism.prompt;
-	//if (!string.IsNullOrEmpty(_authMechanism.domain)) dict["domain"] = _authMechanism.domain;
-	return dict;
+	TMap<FString, FString> Dict;
+	if (!AuthMechanism.type.IsEmpty()) Dict.Add(TEXT("type"), AuthMechanism.type);
+	if (!AuthMechanism.prompt.IsEmpty()) Dict.Add(TEXT("prompt"), AuthMechanism.prompt);
+	if (!AuthMechanism.domain.IsEmpty()) Dict.Add(TEXT("domain"), AuthMechanism.domain);
+	return Dict;
 }
 

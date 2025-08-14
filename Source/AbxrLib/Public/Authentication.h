@@ -4,31 +4,6 @@
 #include "Interfaces/IHttpRequest.h"
 #include "Authentication.generated.h"
 
-class Authentication
-{
-public:
-	static void Authenticate();
-	static bool Authenticated()
-	{
-		const FDateTime Now = FDateTime::UtcNow();
-		return Now.ToUnixTimestamp() <= TokenExpiry;
-	}
-	
-	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
-	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request)
-	{
-		SetAuthHeaders(Request, TEXT(""));
-	}
-
-private:
-	static TMap<FString, FString> CreateAuthMechanismDict();
-
-	static FString AuthToken;
-	static FString ApiSecret;
-	static FString SessionId;
-	static int TokenExpiry;
-};
-
 UENUM(BlueprintType)
 enum class EPartner : uint8
 {
@@ -160,4 +135,33 @@ struct FConfigPayload
 
 	UPROPERTY()
 	FString positionCapturePeriod;
+};
+
+class Authentication
+{
+public:
+	static void Authenticate();
+	static bool Authenticated()
+	{
+		const FDateTime Now = FDateTime::UtcNow();
+		return Now.ToUnixTimestamp() <= TokenExpiry;
+	}
+	
+	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
+	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request)
+	{
+		SetAuthHeaders(Request, TEXT(""));
+	}
+
+	static void KeyboardAuthenticate();
+	static void KeyboardAuthenticate(const FString& Input);
+
+private:
+	static TMap<FString, FString> CreateAuthMechanismDict();
+
+	static FString AuthToken;
+	static FString ApiSecret;
+	static FString SessionId;
+	static int TokenExpiry;
+	static FAuthMechanism AuthMechanism;
 };
