@@ -83,41 +83,46 @@ void Authentication::Authenticate()
 				const FString Expiry = (*ValuePtr)->AsString();
 				TokenExpiry = FCString::Atoi(*Expiry);
 			}
-			
-			TSharedRef<IHttpRequest> ConfigRequest = FHttpModule::Get().CreateRequest();
-			ConfigRequest->SetURL("https://lib-backend.xrdm.app/v1/storage/config");
-			ConfigRequest->SetVerb("GET");
-			ConfigRequest->SetHeader("Content-Type", "application/json");
-			SetAuthHeaders(ConfigRequest);
 
-			ConfigRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
-			{
-				if (bOk && Resp.IsValid())
-				{
-					FConfigPayload Config;
-					FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
-					AuthMechanism = Config.authMechanism;
-					if (!AuthMechanism.prompt.IsEmpty())
-					{
-						KeyboardAuthenticate();
-					}
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("AbxrLib - GetConfiguration failed: %s"), *Resp->GetContentAsString());
-				}
-			});
-
-			ConfigRequest->ProcessRequest();
+			GetConfiguration();
 		}
 	});
 	
 	Request->ProcessRequest();
 }
 
+void Authentication::GetConfiguration()
+{
+	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
+	Request->SetURL("https://lib-backend.xrdm.app/v1/storage/config");
+	Request->SetVerb("GET");
+	Request->SetHeader("Content-Type", "application/json");
+	SetAuthHeaders(Request);
+
+	Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
+	{
+		if (bOk && Resp.IsValid())
+		{
+			FConfigPayload Config;
+			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
+			AuthMechanism = Config.authMechanism;
+			if (!AuthMechanism.prompt.IsEmpty())
+			{
+				KeyboardAuthenticate();
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("AbxrLib - GetConfiguration failed: %s"), *Resp->GetContentAsString());
+		}
+	});
+
+	Request->ProcessRequest();
+}
+
 void Authentication::KeyboardAuthenticate()
 {
-	
+	UE_LOG(LogTemp, Error, TEXT("AbxrLib - KEYBOARD!!!"));
 }
 
 void Authentication::KeyboardAuthenticate(const FString& Input)

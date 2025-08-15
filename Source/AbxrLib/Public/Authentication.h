@@ -141,6 +141,7 @@ class Authentication
 {
 public:
 	static void Authenticate();
+	static void GetConfiguration();
 	static bool Authenticated()
 	{
 		const FDateTime Now = FDateTime::UtcNow();
