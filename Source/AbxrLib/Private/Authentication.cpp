@@ -1,4 +1,5 @@
 #include "Authentication.h"
+#include "Abxr.h"
 #include "AbxrLibConfiguration.h"
 #include "Utils.h"
 #include "HttpModule.h"
@@ -17,9 +18,31 @@ FString Authentication::ApiSecret;
 FString Authentication::SessionId;
 int Authentication::TokenExpiry;
 FAuthMechanism Authentication::AuthMechanism;
+int Authentication::FailedAuthAttempts = 0;
+bool Authentication::KeyboardAuthSuccess = false;
 
 void Authentication::Authenticate()
 {
+	Reset();
+	AuthRequest([](const bool bSuccess)
+	{
+		if (bSuccess)
+		{
+			GetConfiguration([](const bool)
+			{
+				if (!AuthMechanism.prompt.IsEmpty())
+				{
+					KeyboardAuthenticate();
+				}
+			});
+		}
+	});
+}
+
+void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
+{
+	KeyboardAuthSuccess = false;
+	
 	FAuthPayload Payload;
 	Payload.appId = GetDefault<UAbxrLibConfiguration>()->AppId;
 	Payload.orgId = GetDefault<UAbxrLibConfiguration>()->OrgId;
@@ -48,25 +71,23 @@ void Authentication::Authenticate()
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
-
-	Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
+	
+	Request->OnProcessRequestComplete().BindLambda([OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 	{
-		if (!bWasSuccessful || !Response.IsValid())
+		if (!bWasSuccessful || !Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Authentication failed : %s"), *Response->GetContentAsString());
+			OnComplete(false);
 			return;
 		}
-
+		
 		const FString Body = Response->GetContentAsString();
 		TSharedPtr<FJsonObject> JsonObject;
 		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
 		if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 		{
-			const TSharedPtr<FJsonValue>* ValuePtr = JsonObject->Values.Find("token");
-			AuthToken = (*ValuePtr)->AsString();
-
-			ValuePtr = JsonObject->Values.Find("secret");
-			ApiSecret = (*ValuePtr)->AsString();
+			JsonObject->TryGetStringField(TEXT("token"), AuthToken);
+			JsonObject->TryGetStringField(TEXT("secret"), ApiSecret);
 
 			TArray<FString> Parts;
 			AuthToken.ParseIntoArray(Parts, TEXT("."));
@@ -79,19 +100,22 @@ void Authentication::Authenticate()
 			Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
 			if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
 			{
-				ValuePtr = PayloadJson->Values.Find("exp");
-				const FString Expiry = (*ValuePtr)->AsString();
-				TokenExpiry = FCString::Atoi(*Expiry);
+				FString ExpStr;
+				if (JsonObject->TryGetStringField(TEXT("exp"), ExpStr))
+				{
+					TokenExpiry = FCString::Atoi64(*ExpStr);
+				}
 			}
-
-			GetConfiguration();
+			
+			KeyboardAuthSuccess = true;
+			OnComplete(true);
 		}
 	});
 	
 	Request->ProcessRequest();
 }
 
-void Authentication::GetConfiguration()
+void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 {
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL("https://lib-backend.xrdm.app/v1/storage/config");
@@ -99,21 +123,19 @@ void Authentication::GetConfiguration()
 	Request->SetHeader("Content-Type", "application/json");
 	SetAuthHeaders(Request);
 
-	Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
+	Request->OnProcessRequestComplete().BindLambda([OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
 	{
 		if (bOk && Resp.IsValid())
 		{
 			FConfigPayload Config;
 			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
 			AuthMechanism = Config.authMechanism;
-			if (!AuthMechanism.prompt.IsEmpty())
-			{
-				KeyboardAuthenticate();
-			}
+			OnComplete(true);
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - GetConfiguration failed: %s"), *Resp->GetContentAsString());
+			OnComplete(false);
 		}
 	});
 
@@ -122,12 +144,31 @@ void Authentication::GetConfiguration()
 
 void Authentication::KeyboardAuthenticate()
 {
-	UE_LOG(LogTemp, Error, TEXT("AbxrLib - KEYBOARD!!!"));
+	FString Prompt = TEXT("");
+	if (FailedAuthAttempts > 0) Prompt = TEXT("Authentication Failed (") + FString::FromInt(FailedAuthAttempts) + ")\n";
+	Prompt.Append(AuthMechanism.prompt);
+	UAbxr::PresentKeyboard(Prompt, AuthMechanism.type, AuthMechanism.domain);
+	FailedAuthAttempts++;
 }
 
-void Authentication::KeyboardAuthenticate(const FString& Input)
+void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
 {
-	
+	FString OriginalPrompt = AuthMechanism.prompt;
+	AuthMechanism.prompt = KeyboardInput;
+	AuthRequest([OriginalPrompt](const bool bSuccess)
+	{
+		if (bSuccess)
+		{
+			UE_LOG(LogTemp, Error, TEXT("AbxrLib - IN BREAKOUT!"));
+			//KeyboardHandler.Destroy();
+			FailedAuthAttempts = 0;
+		}
+		else
+		{
+			AuthMechanism.prompt = OriginalPrompt;
+			KeyboardAuthenticate();
+		}
+	});
 }
 
 
@@ -135,7 +176,7 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 {
 	Request->SetHeader("Authorization", "Bearer " + AuthToken);
 
-	FString UnixTime = LexToString(FDateTime::UtcNow().ToUnixTimestamp());
+	const FString UnixTime = LexToString(FDateTime::UtcNow().ToUnixTimestamp());
 	Request->SetHeader("x-abxrlib-timestamp", UnixTime);
 
 	FString HashString = AuthToken + ApiSecret + UnixTime;
@@ -155,5 +196,17 @@ TMap<FString, FString> Authentication::CreateAuthMechanismDict()
 	if (!AuthMechanism.prompt.IsEmpty()) Dict.Add(TEXT("prompt"), AuthMechanism.prompt);
 	if (!AuthMechanism.domain.IsEmpty()) Dict.Add(TEXT("domain"), AuthMechanism.domain);
 	return Dict;
+}
+
+// TODO maybe this auth class should be static and Unreal prefers to store the objects somewhere
+void Authentication::Reset()
+{
+	AuthToken = TEXT("");
+	ApiSecret = TEXT("");
+	SessionId = TEXT("");
+	TokenExpiry = 0;
+	AuthMechanism = FAuthMechanism();
+	FailedAuthAttempts = 0;
+	KeyboardAuthSuccess = false;
 }
 

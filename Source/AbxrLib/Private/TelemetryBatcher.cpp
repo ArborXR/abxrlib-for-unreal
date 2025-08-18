@@ -40,7 +40,7 @@ void TelemetryBatcher::Init(const UWorld* World)
 void TelemetryBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 {
 	FDateTime Now = FDateTime::UtcNow(); //TODO should this be using Game Time (would need context)
-	int64 UnixMillis = Now.ToUnixTimestamp() * 1000 + Now.GetMillisecond();
+	const int64 UnixMillis = Now.ToUnixTimestamp() * 1000 + Now.GetMillisecond();
 	FString PreciseTimestamp = FString::Printf(TEXT("%lld"), UnixMillis);
 
 	FAbxrTelemetryPayload Payload;

@@ -14,7 +14,4 @@ public:
 private:
 	FTimerHandle MyRepeatingTimer;
 	void MyRepeatingFunction();
-	
-	FTimerHandle TimerHandle;
-	void AskForName();
 };

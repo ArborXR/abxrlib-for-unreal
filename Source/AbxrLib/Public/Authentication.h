@@ -141,7 +141,7 @@ class Authentication
 {
 public:
 	static void Authenticate();
-	static void GetConfiguration();
+	
 	static bool Authenticated()
 	{
 		const FDateTime Now = FDateTime::UtcNow();
@@ -155,14 +155,19 @@ public:
 	}
 
 	static void KeyboardAuthenticate();
-	static void KeyboardAuthenticate(const FString& Input);
+	static void KeyboardAuthenticate(const FString& KeyboardInput);
 
 private:
 	static TMap<FString, FString> CreateAuthMechanismDict();
+	static void Reset();
+	static void AuthRequest(TFunction<void(bool)> OnComplete);
+	static void GetConfiguration(TFunction<void(bool)> OnComplete);
 
 	static FString AuthToken;
 	static FString ApiSecret;
 	static FString SessionId;
 	static int TokenExpiry;
 	static FAuthMechanism AuthMechanism;
+	static int FailedAuthAttempts;
+	static bool KeyboardAuthSuccess;
 };

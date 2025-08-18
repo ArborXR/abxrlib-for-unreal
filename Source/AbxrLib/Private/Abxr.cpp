@@ -1,6 +1,7 @@
 #include "Abxr.h"
 #include "Authentication.h"
 #include "EventBatcher.h"
+#include "InputDialogWidget.h"
 #include "LogBatcher.h"
 #include "TelemetryBatcher.h"
 
@@ -8,11 +9,7 @@ TMap<FString, int64> UAbxr::AssessmentStartTimes;
 TMap<FString, int64> UAbxr::ObjectiveStartTimes;
 TMap<FString, int64> UAbxr::InteractionStartTimes;
 TMap<FString, int64> UAbxr::LevelStartTimes;
-
-void UAbxr::Authenticate()
-{
-    Authentication::Authenticate();
-}
+UObject* UAbxr::World;
 
 void UAbxr::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
 {
@@ -160,4 +157,14 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 	{
 		Meta.Add(TEXT("duration"), TEXT("0"));
 	}
+}
+
+void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
+{
+	auto* Dialog = UInputDialogWidget::ShowDialog(World, FText::FromString(PromptText), FText::FromString("Type here..."));
+	Dialog->OnAccepted.AddLambda([](const FString& Text)
+	{
+		UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
+		Authentication::KeyboardAuthenticate(Text);
+	});
 }

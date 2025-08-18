@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Authentication.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Abxr.generated.h"
 
@@ -33,8 +34,10 @@ class ABXRLIB_API UAbxr : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
+	static void SetWorld(UObject* _World) { UAbxr::World = _World; }
+	
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-	static void Authenticate();
+	static void Authenticate() { Authentication::Authenticate(); }
 	
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void LogDebug(const FString& Text, const TMap<FString, FString>& Meta);
@@ -138,11 +141,16 @@ public:
 	static void EventCritical(const FString& Label, const TMap<FString, FString>& Meta);
 	static void EventCritical(const FString& Label) { EventCritical(Label, TMap<FString, FString>()); }
 
+	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
+	static void PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain);
+	static void PresentKeyboard(const FString& PromptText, const FString& KeyboardType) { PresentKeyboard(PromptText, KeyboardType, FString("")); }
+
 private:
 	static TMap<FString, int64> AssessmentStartTimes;
 	static TMap<FString, int64> ObjectiveStartTimes;
 	static TMap<FString, int64> InteractionStartTimes;
 	static TMap<FString, int64> LevelStartTimes;
+	static UObject* World;
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 };
