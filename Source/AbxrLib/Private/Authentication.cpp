@@ -100,11 +100,9 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 			Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
 			if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
 			{
-				FString ExpStr;
-				if (JsonObject->TryGetStringField(TEXT("exp"), ExpStr))
-				{
-					TokenExpiry = FCString::Atoi64(*ExpStr);
-				}
+				const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find("exp");
+				const FString Expiry = (*ValuePtr)->AsString();
+				TokenExpiry = FCString::Atoi(*Expiry);
 			}
 			
 			KeyboardAuthSuccess = true;
