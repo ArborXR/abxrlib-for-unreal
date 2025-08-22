@@ -18,13 +18,13 @@ void UAbxrInit::Init()
 	TelemetryBatcher::Init(World);
 	
 	// Start a repeating timer
-	World->GetTimerManager().SetTimer(
+	/*World->GetTimerManager().SetTimer(
 		MyRepeatingTimer,
 		this,
 		&UAbxrInit::MyRepeatingFunction,
 		3.0f,   // Interval in seconds
 		true    // Loop
-	);
+	);*/
 
 	UAbxr::SetWorld(World);
 }
