@@ -107,6 +107,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 			
 			KeyboardAuthSuccess = true;
 			OnComplete(true);
+			UE_LOG(LogTemp, Log, TEXT("AbxrLib - Authenticated successfully"));
 		}
 	});
 	
