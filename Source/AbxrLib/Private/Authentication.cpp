@@ -158,7 +158,6 @@ void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
 	{
 		if (bSuccess)
 		{
-			UE_LOG(LogTemp, Error, TEXT("AbxrLib - IN BREAKOUT!"));
 			//KeyboardHandler.Destroy();
 			FailedAuthAttempts = 0;
 		}

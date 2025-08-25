@@ -34,7 +34,7 @@ class ABXRLIB_API UAbxr : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	static void SetWorld(UObject* _World) { UAbxr::World = _World; }
+	static void SetWorld(UWorld* World) { GWorldWeak = World; }
 	
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void Authenticate() { Authentication::Authenticate(); }
@@ -150,7 +150,7 @@ private:
 	static TMap<FString, int64> ObjectiveStartTimes;
 	static TMap<FString, int64> InteractionStartTimes;
 	static TMap<FString, int64> LevelStartTimes;
-	static UObject* World;
+	static TWeakObjectPtr<UWorld> GWorldWeak;
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 };

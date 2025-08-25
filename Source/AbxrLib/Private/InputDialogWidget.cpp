@@ -16,12 +16,9 @@
 #include "TimerManager.h"
 #include "Styling/SlateTypes.h"
 
-UInputDialogWidget* UInputDialogWidget::ShowDialog(const UObject* WorldContextObject, const FText& Message, const FText& Placeholder,
+UInputDialogWidget* UInputDialogWidget::ShowDialog(UWorld* World, const FText& Message, const FText& Placeholder,
                                                    const bool bStartWithExistingText, const FString& ExistingText, const int32 ZOrder)
 {
-    UWorld* World = WorldContextObject ? WorldContextObject->GetWorld() : nullptr;
-    if (!World) return nullptr;
-
     UInputDialogWidget* Dialog = CreateWidget<UInputDialogWidget>(World);
     if (!Dialog) return nullptr;
 

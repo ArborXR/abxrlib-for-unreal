@@ -17,7 +17,7 @@ class ABXRLIB_API UInputDialogWidget : public UUserWidget
 
 public:
     // Create, add to viewport, focus the edit box, set UI-only input (restored on close).
-    static UInputDialogWidget* ShowDialog(const UObject* WorldContextObject, const FText& Message,
+    static UInputDialogWidget* ShowDialog(UWorld* World, const FText& Message,
         const FText& Placeholder = FText(), bool bStartWithExistingText = false,
         const FString& ExistingText = FString(), int32 ZOrder = 10000);
 
