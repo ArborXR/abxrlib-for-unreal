@@ -1,0 +1,24 @@
+#include "AbxrWorldSubsystem.h"
+#include "EventBatcher.h"
+#include "LogBatcher.h"
+#include "TelemetryBatcher.h"
+#include "Engine/World.h"
+#include "Engine/GameInstance.h"
+
+void UAbxrWorldSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	const UWorld* World = GetWorld();
+	if (!World || !World->IsGameWorld()) return; // skip editor/preview worlds you don’t want
+
+	EventBatcher::Init(World);
+	LogBatcher::Init(World);
+	TelemetryBatcher::Init(World);
+	bWorldReady = true;
+}
+
+void UAbxrWorldSubsystem::Deinitialize()
+{
+	Super::Deinitialize();
+	bWorldReady = false;
+}
