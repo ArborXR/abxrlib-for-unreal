@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Authentication.h"
+#include "Engine/World.h"
+#include "UObject/WeakObjectPtr.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Abxr.generated.h"
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "TimerManager.h"
+#include "Containers/Ticker.h"
 #include "EventBatcher.generated.h"
 
 USTRUCT()
@@ -27,7 +28,7 @@ struct FAbxrEventPayloadWrapper
 	TArray<FAbxrEventPayload> data;
 };
 
-class EventBatcher : public UGameInstanceSubsystem
+class EventBatcher
 {
 public:
 	static void Add(FString Name, const TMap<FString, FString>& Meta);

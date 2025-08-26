@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "TimerManager.h"
+#include "Containers/Ticker.h"
 #include "TelemetryBatcher.generated.h"
 
 USTRUCT()
