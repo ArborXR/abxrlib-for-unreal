@@ -16,25 +16,35 @@
 FCriticalSection LogBatcher::Mutex;
 TArray<FAbxrLogPayload> LogBatcher::Payloads;
 int64 LogBatcher::LastCallTime = 0;
-int LogBatcher::Timer;
-FTimerHandle LogBatcher::TimerHandle;
+bool LogBatcher::bStarted = false;
+double LogBatcher::NextAt = 0.0;
+FTSTicker::FDelegateHandle LogBatcher::Ticker;
 
-void LogBatcher::Init(const UWorld* World)
+bool LogBatcher::Tick(float /*Dt*/)
 {
-	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
-	World->GetTimerManager().SetTimer(
-		TimerHandle,
-		[]
-		{
-			Timer--;
-			if (Timer <= 0)
-			{
-				Send();
-			}
-		},
-		1.0f,  // Interval
-		true   // Loop
-	);
+	const double Now = FPlatformTime::Seconds(); // wall-clock
+	if (Now >= NextAt) Send();
+	return true; // keep running
+}
+
+// Tick every ~0.25s; we gate on absolute time, so drift is negligible
+void LogBatcher::Start()
+{
+	if (bStarted) return;
+	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
+	Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick), 0.25f);
+	bStarted = true;
+}
+
+void LogBatcher::Stop()
+{
+	if (!bStarted) return;
+	bStarted = false;
+	if (Ticker.IsValid())
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
+		Ticker.Reset();
+	}
 }
 
 void LogBatcher::Add(FString Level, FString Text, const TMap<FString, FString>& Meta)
@@ -54,8 +64,8 @@ void LogBatcher::Add(FString Level, FString Text, const TMap<FString, FString>& 
 		Payloads.Add(Payload);
 		if (Payloads.Num() >= GetDefault<UAbxrLibConfiguration>()->LogsPerSendAttempt)
 		{
-			// Set timer to 0 so it triggers a send
-			Timer = 0;
+			// Set timer to trigger a send
+			NextAt = FPlatformTime::Seconds();
 		}
 	}
 }
@@ -66,7 +76,7 @@ void LogBatcher::Send()
 	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
 	
 	LastCallTime = UnixSeconds;
-	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds; // reset timer
+	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds; // reset timer
 	if (!Authentication::Authenticated()) return;
 	
 	{
@@ -98,7 +108,7 @@ void LogBatcher::Send()
 		if (!bWasSuccessful || !Response.IsValid())
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Log POST Request failed : %s"), *Response->GetContentAsString());
-			Timer = GetDefault<UAbxrLibConfiguration>()->SendRetryIntervalSeconds;
+			NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendRetryIntervalSeconds;
 			{
 				FScopeLock Lock(&Mutex);
 				Payloads.Insert(LogsToSend, 0);

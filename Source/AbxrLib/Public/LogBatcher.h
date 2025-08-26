@@ -33,15 +33,19 @@ struct FAbxrLogPayloadWrapper
 class LogBatcher
 {
 public:
-	static void Init(const UWorld* World);
 	static void Add(FString LogLevel, FString Text, const TMap<FString, FString>& Meta);
 	static void Send();
+	static void Start();
+	static void Stop();
 
 private:
-	static FTimerHandle TimerHandle;
-	static int Timer;
+	static bool Tick(float Dt);
+	
 	static FCriticalSection Mutex;
 	static TArray<FAbxrLogPayload> Payloads;
 	static int64 LastCallTime;
+	static bool bStarted;
+	static double NextAt;
+	static FTSTicker::FDelegateHandle Ticker;
 	static constexpr double MaxCallFrequencySeconds = 1;
 };

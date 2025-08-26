@@ -30,15 +30,19 @@ struct FAbxrTelemetryPayloadWrapper
 class TelemetryBatcher
 {
 public:
-	static void Init(const UWorld* World);
 	static void Add(FString Name, const TMap<FString, FString>& Meta);
 	static void Send();
+	static void Start();
+	static void Stop();
 
 private:
-	static FTimerHandle TimerHandle;
-	static int Timer;
+	static bool Tick(float Dt);
+	
 	static FCriticalSection Mutex;
 	static TArray<FAbxrTelemetryPayload> Payloads;
 	static int64 LastCallTime;
+	static bool bStarted;
+	static double NextAt;
+	static FTSTicker::FDelegateHandle Ticker;
 	static constexpr double MaxCallFrequencySeconds = 1;
 };

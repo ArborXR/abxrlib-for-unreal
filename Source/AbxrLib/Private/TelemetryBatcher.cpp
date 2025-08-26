@@ -16,25 +16,35 @@
 FCriticalSection TelemetryBatcher::Mutex;
 TArray<FAbxrTelemetryPayload> TelemetryBatcher::Payloads;
 int64 TelemetryBatcher::LastCallTime = 0;
-int TelemetryBatcher::Timer;
-FTimerHandle TelemetryBatcher::TimerHandle;
+bool TelemetryBatcher::bStarted = false;
+double TelemetryBatcher::NextAt = 0.0;
+FTSTicker::FDelegateHandle TelemetryBatcher::Ticker;
 
-void TelemetryBatcher::Init(const UWorld* World)
+bool TelemetryBatcher::Tick(float /*Dt*/)
 {
-	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
-	World->GetTimerManager().SetTimer(
-		TimerHandle,
-		[]
-		{
-			Timer--;
-			if (Timer <= 0)
-			{
-				Send();
-			}
-		},
-		1.0f,  // Interval
-		true   // Loop
-	);
+	const double Now = FPlatformTime::Seconds(); // wall-clock
+	if (Now >= NextAt) Send();
+	return true; // keep running
+}
+
+// Tick every ~0.25s; we gate on absolute time, so drift is negligible
+void TelemetryBatcher::Start()
+{
+	if (bStarted) return;
+	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
+	Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick), 0.25f);
+	bStarted = true;
+}
+
+void TelemetryBatcher::Stop()
+{
+	if (!bStarted) return;
+	bStarted = false;
+	if (Ticker.IsValid())
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
+		Ticker.Reset();
+	}
 }
 
 void TelemetryBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
@@ -53,8 +63,8 @@ void TelemetryBatcher::Add(FString Name, const TMap<FString, FString>& Meta)
 		Payloads.Add(Payload);
 		if (Payloads.Num() >= GetDefault<UAbxrLibConfiguration>()->TelemetryEntriesPerSendAttempt)
 		{
-			// Set timer to 0 so it triggers a send
-			Timer = 0;
+			// Set timer to trigger a send
+			NextAt = FPlatformTime::Seconds();
 		}
 	}
 }
@@ -65,7 +75,7 @@ void TelemetryBatcher::Send()
 	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
 		
 	LastCallTime = UnixSeconds;
-	Timer = GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds; // reset timer
+	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds; // reset timer
 	if (!Authentication::Authenticated()) return;
 	
 	{
@@ -97,7 +107,7 @@ void TelemetryBatcher::Send()
 		if (!bWasSuccessful || !Response.IsValid())
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Telemetry POST Request failed : %s"), *Response->GetContentAsString());
-			Timer = GetDefault<UAbxrLibConfiguration>()->SendRetryIntervalSeconds;
+			NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendRetryIntervalSeconds;
 			{
 				FScopeLock Lock(&Mutex);
 				Payloads.Insert(TelemetriesToSend, 0);
