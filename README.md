@@ -7,9 +7,20 @@ The name "ABXR" stands for "Analytics Backbone for XR"—a flexible, open-source
 2. [Installation](#installation)
 3. [Configuration](#configuration)
 4. [Sending Data](#sending-data)
-5. [FAQ](#faq)
-6. [Troubleshooting](#troubleshooting)
-7. [Contact](#contact)
+   - [Events](#events)
+   - [Analytics Event Wrappers](#analytics-event-wrappers-essential-for-all-developers)
+   - [Logging](#logging)
+   - [Telemetry](#telemetry)
+   - [Metadata Formats](#metadata-formats)
+5. [Advanced Features](#advanced-features)
+   - [Module Targets](#module-targets)
+   - [Authentication](#authentication)
+   - [Session Management](#session-management)
+   - [Mixpanel Compatibility](#mixpanel-compatibility)
+6. [Support](#support)
+   - [Resources](#resources)
+   - [FAQ](#faq)
+   - [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -89,7 +100,7 @@ For information on implementing your own backend service or using other compatib
 
 ## Sending Data
 
-### Event Methods
+### Events
 ```cpp
 //C++ Event Method Signatures
 public static void Event(const FString& Name);
@@ -104,8 +115,13 @@ UAbxr::Event(TEXT("button_pressed"));
 
 Logs a named event with optional metadata and spatial context. Timestamps and origin (`user` or `system`) are automatically appended.
 
-### Event Wrappers (for LMS Compatibility)
--The LMS Event Functions are specialized versions of the Event method, tailored for common scenarios in XR experiences. These functions help enforce consistency in event logging across different parts of the application and are crucial for powering integrations with Learning Management System (LMS) platforms. By using these standardized wrapper functions, developers ensure that key events like starting or completing levels, assessments, or interactions are recorded in a uniform format. This consistency not only simplifies data analysis but also facilitates seamless communication with external educational systems, enhancing the overall learning ecosystem.
+### Analytics Event Wrappers (Essential for All Developers)
+
+**These analytics event functions are essential for ALL developers, not just those integrating with LMS platforms.** They provide standardized tracking for key user interactions and learning outcomes that are crucial for understanding user behavior, measuring engagement, and optimizing XR experiences.
+
+**EventAssessmentStart and EventAssessmentComplete should be considered REQUIRED for proper usage** of the ABXR SDK, as they provide critical insights into user performance and completion rates.
+
+The Analytics Event Functions are specialized versions of the Event method, tailored for common scenarios in XR experiences. These functions help enforce consistency in event logging across different parts of the application and provide valuable data for analytics, user experience optimization, and business intelligence. While they also power integrations with Learning Management System (LMS) platforms, their benefits extend far beyond educational use cases.
 
 #### Assessments
 Assessments are intended to track the overall performance of a learner across multiple Objectives and Interactions. 
@@ -189,6 +205,14 @@ public static void EventCritical(const FString& Label)
 public static void EventCritical(const FString& Label, TMap<FString, FString>& Meta)
 ```
 
+**Parameters for all Event Wrapper Functions:**
+- `AssessmentName/ObjectiveName/InteractionName/LevelName` (FString): The identifier for the assessment, objective, interaction, or level.
+- `Score` (int): The numerical score achieved. While typically between 1-100, any integer is valid.
+- `Status` (EEventStatus): The basic result of the assessment or objective (Pass, Fail, Complete, Incomplete, Browsed).
+- `InteractionType` (EInteractionType): The type of interaction for interaction events.
+- `Response` (FString): The user's response for interaction events. For example: TEXT("a"), TEXT("true"), TEXT("correct").
+- `Meta` (TMap<FString, FString>): Optional. Additional key-value pairs describing the event.
+
 **Note:** All complete events automatically calculate duration if a corresponding start event was logged.
 
 ---
@@ -228,48 +252,192 @@ UAbxr::TelemetryEntry(TEXT("headset_position"), TMap<FString, FString> { {TEXT("
 
 ---
 
-## FAQ
+### Metadata Formats
 
-### Q: How do I retrieve my Application ID and Authorization Secret?
-A: Your Application ID can be found in the Web Dashboard under the application details (you must be sure to use the App ID from the specific application you need data sent through). For the Authorization Secret, navigate to Settings > Organization Codes on the same dashboard.
+The ABXR SDK for Unreal supports metadata through the `TMap<FString, FString>` parameter in all event and log methods. This native Unreal format provides efficient key-value pairs for describing events and context.
 
-## Troubleshooting
+#### TMap<FString, FString> (Native Unreal Format)
+```cpp
+// Native Unreal format - most efficient and recommended
+TMap<FString, FString> meta;
+meta.Add(TEXT("action"), TEXT("click"));
+meta.Add(TEXT("timestamp"), FDateTime::UtcNow().ToString());
+meta.Add(TEXT("userId"), TEXT("12345"));
+meta.Add(TEXT("completed"), TEXT("true"));
+
+UAbxr::Event(TEXT("user_action"), meta);
+
+// Inline construction
+UAbxr::LogInfo(TEXT("User login"), TMap<FString, FString> {
+    {TEXT("username"), TEXT("john_doe")},
+    {TEXT("loginMethod"), TEXT("oauth")},
+    {TEXT("deviceType"), TEXT("quest3")}
+});
+```
+
+#### Complex Data Types
+```cpp
+// For complex data, convert to strings before adding to metadata
+FVector PlayerPosition = GetActorLocation();
+TMap<FString, FString> locationMeta;
+locationMeta.Add(TEXT("position_x"), FString::SanitizeFloat(PlayerPosition.X));
+locationMeta.Add(TEXT("position_y"), FString::SanitizeFloat(PlayerPosition.Y));
+locationMeta.Add(TEXT("position_z"), FString::SanitizeFloat(PlayerPosition.Z));
+
+UAbxr::Event(TEXT("player_moved"), locationMeta);
+
+// For arrays, serialize to JSON-like strings
+TArray<FString> Items = {TEXT("sword"), TEXT("shield"), TEXT("potion")};
+FString ItemsString = TEXT("[\"") + FString::Join(Items, TEXT("\", \"")) + TEXT("\"]");
+TMap<FString, FString> inventoryMeta;
+inventoryMeta.Add(TEXT("items"), ItemsString);
+
+UAbxr::Event(TEXT("inventory_updated"), inventoryMeta);
+```
+
+#### No Metadata
+```cpp
+// Events and logs work fine without metadata
+UAbxr::Event(TEXT("app_started"));
+UAbxr::LogInfo(TEXT("Application initialized"));
+```
+
+#### Type Conversion Guidelines
+
+Since ABXR metadata uses string key-value pairs, follow these patterns for common Unreal types:
+
+```cpp
+// Numeric types
+meta.Add(TEXT("score"), FString::FromInt(PlayerScore));          // int32 → string
+meta.Add(TEXT("health"), FString::SanitizeFloat(PlayerHealth));  // float → string
+meta.Add(TEXT("timestamp"), FString::FromInt(FDateTime::UtcNow().ToUnixTimestamp())); // int64 → string
+
+// Boolean types  
+meta.Add(TEXT("completed"), PlayerCompleted ? TEXT("true") : TEXT("false"));
+
+// Enums
+meta.Add(TEXT("difficulty"), UEnum::GetValueAsString(DifficultyLevel));
+
+// Vectors and Rotators
+FVector Location = GetActorLocation();
+meta.Add(TEXT("location"), FString::Printf(TEXT("%.2f,%.2f,%.2f"), Location.X, Location.Y, Location.Z));
+
+FRotator Rotation = GetActorRotation(); 
+meta.Add(TEXT("rotation"), FString::Printf(TEXT("%.2f,%.2f,%.2f"), Rotation.Pitch, Rotation.Yaw, Rotation.Roll));
+```
+
+**All event and log methods support TMap<FString, FString> metadata:**
+- `UAbxr::Event(name, meta?)`
+- `UAbxr::EventAssessmentStart/Complete(..., meta?)`
+- `UAbxr::EventObjectiveStart/Complete(..., meta?)`
+- `UAbxr::EventInteractionStart/Complete(..., meta?)`
+- `UAbxr::EventLevelStart/Complete(..., meta?)`
+- `UAbxr::LogDebug/Info/Warn/Error/Critical(message, meta?)`
+- `UAbxr::TelemetryEntry(name, meta?)`
 
 ---
 
-## Persisting User State with ArborXR Insights
+## Advanced Features
 
-The ABXR SDK includes a built-in storage interface that enables persistent session data across XR devices. This is ideal for applications with long-form content, resumable training, or user-specific learning paths.
+### Module Targets
+The **Module Target** feature enables developers to create single applications with multiple modules, where each module can be its own assignment in an LMS. 
+(!!Feature coming soon!!)
 
-When integrated with **ArborXR Insights**, session state data is securely stored and can be retrieved from any device, enabling users to resume exactly where they left off. 
+### Authentication
+Advanced authentication and user management features.
+(!!Feature coming soon!!)
 
-### Benefits of Using ArborXR Insights for Storage:
-- Cross-device continuity and resuming sessions
-- Secure, compliant storage (GDPR, HIPAA-ready)
-- Configurable behaviors (e.g., `keepLatest`, append history)
-- Seamless AI and analytics integration for stored user states
+### Session Management
+Comprehensive session management capabilities for multi-user environments and session continuity.
+(!!Feature coming soon!!)
 
-To use this feature, simply call the storage functions provided in the SDK (`SetStorageEntry`, `GetStorageEntry`, etc.). These entries are automatically synced with ArborXR’s cloud infrastructure, ensuring consistent data across sessions.
-
----
-
-## ArborXR Insights Web Portal & API
-
-For dashboards, analytics queries, impersonation, and integration management, use the **ArborXR Insights User API**, accessible through the platform's admin portal.
-
-Example features:
-- Visualize training completion & performance by cohort
-- Export SCORM/xAPI-compatible results
-- Query trends in interaction data
-
-Endpoints of note:
-- `/v1/analytics/dashboard`
-- `/v1/admin/system/organization/{org_id}`
-- `/v1/analytics/data`
+### Mixpanel Compatibility
+Full compatibility with Mixpanel's SDK for easy migration.
+(!!Feature coming soon!!)
 
 ---
 
 ## Support
 
+### Resources
+
 - **Docs:** [https://help.arborxr.com/](https://help.arborxr.com/)
 - **GitHub:** [https://github.com/ArborXR/abxrlib-for-unreal](https://github.com/ArborXR/abxrlib-for-unreal)
+
+### FAQ
+
+#### How do I retrieve my Application ID and Authorization Secret?
+Your Application ID can be found in the Web Dashboard under the application details (you must be sure to use the App ID from the specific application you need data sent through). For the Authorization Secret, navigate to Settings > Organization Codes on the same dashboard.
+
+### Troubleshooting
+
+#### Authentication Issues
+
+**Problem: Library fails to authenticate**
+- **Solution**: Verify your App ID, Org ID, and Auth Secret are correct in Project Settings
+- **Check**: Ensure all three credentials are entered in `Edit > Project Settings > Plugins > AbxrLib Configuration`
+- **Debug**: Check the Unreal Output Log for detailed ABXR authentication error messages
+
+**Problem: Events not being sent**
+- **Solution**: Verify authentication completed successfully during app startup
+- **Debug**: Monitor the Output Log for ABXR connection status messages
+- **Check**: Ensure your event names use snake_case format for best processing
+
+#### Development vs Production Issues
+
+**Problem: Library works in editor but not in packaged builds**
+- **Solution**: For production builds, only include App ID in project settings
+- **Check**: Remove Org ID and Auth Secret from packaged builds distributed to third parties
+- **Alternative**: Use ArborXR-managed devices where credentials are automatically provided
+
+**Problem: Missing credentials on non-managed devices**
+- **Solution**: Ensure all three credentials (App ID, Org ID, Auth Secret) are configured for development/testing
+- **Check**: Verify credentials are correctly entered in the Unreal Editor project settings
+- **Debug**: Check that the plugin configuration is properly saved with the project
+
+#### Integration Issues
+
+**Problem: Plugin not appearing in Project Settings**
+- **Solution**: Verify the ABXR plugin is properly installed and enabled in the Plugins menu
+- **Check**: Restart Unreal Editor after plugin installation
+- **Manual Fix**: Check that plugin files are correctly placed in the Plugins directory
+
+**Problem: Compilation errors with ABXR methods**
+- **Solution**: Ensure you're using the correct C++ syntax with `UAbxr::` prefix
+- **Check**: Verify `#include` statements for ABXR headers are present
+- **Debug**: Check that the ABXR module is properly linked in your build configuration
+
+#### Data and Event Issues  
+
+**Problem: Metadata not appearing in analytics**
+- **Solution**: Verify metadata is being added to `TMap<FString, FString>` correctly
+- **Debug**: Use UE_LOG to verify metadata contents before sending events
+- **Check**: Ensure complex data types are converted to strings properly
+
+**Problem: Telemetry data missing**
+- **Solution**: Check that telemetry calls use valid key-value pairs
+- **Debug**: Verify telemetry is called with proper `TMap<FString, FString>` format
+- **Check**: Ensure telemetry names follow the expected format (e.g., "headset_position")
+
+#### Common Integration Patterns
+
+**Best Practices:**
+```cpp
+// Verify authentication before sending events
+if (UAbxr::IsAuthenticated()) {
+    UAbxr::Event(TEXT("game_started"));
+} else {
+    UE_LOG(LogTemp, Warning, TEXT("ABXR not authenticated - events will be skipped"));
+}
+
+// Always use TEXT() macro for string literals
+TMap<FString, FString> meta;
+meta.Add(TEXT("player_id"), FString::FromInt(PlayerId));
+UAbxr::Event(TEXT("player_joined"), meta);
+```
+
+**Getting Help:**
+- Check Unreal Output Log for ABXR-specific messages
+- Verify network connectivity and firewall settings
+- Test authentication flow in isolation before adding complex features
+- Use UE_LOG statements to debug metadata and event data before sending
