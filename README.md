@@ -150,6 +150,20 @@ Interactions are sub-tasks to an assessment or objective
 public enum EEventStatus { Pass, Fail, Complete, Incomplete, Browsed }
 public enum EInteractionType { Null, Bool, Select, Text, Rating, Number, Matching, Performance, Sequencing }
 
+//C++ Method Signatures
+public static void UAbxr::EventAssessmentStart(const FString& AssessmentName);
+public static void UAbxr::EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta);
+public static void UAbxr::EventAssessmentComplete(const FString& AssessmentName, int32 Score, EEventStatus Status);
+public static void UAbxr::EventAssessmentComplete(const FString& AssessmentName, int32 Score, EEventStatus Status, TMap<FString, FString>& Meta);
+public static void UAbxr::EventObjectiveStart(const FString& ObjectiveName);
+public static void UAbxr::EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta);
+public static void UAbxr::EventObjectiveComplete(const FString& ObjectiveName, int32 Score, EEventStatus Status);
+public static void UAbxr::EventObjectiveComplete(const FString& ObjectiveName, int32 Score, EEventStatus Status, TMap<FString, FString>& Meta);
+public static void UAbxr::EventInteractionStart(const FString& InteractionName);
+public static void UAbxr::EventInteractionStart(const FString& InteractionName, TMap<FString, FString>& Meta);
+public static void UAbxr::EventInteractionComplete(const FString& InteractionName, EInteractionType Type, const FString& Result);
+public static void UAbxr::EventInteractionComplete(const FString& InteractionName, EInteractionType Type, const FString& Result, TMap<FString, FString>& Meta);
+
 // Assessment tracking (overall course/curriculum performance)
 UAbxr::EventAssessmentStart(TEXT("final_exam"));
 UAbxr::EventAssessmentComplete(TEXT("final_exam"), 92, EEventStatus::Pass);
@@ -165,6 +179,14 @@ UAbxr::EventInteractionComplete(TEXT("select_option_a"), EInteractionType::Selec
 
 #### Additional Event Wrappers
 ```cpp
+//C++ Method Signatures
+public static void UAbxr::EventLevelStart(const FString& LevelName);
+public static void UAbxr::EventLevelStart(const FString& LevelName, TMap<FString, FString>& Meta);
+public static void UAbxr::EventLevelComplete(const FString& LevelName, int32 Score);
+public static void UAbxr::EventLevelComplete(const FString& LevelName, int32 Score, TMap<FString, FString>& Meta);
+public static void UAbxr::EventCritical(const FString& EventName);
+public static void UAbxr::EventCritical(const FString& EventName, TMap<FString, FString>& Meta);
+
 // Level tracking 
 UAbxr::EventLevelStart(TEXT("level_1"));
 UAbxr::EventLevelComplete(TEXT("level_1"), 85);
@@ -217,6 +239,10 @@ UAbxr::Track(TEXT("User Session")); // Duration automatically included
 Global properties automatically included in all events:
 
 ```cpp
+//C++ Method Signatures
+public static void UAbxr::Register(const FString& Key, const FString& Value);
+public static void UAbxr::RegisterOnce(const FString& Key, const FString& Value);
+
 // Set persistent properties (included in all events)
 UAbxr::Register(TEXT("user_type"), TEXT("premium"));
 UAbxr::Register(TEXT("app_version"), TEXT("1.2.3"));
@@ -255,8 +281,8 @@ The Telemetry Methods provide comprehensive tracking of the XR environment. By d
 
 To log spatial or system telemetry:
 ```cpp
-//C++ Event Method Signatures
-public void TelemetryEntry(const FString& Name, TMap<FString, FString>& Meta)
+//C++ Method Signatures
+public static void UAbxr::TelemetryEntry(const FString& Name, TMap<FString, FString>& Meta);
 
 // Example usage
 UAbxr::TelemetryEntry(TEXT("headset_position"), TMap<FString, FString> { {TEXT("Host"), TEXT("api.example.com")}, {TEXT("Port"), TEXT("443")}, {TEXT("Scheme"), TEXT("https")} });
@@ -272,6 +298,13 @@ UAbxr::TelemetryEntry(TEXT("headset_position"), TMap<FString, FString> { {TEXT("
 The Storage API enables developers to store and retrieve learner/player progress, facilitating the creation of long-form training content. When users log in using ArborXR's facility or the developer's in-app solution, these methods allow users to continue their progress on different headsets, ensuring a seamless learning experience across multiple sessions or devices.
 
 ```cpp
+//C++ Method Signatures
+public static void UAbxr::StorageSetEntry(const FString& Name, TMap<FString, FString>& Entry, EStorageScope Scope, EStoragePolicy Policy = EStoragePolicy::KeepLatest);
+public static void UAbxr::StorageSetDefaultEntry(TMap<FString, FString>& Entry, EStorageScope Scope, EStoragePolicy Policy = EStoragePolicy::KeepLatest);
+public static void UAbxr::StorageGetEntry(const FString& Name, EStorageScope Scope, /* callback */);
+public static void UAbxr::StorageGetDefaultEntry(EStorageScope Scope, /* callback */);
+public static void UAbxr::StorageRemoveEntry(const FString& Name, EStorageScope Scope);
+
 // Save progress data
 UAbxr::StorageSetEntry(TEXT("state"), TMap<FString, FString>{{TEXT("progress"), TEXT("75%")}}, EStorageScope::User);
 UAbxr::StorageSetDefaultEntry(TMap<FString, FString>{{TEXT("progress"), TEXT("75%")}}, EStorageScope::User);
@@ -317,13 +350,15 @@ UAbxr::AIProxy(TEXT("What's the weather like?"), PastMessages, TEXT("gpt-4"), /*
 ### Exit Polls
 Deliver questionnaires to users to gather feedback.
 ```cpp
+// Poll type enumeration
+public enum EPollType { Thumbs, Rating, MultipleChoice }
+
+//C++ Method Signatures
+public static void UAbxr::PollUser(const FString& Question, EPollType PollType);
+
 // Poll types: Thumbs, Rating (1-5), MultipleChoice (2-8 options)
 UAbxr::PollUser(TEXT("How would you rate this training experience?"), EPollType::Rating);
 ```
-**Poll Types:**
-- `Thumbs Up/Thumbs Down`
-- `Rating (1-5)`
-- `Multiple Choice (2-8 string options)`
 
 ---
 
@@ -583,28 +618,13 @@ The ABXRLib SDK provides compatibility with Mixpanel's tracking patterns, making
 // After:  UAbxr::Track(TEXT("Plan Selected"), Properties);
 ```
 
-#### Super Properties
-
-Global properties automatically included in all events:
-
-```cpp
-// Set persistent properties (included in all events)
-UAbxr::Register(TEXT("user_type"), TEXT("premium"));
-UAbxr::Register(TEXT("app_version"), TEXT("1.2.3"));
-
-// Set only if not already set
-UAbxr::RegisterOnce(TEXT("user_tier"), TEXT("free"));
-
-// Management
-UAbxr::Unregister(TEXT("device_type"));  // Remove specific property
-UAbxr::Reset();                          // Clear all super properties
-```
-
-Perfect for user attributes, app state, and device information that should be included with every event.
-
 #### Drop-in Compatibility Methods
 
 ```cpp
+//C++ Method Signatures
+public static void UAbxr::Track(const FString& EventName);
+public static void UAbxr::Track(const FString& EventName, TMap<FString, FString>& Properties);
+
 // ABXR compatibility methods for Mixpanel users
 UAbxr::Track(TEXT("user_signup"));
 TMap<FString, FString> Properties;
