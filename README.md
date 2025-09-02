@@ -444,6 +444,49 @@ meta.Add(TEXT("rotation"), FString::Printf(TEXT("%.2f,%.2f,%.2f"), Rotation.Pitc
 - `UAbxr::LogDebug/Info/Warn/Error/Critical(message, meta?)`
 - `UAbxr::TelemetryEntry(name, meta?)`
 
+### Automatic Data Collection
+
+The ABXRLib SDK automatically enhances your data with additional context and metadata without requiring explicit configuration:
+
+#### Super Properties Auto-Merge
+Super properties are automatically merged into **every** event's metadata. Event-specific properties take precedence when keys conflict:
+```cpp
+// Set super properties
+UAbxr::Register(TEXT("app_version"), TEXT("1.2.3"));
+UAbxr::Register(TEXT("user_type"), TEXT("premium"));
+
+// Every event automatically includes super properties
+TMap<FString, FString> meta;
+meta.Add(TEXT("level"), TEXT("3"));
+meta.Add(TEXT("user_type"), TEXT("trial")); // This overrides the super property
+
+UAbxr::Event(TEXT("level_complete"), meta);
+// Result includes: app_version=1.2.3, user_type=trial, level=3
+```
+
+#### Duration Auto-Calculation
+When using timed events or event wrappers, duration is automatically calculated and included:
+```cpp
+// Manual timed events
+UAbxr::StartTimedEvent(TEXT("puzzle_solving"));
+// ... 30 seconds later ...
+UAbxr::Event(TEXT("puzzle_solving")); // Automatically includes {"duration": "30"}
+
+// Event wrapper functions automatically handle duration
+UAbxr::EventAssessmentStart(TEXT("final_exam"));
+// ... 45 seconds later ...
+UAbxr::EventAssessmentComplete(TEXT("final_exam"), 95, EEventStatus::Pass); // Automatically includes duration
+
+// Works for all start/complete pairs:
+// - EventAssessmentStart/Complete
+// - EventObjectiveStart/Complete  
+// - EventInteractionStart/Complete
+// - EventLevelStart/Complete
+
+// Duration defaults to "0" if no corresponding start event was found
+// Timer is automatically removed after the first matching event
+```
+
 ---
 
 ## Advanced Features
@@ -499,6 +542,64 @@ UAbxr::ClearModuleTargets();
 - **Error recovery**: Clear corrupted module target data
 - **Testing**: Reset module queue during development
 - **Session management**: Clean up between different users
+
+#### Persistence and Recovery
+
+Module targets are automatically persisted across game sessions and engine restarts:
+
+```cpp
+// Module targets are automatically saved when received from authentication
+// No manual intervention required
+
+// When game restarts or crashes, module queue is automatically restored
+FCurrentSessionData NextTarget = UAbxr::GetModuleTarget(); // Loads from storage if needed
+```
+
+**Automatic Recovery Features:**
+- **Session Persistence**: Module target queue survives game crashes and restarts
+- **Lazy Loading**: Queue is automatically loaded from storage when first accessed
+- **Error Resilience**: Failed storage operations are logged but don't crash the application
+- **Cross-Session Continuity**: Users can continue multi-module experiences across game sessions
+
+**Storage Details:**
+- Module targets are stored in user-scoped persistent storage
+- Storage key: `"AbxrModuleTargetQueue"` (handled internally)
+- Automatic cleanup when `UAbxr::ClearModuleTargets()` is called
+- Uses ABXRLib's storage system for reliability and sync capabilities
+
+#### Best Practices
+
+1. **Set up auth callback early**: Bind to `OnAuthCompleted` before calling authentication
+2. **Handle first module**: Process the first module target from `AuthData.ModuleTarget`
+3. **Use GetModuleTarget() sequentially**: Call after completing each module to get the next one
+4. **Validate modules**: Check if requested module exists before navigation
+5. **Progress tracking**: Use assessment events to track module completion
+6. **Error handling**: Handle cases where navigation fails or module is invalid
+7. **Check completion**: Use `GetModuleTarget()` returning empty to detect when all modules are done
+
+#### Data Structures
+
+The module target callback provides an `FCurrentSessionData` struct with the following properties:
+
+```cpp
+USTRUCT(BlueprintType)
+struct FCurrentSessionData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly)
+    FString moduleTarget;     // The target module identifier from LMS
+
+    UPROPERTY(BlueprintReadOnly)
+    FString userData;         // Additional user data from authentication
+
+    UPROPERTY(BlueprintReadOnly)
+    FString userId;           // User identifier
+
+    UPROPERTY(BlueprintReadOnly)
+    FString userEmail;        // User email address
+};
+```
 
 ### Authentication
 
