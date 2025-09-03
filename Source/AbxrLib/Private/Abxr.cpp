@@ -2,6 +2,7 @@
 #include "Authentication.h"
 #include "EventBatcher.h"
 #include "InputDialogWidget.h"
+#include "PinPadWidget.h"
 #include "LogBatcher.h"
 #include "TelemetryBatcher.h"
 #include "Kismet/GameplayStatics.h"
@@ -163,19 +164,44 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 {
 	TWeakObjectPtr<UWorld> Snap = GWorldWeak;
-	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText]
+	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText, KeyboardType, EmailDomain]
 	{
 		UWorld* World = Snap.Get();
 		if (!IsValid(World) || !World->IsGameWorld() || World->GetNetMode()==NM_DedicatedServer) return;
 
-		auto* Dialog = UInputDialogWidget::ShowDialog(World, FText::FromString(PromptText), FText::FromString("Type here..."));
-		Dialog->OnAccepted.AddLambda([](const FString& Text)
+		// Check if we need a PIN pad
+		if (KeyboardType == TEXT("assessmentPin"))
 		{
-			UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
-			Authentication::KeyboardAuthenticate(Text);
-		});
-
-		//APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
-		//if (!PC) return;
+			FString DisplayPrompt = PromptText.IsEmpty() ? TEXT("Enter your 6-digit PIN") : PromptText;
+			auto* PinPad = UPinPadWidget::ShowPinPad(World, FText::FromString(DisplayPrompt));
+			PinPad->OnPinAccepted.AddLambda([](const FString& Pin)
+			{
+				UE_LOG(LogTemp, Log, TEXT("User entered PIN: %s"), *Pin);
+				Authentication::KeyboardAuthenticate(Pin);
+			});
+		}
+		else if (KeyboardType == TEXT("email"))
+		{
+			FString DisplayPrompt = PromptText.IsEmpty() ? 
+				FString::Printf(TEXT("Enter your email username (<u>username</u>@%s)"), *EmailDomain) :
+				FString::Printf(TEXT("%s (<u>username</u>@%s)"), *PromptText, *EmailDomain);
+			
+			auto* Dialog = UInputDialogWidget::ShowDialog(World, FText::FromString(DisplayPrompt), FText::FromString("Type here..."));
+			Dialog->OnAccepted.AddLambda([](const FString& Text)
+			{
+				UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
+				Authentication::KeyboardAuthenticate(Text);
+			});
+		}
+		else // Default to full keyboard (KeyboardType == "text" or null)
+		{
+			FString DisplayPrompt = PromptText.IsEmpty() ? TEXT("Please Enter Your Login") : PromptText;
+			auto* Dialog = UInputDialogWidget::ShowDialog(World, FText::FromString(DisplayPrompt), FText::FromString("Type here..."));
+			Dialog->OnAccepted.AddLambda([](const FString& Text)
+			{
+				UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
+				Authentication::KeyboardAuthenticate(Text);
+			});
+		}
 	});
 }
