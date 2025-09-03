@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AbxrLib XRDM SDK Android Integration -->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Initialize UPL -->
+    <init>
+        <log text="AbxrLib XRDM SDK UPL initialization"/>
+    </init>
+
+    <!-- Add AAR Library -->
+    <androidManifestUpdates>
+        <addElements tag="application">
+            <meta-data android:name="app.xrdm.sdk.external" android:value="true" />
+        </addElements>
+    </androidManifestUpdates>
+
+    <!-- Build gradle updates -->
+    <buildGradleUpdates>
+        <insert>
+            dependencies {
+                implementation files('XRDM.SDK.External.Native.aar')
+            }
+        </insert>
+    </buildGradleUpdates>
+
+    <!-- Copy AAR file to build directory -->
+    <resourceCopies>
+        <copyFile src="$S(ThirdPartyDir)/XRDMSDK/Android/XRDM.SDK.External.Native.aar" 
+                  dst="$S(BuildDir)/libs/XRDM.SDK.External.Native.aar" />
+    </resourceCopies>
+
+    <!-- Add permissions if needed -->
+    <androidManifestUpdates>
+        <addPermission android:name="android.permission.INTERNET" />
+        <addPermission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        <addPermission android:name="android.permission.ACCESS_WIFI_STATE" />
+    </androidManifestUpdates>
+
+</root>

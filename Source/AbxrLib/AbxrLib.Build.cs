@@ -22,6 +22,13 @@ public class AbxrLib : ModuleRules
             "InputCore",
             "ApplicationCore"
         ]);
+
+        // Add XRDM SDK for Android platforms
+        if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            PublicDependencyModuleNames.Add("XRDMSDK");
+            PublicDependencyModuleNames.Add("Launch"); // Required for JNI
+        }
         
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
