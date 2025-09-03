@@ -14,20 +14,20 @@
         </addElements>
     </androidManifestUpdates>
 
+    <!-- Copy AAR file to project libs directory -->
+    <resourceCopies>
+        <copyFile src="$S(PluginDir)/Source/ThirdParty/XRDMSDK/Android/XRDM.SDK.External.Native.aar" 
+                  dst="$S(BuildDir)/JavaLibs/XRDM.SDK.External.Native.aar" />
+    </resourceCopies>
+
     <!-- Build gradle updates -->
     <buildGradleUpdates>
         <insert>
             dependencies {
-                implementation files('XRDM.SDK.External.Native.aar')
+                implementation files('JavaLibs/XRDM.SDK.External.Native.aar')
             }
         </insert>
     </buildGradleUpdates>
-
-    <!-- Copy AAR file to build directory -->
-    <resourceCopies>
-        <copyFile src="$S(ThirdPartyDir)/XRDMSDK/Android/XRDM.SDK.External.Native.aar" 
-                  dst="$S(BuildDir)/libs/XRDM.SDK.External.Native.aar" />
-    </resourceCopies>
 
     <!-- Add permissions if needed -->
     <androidManifestUpdates>

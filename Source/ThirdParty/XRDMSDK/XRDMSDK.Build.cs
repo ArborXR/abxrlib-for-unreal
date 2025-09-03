@@ -14,27 +14,28 @@ public class XRDMSDK : ModuleRules
             string AARPath = Path.Combine(AndroidPath, "XRDM.SDK.External.Native.aar");
             string UPLPath = Path.Combine(AndroidPath, "AbxrLib_XRDMSDK_UPL.xml");
             
-            // Add the AAR file
+            // Add the AAR file as AndroidPlugin (this is the primary method)
             if (File.Exists(AARPath))
             {
-                PublicAdditionalLibraries.Add(AARPath);
-                
-                // Add Android dependencies
                 AdditionalPropertiesForReceipt.Add("AndroidPlugin", AARPath);
                 
-                // Add UPL file for proper Android integration
-                if (File.Exists(UPLPath))
-                {
-                    AdditionalPropertiesForReceipt.Add("AndroidPlugin", UPLPath);
-                }
-                
-                // Add required Java classes to the build
-                string BuildGradleAdditions = @"
-                    dependencies {
-                        implementation files('XRDM.SDK.External.Native.aar')
-                    }
-                ";
-                AdditionalPropertiesForReceipt.Add("AndroidPluginBuildGradleAdditions", BuildGradleAdditions);
+                // Log the AAR file path for debugging
+                System.Console.WriteLine($"XRDMSDK: Adding AAR file: {AARPath}");
+            }
+            else
+            {
+                System.Console.WriteLine($"XRDMSDK: AAR file not found at: {AARPath}");
+            }
+            
+            // Add UPL file for additional Android integration
+            if (File.Exists(UPLPath))
+            {
+                AdditionalPropertiesForReceipt.Add("AndroidPlugin", UPLPath);
+                System.Console.WriteLine($"XRDMSDK: Adding UPL file: {UPLPath}");
+            }
+            else
+            {
+                System.Console.WriteLine($"XRDMSDK: UPL file not found at: {UPLPath}");
             }
         }
     }

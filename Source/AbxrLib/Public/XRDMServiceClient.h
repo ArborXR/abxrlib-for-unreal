@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Engine/World.h"
+#include "Engine/TimerHandle.h"
+#include "Misc/DateTime.h"
 
 #if PLATFORM_ANDROID
 #include "Android/AndroidJNI.h"
