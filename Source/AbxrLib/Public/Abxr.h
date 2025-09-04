@@ -18,6 +18,16 @@ enum class EEventStatus : uint8
 };
 
 UENUM(BlueprintType)
+enum class ELogLevel : uint8
+{
+	Debug     UMETA(DisplayName = "debug"),
+	Info      UMETA(DisplayName = "info"),
+	Warn      UMETA(DisplayName = "warn"),
+	Error     UMETA(DisplayName = "error"),
+	Critical  UMETA(DisplayName = "critical")
+};
+
+UENUM(BlueprintType)
 enum class EInteractionType : uint8
 {
 	Bool         UMETA(DisplayName = "bool"),
@@ -60,6 +70,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void LogCritical(const FString& Text, const TMap<FString, FString>& Meta);
 	static void LogCritical(const FString& Text) { LogCritical(Text, TMap<FString, FString>()); }
+
+	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
+	static void Log(const FString& Message, ELogLevel Level, const TMap<FString, FString>& Meta);
+	static void Log(const FString& Message, ELogLevel Level) { Log(Message, Level, TMap<FString, FString>()); }
+	static void Log(const FString& Message) { Log(Message, ELogLevel::Info, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void Event(const FString& Name, const TMap<FString, FString>& Meta);

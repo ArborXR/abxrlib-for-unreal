@@ -37,6 +37,31 @@ void UAbxr::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
     LogBatcher::Add("critical", Text, Meta);
 }
 
+void UAbxr::Log(const FString& Message, ELogLevel Level, const TMap<FString, FString>& Meta)
+{
+    switch (Level)
+    {
+        case ELogLevel::Debug:
+            LogDebug(Message, Meta);
+            break;
+        case ELogLevel::Info:
+            LogInfo(Message, Meta);
+            break;
+        case ELogLevel::Warn:
+            LogWarn(Message, Meta);
+            break;
+        case ELogLevel::Error:
+            LogError(Message, Meta);
+            break;
+        case ELogLevel::Critical:
+            LogCritical(Message, Meta);
+            break;
+        default:
+            LogInfo(Message, Meta);
+            break;
+    }
+}
+
 void UAbxr::Event(const FString& Name, const TMap<FString, FString>& Meta)
 {
 	EventBatcher::Add(Name, Meta);

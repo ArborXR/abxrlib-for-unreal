@@ -263,6 +263,18 @@ The Log Methods provide straightforward logging functionality, similar to syslog
 
 ```cpp
 //C++ Event Method Signatures
+public static void UAbxr::Log(const FString& Message, ELogLevel Level = ELogLevel::Info)
+
+// Example usage
+UAbxr::Log(TEXT("Module started")); // Defaults to ELogLevel::Info
+UAbxr::Log(TEXT("Module started"), ELogLevel::Info);
+UAbxr::Log(TEXT("Debug information"), ELogLevel::Debug);
+UAbxr::Log(TEXT("Error occurred"), ELogLevel::Error);
+```
+
+Use standard or severity-specific logging:
+```cpp
+//C++ Method Signatures
 public static void LogDebug(const FString& Message)
 public static void LogInfo(const FString& Message)
 public static void LogWarn(const FString& Message)
