@@ -162,6 +162,8 @@ private:
 	static void Reset();
 	static void AuthRequest(TFunction<void(bool)> OnComplete);
 	static void GetConfiguration(TFunction<void(bool)> OnComplete);
+	static void GetConfigData();
+	static void GetArborData();
 
 	static FString AuthToken;
 	static FString ApiSecret;
@@ -170,4 +172,15 @@ private:
 	static FAuthMechanism AuthMechanism;
 	static int FailedAuthAttempts;
 	static bool KeyboardAuthSuccess;
+
+	static FString OrgId;
+	static FString DeviceId;
+	static FString AuthSecret;
+	static FString UserId;
+	static FString AppId;
+	static FString Partner;
+	static FString DeviceModel;
+	static TArray<FString> DeviceTags;
+	static FString XrdmVersion;
+	static FString IpAddress;
 };

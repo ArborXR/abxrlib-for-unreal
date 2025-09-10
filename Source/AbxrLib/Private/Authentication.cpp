@@ -4,6 +4,7 @@
 #include "Utils.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
+#include "XRDMService.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
@@ -20,38 +21,60 @@ int Authentication::TokenExpiry;
 FAuthMechanism Authentication::AuthMechanism;
 int Authentication::FailedAuthAttempts = 0;
 bool Authentication::KeyboardAuthSuccess = false;
+FString Authentication::OrgId;
+FString Authentication::DeviceId;
+FString Authentication::AuthSecret;
+FString Authentication::UserId;
+FString Authentication::AppId;
+FString Authentication::Partner = "none";
+FString Authentication::DeviceModel;
+TArray<FString> Authentication::DeviceTags;
+FString Authentication::XrdmVersion;
+FString Authentication::IpAddress;
 
 void Authentication::Authenticate()
 {
 	Reset();
-	AuthRequest([](const bool bSuccess)
+	GetConfigData();
+	DeviceId = FGuid::NewGuid().ToString();
+#if PLATFORM_ANDROID
+	const auto Promise = UXRDMService::GetInstance()->WaitForConnection();
+	Promise->GetFuture().Next([](bool bConnected)
 	{
-		if (bSuccess)
+		if (bConnected) GetArborData();
+#endif
+		AuthRequest([](const bool bSuccess)
 		{
-			GetConfiguration([](const bool)
+			if (bSuccess)
 			{
-				if (!AuthMechanism.prompt.IsEmpty())
+				GetConfiguration([](const bool)
 				{
-					KeyboardAuthenticate();
-				}
-			});
-		}
+					if (!AuthMechanism.prompt.IsEmpty())
+					{
+						KeyboardAuthenticate();
+					}
+				});
+			}
+		});
+#if PLATFORM_ANDROID
 	});
+#endif
 }
 
 void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 {
 	KeyboardAuthSuccess = false;
+	if (SessionId.IsEmpty()) SessionId = FGuid::NewGuid().ToString();
 	
 	FAuthPayload Payload;
-	Payload.appId = GetDefault<UAbxrLibConfiguration>()->AppId;
-	Payload.orgId = GetDefault<UAbxrLibConfiguration>()->OrgId;
-	Payload.authSecret = GetDefault<UAbxrLibConfiguration>()->AuthSecret;
+	Payload.appId = AppId;
+	Payload.orgId = OrgId;
+	Payload.authSecret = AuthSecret;
 	Payload.deviceId = TEXT("34f9f880-8360-47a2-89c8-ddccb6652f82");
 	Payload.userId = TEXT("userid");
 	Payload.tags = { };
-	Payload.sessionId = TEXT("25b34140-62c9-4c33-b3e6-3fe9cabd50d4");
-	Payload.partner = TEXT("none");
+	Payload.sessionId = SessionId;
+	Payload.partner = Partner;
 	Payload.ipAddress = TEXT("");
 	Payload.deviceModel = TEXT("");
 	Payload.geolocation = TMap<FString, FString>();
@@ -139,6 +162,25 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 	});
 
 	Request->ProcessRequest();
+}
+
+void Authentication::GetConfigData()
+{
+	AppId = GetDefault<UAbxrLibConfiguration>()->AppId;
+	OrgId = GetDefault<UAbxrLibConfiguration>()->OrgId;
+	AuthSecret = GetDefault<UAbxrLibConfiguration>()->AuthSecret;
+}
+
+void Authentication::GetArborData()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		OrgId = XRDMService->GetOrgId();
+		Partner = "arborxr";
+		DeviceId = XRDMService->GetDeviceId();
+		DeviceTags = XRDMService->GetDeviceTags();
+		AuthSecret = XRDMService->GetFingerprint();
+	}
 }
 
 void Authentication::KeyboardAuthenticate()

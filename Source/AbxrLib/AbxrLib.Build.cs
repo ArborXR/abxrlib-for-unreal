@@ -27,5 +27,13 @@ public class AbxrLib : ModuleRules
         {
             PublicSystemLibraries.Add("Advapi32.lib");
         }
+        if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            PrivateDependencyModuleNames.AddRange([
+                "Launch"
+            ]);
+			
+            AdditionalPropertiesForReceipt.Add("AndroidPlugin", System.IO.Path.Combine(ModuleDirectory, "..", "..", "AbxrLib_UPL.xml"));
+        }
     }
 }

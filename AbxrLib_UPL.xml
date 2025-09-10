@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<init>
+		<log text="AbxrLib Android Plugin init"/>
+	</init>
+
+	<resourceCopies>
+		<copyFile src="$S(PluginDir)/libs/XRDM.SDK.External.NativeWithShim.aar"
+				  dst="$S(BuildDir)/gradle/app/libs/XRDM.SDK.External.NativeWithShim.aar" />
+	</resourceCopies>
+
+	<androidManifestUpdates>
+		<!-- Add any required permissions here if needed -->
+	</androidManifestUpdates>
+
+	<buildGradleAdditions>
+		<insert>
+			repositories {
+				flatDir {
+					dirs 'libs'
+				}
+			}
+			dependencies {
+				implementation(name:'XRDM.SDK.External.NativeWithShim', ext:'aar')
+			}
+		</insert>
+	</buildGradleAdditions>
+</root>

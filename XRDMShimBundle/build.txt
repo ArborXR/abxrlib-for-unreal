@@ -1,0 +1,6 @@
+1. unzip XRDM.SDK.External.Native.aar -d xrdm
+2. javac -cp xrdm/classes.jar -d stub_classes NativeConnectionCallback.java
+3. cd xrdm
+4. jar uf classes.jar -C ../stub_classes .
+5. zip -r ../XRDM.SDK.External.NativeWithShim.aar *
+6. cd ..
