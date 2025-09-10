@@ -6,6 +6,7 @@
   "Description": "AbxrLib analytics for Unreal",
   "Category": "VR Utility",
   "CreatedBy": "ArborXR",
+  "EnabledByDefault": true,
   "Modules": [
     {
       "Name": "AbxrLib",
