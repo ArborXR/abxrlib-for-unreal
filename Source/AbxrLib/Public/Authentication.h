@@ -107,7 +107,7 @@ struct FConfigPayload
 	FString sendRetriesOnFailure;
 
 	UPROPERTY()
-	FString sendTreyInterval;
+	FString sendRetryInterval;
 	
 	UPROPERTY()
 	FString sendNextBatchWait;
@@ -166,6 +166,7 @@ private:
 	static void Reset();
 	static void AuthRequest(TFunction<void(bool)> OnComplete);
 	static void GetConfiguration(TFunction<void(bool)> OnComplete);
+	static void SetConfigFromPayload(const FConfigPayload& Payload);
 	static void GetConfigData();
 	static void GetArborData();
 

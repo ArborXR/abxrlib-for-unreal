@@ -180,6 +180,7 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 		{
 			FConfigPayload Config;
 			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
+			SetConfigFromPayload(Config);
 			AuthMechanism = Config.authMechanism;
 			OnComplete(true);
 		}
@@ -191,6 +192,23 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 	});
 
 	Request->ProcessRequest();
+}
+
+void Authentication::SetConfigFromPayload(const FConfigPayload& Payload)
+{
+	UAbxrLibConfiguration* Config = GetMutableDefault<UAbxrLibConfiguration>();
+    if (!Payload.restUrl.IsEmpty()) Config->SetRestUrl(Payload.restUrl);
+	if (!Payload.sendRetriesOnFailure.IsEmpty()) Config->SetSendRetriesOnFailure(FCString::Atoi(*Payload.sendRetriesOnFailure));
+	if (!Payload.sendRetryInterval.IsEmpty()) Config->SetSendRetryIntervalSeconds(FCString::Atoi(*Payload.sendRetryInterval));
+	if (!Payload.sendNextBatchWait.IsEmpty()) Config->SetSendNextBatchWaitSeconds(FCString::Atoi(*Payload.sendNextBatchWait));
+	if (!Payload.stragglerTimeout.IsEmpty()) Config->SetStragglerTimeoutSeconds(FCString::Atoi(*Payload.stragglerTimeout));
+	if (!Payload.eventsPerSendAttempt.IsEmpty()) Config->SetEventsPerSendAttempt(FCString::Atoi(*Payload.eventsPerSendAttempt));
+	if (!Payload.logsPerSendAttempt.IsEmpty()) Config->SetLogsPerSendAttempt(FCString::Atoi(*Payload.logsPerSendAttempt));
+	if (!Payload.telemetryEntriesPerSendAttempt.IsEmpty()) Config->SetTelemetryEntriesPerSendAttempt(FCString::Atoi(*Payload.telemetryEntriesPerSendAttempt));
+	if (!Payload.storageEntriesPerSendAttempt.IsEmpty()) Config->SetStorageEntriesPerSendAttempt(FCString::Atoi(*Payload.storageEntriesPerSendAttempt));
+	if (!Payload.pruneSentItemsOlderThan.IsEmpty()) Config->SetPruneSentItemsOlderThanHours(FCString::Atoi(*Payload.pruneSentItemsOlderThan));
+	if (!Payload.maximumCachedItems.IsEmpty()) Config->SetMaximumCachedItems(FCString::Atoi(*Payload.maximumCachedItems));
+	if (!Payload.retainLocalAfterSent.IsEmpty()) Config->SetRetainLocalAfterSent(Payload.retainLocalAfterSent.ToBool());
 }
 
 void Authentication::GetConfigData()
