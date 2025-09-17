@@ -24,13 +24,14 @@ bool Authentication::KeyboardAuthSuccess = false;
 FString Authentication::OrgId;
 FString Authentication::DeviceId;
 FString Authentication::AuthSecret;
-FString Authentication::UserId;
 FString Authentication::AppId;
 FString Authentication::Partner = "none";
 FString Authentication::DeviceModel;
 TArray<FString> Authentication::DeviceTags;
 FString Authentication::XrdmVersion;
 FString Authentication::IpAddress;
+std::thread Authentication::ReAuthThread;
+std::atomic<bool> Authentication::bShouldStop{false};
 
 void Authentication::Authenticate()
 {
@@ -59,6 +60,34 @@ void Authentication::Authenticate()
 #if PLATFORM_ANDROID
 	});
 #endif
+	PollForReAuth();
+}
+
+void Authentication::PollForReAuth()
+{
+	if (ReAuthThread.joinable()) return;  // Only start if not already running
+	ReAuthThread = std::thread(&Authentication::ReAuthThreadFunction);
+}
+
+void Authentication::ReAuthThreadFunction()
+{
+	while (!bShouldStop.load())
+	{
+		std::this_thread::sleep_for(std::chrono::minutes(1));
+		if (!bShouldStop.load()) CheckReauthentication();
+	}
+}
+
+void Authentication::CheckReauthentication()
+{
+	if (TokenExpiry - FDateTime::UtcNow().ToUnixTimestamp() <= 120)
+	{
+		// Marshal back to game thread
+		AsyncTask(ENamedThreads::GameThread, []
+		{
+			AuthRequest([](const bool){});
+		});
+	}
 }
 
 void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
@@ -71,7 +100,6 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	Payload.orgId = OrgId;
 	Payload.authSecret = AuthSecret;
 	Payload.deviceId = TEXT("34f9f880-8360-47a2-89c8-ddccb6652f82");
-	Payload.userId = TEXT("userid");
 	Payload.tags = { };
 	Payload.sessionId = SessionId;
 	Payload.partner = Partner;

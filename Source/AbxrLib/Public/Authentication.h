@@ -2,7 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Interfaces/IHttpRequest.h"
+#include <thread>
+#include <atomic>
 #include "Authentication.generated.h"
+
 
 UENUM(BlueprintType)
 enum class EPartner : uint8
@@ -141,6 +144,7 @@ class Authentication
 {
 public:
 	static void Authenticate();
+	static void PollForReAuth();
 	
 	static bool Authenticated()
 	{
@@ -165,6 +169,12 @@ private:
 	static void GetConfigData();
 	static void GetArborData();
 
+	static std::thread ReAuthThread;
+	static std::atomic<bool> bShouldStop;
+    
+	static void ReAuthThreadFunction();
+	static void CheckReauthentication();
+
 	static FString AuthToken;
 	static FString ApiSecret;
 	static FString SessionId;
@@ -176,7 +186,6 @@ private:
 	static FString OrgId;
 	static FString DeviceId;
 	static FString AuthSecret;
-	static FString UserId;
 	static FString AppId;
 	static FString Partner;
 	static FString DeviceModel;
