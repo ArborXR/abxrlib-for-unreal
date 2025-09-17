@@ -101,7 +101,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	Payload.appId = AppId;
 	Payload.orgId = OrgId;
 	Payload.authSecret = AuthSecret;
-	Payload.deviceId = TEXT("34f9f880-8360-47a2-89c8-ddccb6652f82");
+	Payload.deviceId = DeviceId;
 	Payload.tags = { };
 	Payload.sessionId = SessionId;
 	Payload.partner = Partner;
@@ -109,15 +109,14 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	Payload.deviceModel = TEXT("");
 	Payload.geolocation = TMap<FString, FString>();
 	Payload.osVersion = FPlatformMisc::GetOSVersion();
-	Payload.xrdmVersion = TEXT("1.0");
-	Payload.appVersion = TEXT("1.0");
+	Payload.xrdmVersion = TEXT("1.0.0");
+	Payload.appVersion = TEXT("1.0.0");
 	Payload.unrealVersion = FString::Printf(TEXT("%d.%d.%d"), ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION, ENGINE_PATCH_VERSION);
 	Payload.abxrLibVersion = IPluginManager::Get().FindPlugin(TEXT("AbxrLib"))->GetDescriptor().VersionName;
 	Payload.authMechanism = CreateAuthMechanismDict();
 
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
-	UE_LOG(LogTemp, Error, TEXT("AbxrLib - JSON: %s"), *Json);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/auth/token")));
