@@ -52,7 +52,9 @@ void Authentication::Authenticate()
 				{
 					if (!AuthMechanism.prompt.IsEmpty())
 					{
+#if !PLATFORM_ANDROID  // TODO need to add support
 						KeyboardAuthenticate();
+#endif
 					}
 				});
 			}
