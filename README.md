@@ -655,29 +655,46 @@ void AMyActor::HandleAuthCompleted(const FAuthCompletedData& AuthData)
 }
 ```
 
-#### Connection Status Check
+#### Getting Notified When Ready
 
-You can check if AbxrLib has an active connection to the server at any time:
+The recommended way to know when AbxrLib is ready to send data is to use the authentication completion callback:
 
 ```cpp
-// C++ Method Signature
-bool UAbxr::ConnectionActive();
+// Subscribe to authentication completion - the recommended approach
+UAbxr::OnAuthCompleted.AddDynamic(this, &AMyActor::HandleAuthCompleted);
 
-// Example usage
-// Check app-level connection status  
-if (UAbxr::ConnectionActive())
+// In your actor's header file (.h):
+UFUNCTION()
+void HandleAuthCompleted(const FAuthCompletedData& AuthData);
+
+// In your actor's implementation file (.cpp):
+void AMyActor::HandleAuthCompleted(const FAuthCompletedData& AuthData)
 {
-    UE_LOG(LogTemp, Log, TEXT("ABXR is connected and ready to send data"));
-    UAbxr::Event(TEXT("app_ready"));
-}
-else
-{
-    UE_LOG(LogTemp, Warning, TEXT("Connection not active - waiting for authentication"));
-    UAbxr::OnAuthCompleted.AddDynamic(this, &AMyActor::HandleAuthCompleted);
+    if (AuthData.bSuccess)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Authentication successful - AbxrLib is ready!"));
+        UE_LOG(LogTemp, Log, TEXT("Welcome %s!"), *AuthData.UserEmail);
+        
+        // Initialize your app features here
+        StartGameFlow();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Authentication failed: %s. Working in offline mode"), *AuthData.Error);
+
+        // Initialize your app features here
+        StartGameFlow();
+    }
 }
 ```
 
-**Returns:** Boolean indicating if the library has an active connection and can communicate with the server
+**Why OnAuthCompleted is better:**
+- **Event-driven**: No need to poll or check status repeatedly  
+- **Immediate notification**: Called as soon as authentication completes
+- **Rich data**: Provides user info, modules, and detailed authentication data
+- **Error handling**: Includes specific error information when authentication fails
+
+**Note:** `UAbxr::ConnectionActive()` is still available for advanced use cases, but `OnAuthCompleted` is the recommended approach for most developers.
 
 ### Session Management
 
