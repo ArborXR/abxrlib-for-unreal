@@ -153,7 +153,7 @@ void UXRDMService::CompleteConnectionAttempt(bool bSuccess)
 
 bool UXRDMService::IsConnected()
 {
-    UXRDMService* Instance = GetInstance();
+    UXRDMService* NewInstance = GetInstance();
     if (!Instance)
     {
         return false;

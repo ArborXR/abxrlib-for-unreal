@@ -1,18 +1,29 @@
 {
-  "FileVersion": 3,
-  "Version": 1,
-  "VersionName": "1.0.0",
-  "FriendlyName": "AbxrLib",
-  "Description": "AbxrLib analytics for Unreal",
-  "Category": "VR Utility",
-  "CreatedBy": "ArborXR",
-  "EnabledByDefault": true,
-  "Modules": [
-    {
-      "Name": "AbxrLib",
-      "Type": "Runtime",
-      "LoadingPhase": "Default",
-      "PlatformAllowList": [ "Win64", "Android" ]
-    }
-  ]
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "AbxrLib",
+	"Description": "AbxrLib analytics for Unreal",
+	"Category": "VR Utility",
+	"CreatedBy": "ArborXR",
+	"EnabledByDefault": true,
+	"Modules": [
+		{
+			"Name": "AbxrLib",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		}
+	],
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false
 }
