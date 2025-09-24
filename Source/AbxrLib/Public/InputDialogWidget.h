@@ -4,7 +4,7 @@
 #include "InputDialogWidget.generated.h"
 
 // Native (non-UObject) multicast delegates
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnDialogAccepted_Native, const FString&, Text);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDialogAccepted_Native, const FString&/*, Text*/);
 
 /**
  * Minimal UMG dialog (message + single-line text box).

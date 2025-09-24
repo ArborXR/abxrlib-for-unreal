@@ -3,6 +3,8 @@
 #include "Engine/DeveloperSettings.h"
 #include "AbxrLibConfiguration.generated.h"
 
+class UInputWidget;
+
 UCLASS(config=Game, defaultconfig, BlueprintType, meta=(DisplayName="AbxrLib Configuration"))
 class ABXRLIB_API UAbxrLibConfiguration : public UDeveloperSettings
 {
@@ -108,4 +110,9 @@ public:
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Disable Scene Events"))
 	bool DisableSceneEvents;
 	void SetDisableSceneEvents(const bool NewDisableSceneEvents) {this->DisableSceneEvents = NewDisableSceneEvents;}
+
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Input Menu Widget Class"))
+	TSubclassOf<UInputWidget> InputMenuWidgetClass;
+	void SetDisableSceneEvents(const TSubclassOf<UInputWidget>& NewInputMenuWidgetClass) {this->InputMenuWidgetClass = NewInputMenuWidgetClass;}
+
 };

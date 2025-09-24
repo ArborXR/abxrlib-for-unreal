@@ -38,6 +38,8 @@ void Authentication::Authenticate()
 	Reset();
 	GetConfigData();
 	DeviceId = FGuid::NewGuid().ToString();
+	// TODO: remove
+	// KeyboardAuthenticate();
 #if PLATFORM_ANDROID
 	const auto Promise = UXRDMService::GetInstance()->WaitForConnection();
 	Promise->GetFuture().Next([](bool bConnected)
@@ -52,9 +54,9 @@ void Authentication::Authenticate()
 				{
 					if (!AuthMechanism.prompt.IsEmpty())
 					{
-#if !PLATFORM_ANDROID  // TODO need to add support
+// #if !PLATFORM_ANDROID  // TODO need to add support
 						KeyboardAuthenticate();
-#endif
+// #endif
 					}
 				});
 			}
@@ -169,7 +171,9 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 {
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL("https://lib-backend.xrdm.app/v1/storage/config");
+	FString RestURL = GetDefault<UAbxrLibConfiguration>()->RestUrl;
+	RestURL.Append(TEXT("storage/config"));
+	Request->SetURL(RestURL);
 	Request->SetVerb("GET");
 	Request->SetHeader("Content-Type", "application/json");
 	SetAuthHeaders(Request);
@@ -213,6 +217,7 @@ void Authentication::SetConfigFromPayload(const FConfigPayload& Payload)
 
 void Authentication::GetConfigData()
 {
+	UE_LOG(LogTemp, Log, TEXT("AbxrLib - GetConfigData()"));
 	AppId = GetDefault<UAbxrLibConfiguration>()->AppId;
 	OrgId = GetDefault<UAbxrLibConfiguration>()->OrgId;
 	AuthSecret = GetDefault<UAbxrLibConfiguration>()->AuthSecret;
