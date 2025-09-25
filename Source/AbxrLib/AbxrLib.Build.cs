@@ -4,6 +4,7 @@ public class AbxrLib : ModuleRules
 {
     public AbxrLib(ReadOnlyTargetRules Target) : base(Target)
     {
+        PrivateDependencyModuleNames.AddRange(new string[] { "XRBase" });
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange([

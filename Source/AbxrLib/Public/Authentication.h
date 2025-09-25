@@ -6,6 +6,7 @@
 #include <atomic>
 #include "Authentication.generated.h"
 
+class FOnSuccessSignature;
 
 UENUM(BlueprintType)
 enum class EPartner : uint8
@@ -143,7 +144,8 @@ struct FConfigPayload
 class Authentication
 {
 public:
-	static void Authenticate();
+	
+	static void Authenticate(const FOnSuccessSignature& OnAuthDelegate);
 	static void PollForReAuth();
 	
 	static bool Authenticated()

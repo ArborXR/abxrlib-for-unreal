@@ -7,6 +7,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Abxr.generated.h"
 
+DECLARE_DYNAMIC_DELEGATE(FOnSuccessSignature);
+
 UENUM(BlueprintType)
 enum class EEventStatus : uint8
 {
@@ -49,7 +51,7 @@ public:
 	static void SetWorld(UWorld* World) { GWorldWeak = World; }
 	
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-	static void Authenticate() { Authentication::Authenticate(); }
+	static void Authenticate(const FOnSuccessSignature& OnAuthDelegate) { Authentication::Authenticate(OnAuthDelegate); }
 	
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void LogDebug(const FString& Text, const TMap<FString, FString>& Meta);

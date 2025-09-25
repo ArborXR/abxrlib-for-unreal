@@ -19,7 +19,7 @@ class ABXRLIB_API UInputWidget : public UUserWidget
 public:
 
 	UFUNCTION(BlueprintCallable)
-	static UInputWidget* CreateInputWidget(UWorld* CurrentWorld, const FString KeyboardType, const TSubclassOf<UInputWidget> MenuWidgetClass);
+	static UInputWidget* CreateInputWidget(UWorld* CurrentWorld, const FString KeyboardType, const FString& PromptText, const TSubclassOf<UInputWidget> MenuWidgetClass);
 
 	UFUNCTION(BlueprintCallable)
 	void CallInputCompleted(FString InputText);
@@ -33,7 +33,13 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	FString KeyboardType;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	FString KeyboardMessage;
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetKeyboardType(FString NewKeyboardType) { KeyboardType = NewKeyboardType; };
+
+	UFUNCTION(BlueprintCallable)
+	void SetKeyboardMessage(FString NewKeyboardMessage) { KeyboardMessage = NewKeyboardMessage; };
 };

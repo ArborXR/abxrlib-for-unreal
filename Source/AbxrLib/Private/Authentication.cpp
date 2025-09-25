@@ -33,7 +33,7 @@ FString Authentication::IpAddress;
 std::thread Authentication::ReAuthThread;
 std::atomic<bool> Authentication::bShouldStop{false};
 
-void Authentication::Authenticate()
+void Authentication::Authenticate(const FOnSuccessSignature& NewOnAuthDelegate)
 {
 	Reset();
 	GetConfigData();
@@ -46,17 +46,18 @@ void Authentication::Authenticate()
 	{
 		if (bConnected) GetArborData();
 #endif
-		AuthRequest([](const bool bSuccess)
+		AuthRequest([NewOnAuthDelegate](const bool bSuccess)
 		{
 			if (bSuccess)
 			{
+				NewOnAuthDelegate.ExecuteIfBound();
 				GetConfiguration([](const bool)
 				{
 					if (!AuthMechanism.prompt.IsEmpty())
 					{
-// #if !PLATFORM_ANDROID  // TODO need to add support
+#if !PLATFORM_ANDROID  // TODO need to add support
 						KeyboardAuthenticate();
-// #endif
+#endif
 					}
 				});
 			}
@@ -89,6 +90,7 @@ void Authentication::CheckReauthentication()
 		// Marshal back to game thread
 		AsyncTask(ENamedThreads::GameThread, []
 		{
+			FOnSuccessSignature OnAuthDelegate;
 			AuthRequest([](const bool){});
 		});
 	}

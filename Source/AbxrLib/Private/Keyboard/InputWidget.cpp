@@ -4,13 +4,14 @@
 #include "Keyboard/InputWidget.h"
 
 
-UInputWidget* UInputWidget::CreateInputWidget(UWorld* CurrentWorld, const FString KeyboardType, const TSubclassOf<UInputWidget> MenuWidgetClass)
+UInputWidget* UInputWidget::CreateInputWidget(UWorld* CurrentWorld, const FString KeyboardType, const FString& PromptText, const TSubclassOf<UInputWidget> MenuWidgetClass)
 {
 	UInputWidget* NewWidget = Cast<UInputWidget>(CreateWidget<UInputWidget>(CurrentWorld, MenuWidgetClass));
-	NewWidget->SetKeyboardType(KeyboardType);
-	NewWidget->OnKeyboardTypeSetDelegate.Broadcast();
-	
 	NewWidget->AddToViewport(0);
+	
+	NewWidget->SetKeyboardType(KeyboardType);
+	NewWidget->SetKeyboardMessage(PromptText);
+	NewWidget->OnKeyboardTypeSetDelegate.Broadcast();
 	
 	return NewWidget;
 }

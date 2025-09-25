@@ -22,7 +22,9 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 		UE_LOG(LogTemp, Error, TEXT("Failed to get XRDM Service singleton"));
 	}
 #endif
-	UAbxr::Authenticate();
+	
+	FOnSuccessSignature OnCompletedDelegate;
+	UAbxr::Authenticate(OnCompletedDelegate);
 	EventBatcher::Start();
 	LogBatcher::Start();
 	TelemetryBatcher::Start();
