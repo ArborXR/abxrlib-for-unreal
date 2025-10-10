@@ -197,7 +197,7 @@ UAbxr::EventCritical(TEXT("safety_violation"));
 **Parameters for all Event Wrapper Functions:**
 - `levelName/assessmentName/objectiveName/interactionName` (FString): The identifier for the assessment, objective, interaction, or level.
 - `score` (int): The numerical score achieved. While typically between 1-100, any integer is valid. In metadata, you can also set a minScore and maxScore to define the range of scores for this objective.
-- `result` (Interactions): The result for the interaction is based on the InteractionType.
+- `result` (`Interactions`): The result for the interaction is based on the `InteractionType`.
 - `result_details` (FString): Optional. Additional details about the result. For interactions, this can be a single character or a string. For example: TEXT("a"), TEXT("b"), TEXT("c") or TEXT("correct"), TEXT("incorrect").
 - `type` (EInteractionType): Optional. The type of interaction for this event.
 - `meta` (TMap<FString, FString>): Optional. Additional key-value pairs describing the event.
@@ -220,7 +220,7 @@ UAbxr::Event(TEXT("Table puzzle")); // Duration automatically included: 20 secon
 // Works with all event methods
 UAbxr::StartTimedEvent(TEXT("Assessment"));
 // ... later ...
-UAbxr::EventAssessmentComplete(TEXT("Assessment"), 95, EEventStatus::Pass); // Duration included
+UAbxr::EventAssessmentComplete(TEXT("Assessment"), 95, `EEventStatus::Pass`); // Duration included
 
 // Also works with Mixpanel compatibility methods
 UAbxr::StartTimedEvent(TEXT("User Session"));
@@ -263,13 +263,13 @@ The Log Methods provide straightforward logging functionality, similar to syslog
 
 ```cpp
 //C++ Event Method Signatures
-public static void UAbxr::Log(const FString& Message, ELogLevel Level = ELogLevel::Info)
+public static void UAbxr::Log(const FString& Message, ELogLevel Level = `ELogLevel::Info`)
 
 // Example usage
-UAbxr::Log(TEXT("Module started")); // Defaults to ELogLevel::Info
-UAbxr::Log(TEXT("Module started"), ELogLevel::Info);
-UAbxr::Log(TEXT("Debug information"), ELogLevel::Debug);
-UAbxr::Log(TEXT("Error occurred"), ELogLevel::Error);
+UAbxr::Log(TEXT("Module started")); // Defaults to `ELogLevel::Info`
+UAbxr::Log(TEXT("Module started"), `ELogLevel::Info`);
+UAbxr::Log(TEXT("Debug information"), `ELogLevel::Debug`);
+UAbxr::Log(TEXT("Error occurred"), `ELogLevel::Error`);
 ```
 
 Use standard or severity-specific logging:
@@ -310,25 +310,25 @@ The Storage API enables developers to store and retrieve learner/player progress
 
 ```cpp
 //C++ Method Signatures
-public static void UAbxr::StorageSetEntry(const FString& Name, TMap<FString, FString>& Entry, EStorageScope Scope, EStoragePolicy Policy = EStoragePolicy::KeepLatest);
-public static void UAbxr::StorageSetDefaultEntry(TMap<FString, FString>& Entry, EStorageScope Scope, EStoragePolicy Policy = EStoragePolicy::KeepLatest);
+public static void UAbxr::StorageSetEntry(const FString& Name, TMap<FString, FString>& Entry, EStorageScope Scope, EStoragePolicy Policy = `EStoragePolicy::KeepLatest`);
+public static void UAbxr::StorageSetDefaultEntry(TMap<FString, FString>& Entry, EStorageScope Scope, EStoragePolicy Policy = `EStoragePolicy::KeepLatest`);
 public static void UAbxr::StorageGetEntry(const FString& Name, EStorageScope Scope, /* callback */);
 public static void UAbxr::StorageGetDefaultEntry(EStorageScope Scope, /* callback */);
 public static void UAbxr::StorageRemoveEntry(const FString& Name, EStorageScope Scope);
 
 // Save progress data
-UAbxr::StorageSetEntry(TEXT("state"), TMap<FString, FString>{{TEXT("progress"), TEXT("75%")}}, EStorageScope::User);
-UAbxr::StorageSetDefaultEntry(TMap<FString, FString>{{TEXT("progress"), TEXT("75%")}}, EStorageScope::User);
+UAbxr::StorageSetEntry(TEXT("state"), TMap<FString, FString>{{TEXT("progress"), TEXT("75%")}}, `EStorageScope::User`);
+UAbxr::StorageSetDefaultEntry(TMap<FString, FString>{{TEXT("progress"), TEXT("75%")}}, `EStorageScope::User`);
 
 // Retrieve progress data (requires coroutine)
 // Note: Implement coroutine-based retrieval in Unreal as needed
-UAbxr::StorageGetEntry(TEXT("state"), EStorageScope::User, /* callback */);
-UAbxr::StorageGetDefaultEntry(EStorageScope::User, /* callback */);
+UAbxr::StorageGetEntry(TEXT("state"), `EStorageScope::User`, /* callback */);
+UAbxr::StorageGetDefaultEntry(`EStorageScope::User`, /* callback */);
 
 // Remove storage entries  
-UAbxr::StorageRemoveEntry(TEXT("state"), EStorageScope::User);
-UAbxr::StorageRemoveDefaultEntry(EStorageScope::User);
-UAbxr::StorageRemoveMultipleEntries(EStorageScope::User); // Clear all entries (use with caution)
+UAbxr::StorageRemoveEntry(TEXT("state"), `EStorageScope::User`);
+UAbxr::StorageRemoveDefaultEntry(`EStorageScope::User`);
+UAbxr::StorageRemoveMultipleEntries(`EStorageScope::User`); // Clear all entries (use with caution)
 ```
 
 **Parameters:**
@@ -368,14 +368,14 @@ public enum EPollType { Thumbs, Rating, MultipleChoice }
 public static void UAbxr::PollUser(const FString& Question, EPollType PollType);
 
 // Poll types: Thumbs, Rating (1-5), MultipleChoice (2-8 options)
-UAbxr::PollUser(TEXT("How would you rate this training experience?"), EPollType::Rating);
+UAbxr::PollUser(TEXT("How would you rate this training experience?"), `EPollType::Rating`);
 ```
 
 ---
 
 ### Metadata Formats
 
-The ABXRLib SDK for Unreal supports metadata through the `TMap<FString, FString>` parameter in all event and log methods. This native Unreal format provides efficient key-value pairs for describing events and context.
+The ABXRLib SDK for Unreal supports metadata through the TMap<FString, FString> parameter in all event and log methods. This native Unreal format provides efficient key-value pairs for describing events and context.
 
 #### TMap<FString, FString> (Native Unreal Format)
 ```cpp
@@ -487,7 +487,7 @@ UAbxr::Event(TEXT("puzzle_solving")); // Automatically includes {"duration": "30
 // Event wrapper functions automatically handle duration
 UAbxr::EventAssessmentStart(TEXT("final_exam"));
 // ... 45 seconds later ...
-UAbxr::EventAssessmentComplete(TEXT("final_exam"), 95, EEventStatus::Pass); // Automatically includes duration
+UAbxr::EventAssessmentComplete(TEXT("final_exam"), 95, `EEventStatus::Pass`); // Automatically includes duration
 
 // Works for all start/complete pairs:
 // - EventAssessmentStart/Complete
@@ -839,13 +839,13 @@ Your Application ID can be found in the Web Dashboard under the application deta
 #### Data and Event Issues  
 
 **Problem: Metadata not appearing in analytics**
-- **Solution**: Verify metadata is being added to `TMap<FString, FString>` correctly
+- **Solution**: Verify metadata is being added to TMap<FString, FString> correctly
 - **Debug**: Use UE_LOG to verify metadata contents before sending events
 - **Check**: Ensure complex data types are converted to strings properly
 
 **Problem: Telemetry data missing**
 - **Solution**: Check that telemetry calls use valid key-value pairs
-- **Debug**: Verify telemetry is called with proper `TMap<FString, FString>` format
+- **Debug**: Verify telemetry is called with proper TMap<FString, FString> format
 - **Check**: Ensure telemetry names follow the expected format (e.g., "headset_position")
 
 #### Common Integration Patterns
