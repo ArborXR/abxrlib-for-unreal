@@ -153,11 +153,7 @@ void UXRDMService::CompleteConnectionAttempt(bool bSuccess)
 
 bool UXRDMService::IsConnected()
 {
-    UXRDMService* Instance = GetInstance();
-    if (!Instance)
-    {
-        return false;
-    }
+    if (!Instance) return false;
     
 #if PLATFORM_ANDROID
     return Instance->bIsConnected && Instance->ServiceWrapper != nullptr;
