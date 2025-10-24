@@ -169,7 +169,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 {
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL("https://lib-backend.xrdm.app/v1/storage/config");
+	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/storage/config")));
 	Request->SetVerb("GET");
 	Request->SetHeader("Content-Type", "application/json");
 	SetAuthHeaders(Request);
@@ -182,6 +182,7 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
 			SetConfigFromPayload(Config);
 			AuthMechanism = Config.authMechanism;
+			UE_LOG(LogTemp, Log, TEXT("AbxrLib - GetConfiguration() successful"));
 			OnComplete(true);
 		}
 		else
