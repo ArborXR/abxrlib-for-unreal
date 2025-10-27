@@ -1,9 +1,7 @@
 #include "Abxr.h"
 #include "Authentication.h"
-#include "EventBatcher.h"
+#include "DataBatcher.h"
 #include "InputDialogWidget.h"
-#include "LogBatcher.h"
-#include "TelemetryBatcher.h"
 #include "Kismet/GameplayStatics.h"
 
 TMap<FString, int64> UAbxr::AssessmentStartTimes;
@@ -14,27 +12,27 @@ TWeakObjectPtr<UWorld> UAbxr::GWorldWeak;
 
 void UAbxr::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("debug", Text, Meta);
+    DataBatcher::AddLog("debug", Text, Meta);
 }
 
 void UAbxr::LogInfo(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("info", Text, Meta);
+    DataBatcher::AddLog("info", Text, Meta);
 }
 
 void UAbxr::LogWarn(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("warn", Text, Meta);
+    DataBatcher::AddLog("warn", Text, Meta);
 }
 
 void UAbxr::LogError(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("error", Text, Meta);
+    DataBatcher::AddLog("error", Text, Meta);
 }
 
 void UAbxr::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    LogBatcher::Add("critical", Text, Meta);
+    DataBatcher::AddLog("critical", Text, Meta);
 }
 
 void UAbxr::Log(const FString& Message, ELogLevel Level, const TMap<FString, FString>& Meta)
@@ -64,7 +62,7 @@ void UAbxr::Log(const FString& Message, ELogLevel Level, const TMap<FString, FSt
 
 void UAbxr::Event(const FString& Name, const TMap<FString, FString>& Meta)
 {
-	EventBatcher::Add(Name, Meta);
+	DataBatcher::AddEvent(Name, Meta);
 }
 
 /**
@@ -90,7 +88,7 @@ void UAbxr::Event(const FString& Name, const FVector& Position, TMap<FString, FS
 */
 void UAbxr::TelemetryEntry(const FString& Name, const TMap<FString, FString>& Meta)
 {
-    TelemetryBatcher::Add(Name, Meta);
+    DataBatcher::AddTelemetry(Name, Meta);
 }
 
 void UAbxr::EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta)
@@ -109,7 +107,7 @@ void UAbxr::EventAssessmentComplete(const FString& AssessmentName, const int Sco
 	Meta.Add(TEXT("status"), StaticEnum<EEventStatus>()->GetNameStringByValue(static_cast<int64>(Status)));
 	AddDuration(AssessmentStartTimes, AssessmentName, Meta);
 	Event(AssessmentName, Meta);
-	EventBatcher::Send();
+	DataBatcher::Send();
 }
 
 void UAbxr::EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta)

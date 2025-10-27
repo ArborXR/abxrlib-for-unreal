@@ -1,8 +1,6 @@
 #include "AbxrGameInstanceSubsystem.h"
 #include "Abxr.h"
-#include "EventBatcher.h"
-#include "LogBatcher.h"
-#include "TelemetryBatcher.h"
+#include "DataBatcher.h"
 #include "XRDMService.h"
 #include "Engine/GameInstance.h"
 
@@ -23,16 +21,12 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 	}
 #endif
 	UAbxr::Authenticate();
-	EventBatcher::Start();
-	LogBatcher::Start();
-	TelemetryBatcher::Start();
+	DataBatcher::Start();
 }
 
 void UAbxrGameInstanceSubsystem::Deinitialize()
 {
-	EventBatcher::Stop();
-	LogBatcher::Stop();
-	TelemetryBatcher::Stop();
+	DataBatcher::Stop();
 	
 	Super::Deinitialize();
 	bInitialized = false;

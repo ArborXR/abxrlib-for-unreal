@@ -18,9 +18,7 @@ public:
 		SendRetryIntervalSeconds = 3;
 		SendNextBatchWaitSeconds = 30;
 		StragglerTimeoutSeconds = 15;
-		EventsPerSendAttempt = 16;
-		LogsPerSendAttempt = 16;
-		TelemetryEntriesPerSendAttempt = 16;
+		DataEntriesPerSendAttempt = 32;
 		StorageEntriesPerSendAttempt = 16;
 		PruneSentItemsOlderThanHours = 12;
 		MaximumCachedItems = 1024;
@@ -73,17 +71,9 @@ public:
 	int StragglerTimeoutSeconds;
 	void SetStragglerTimeoutSeconds(const int NewStragglerTimeoutSeconds) {this->StragglerTimeoutSeconds = NewStragglerTimeoutSeconds;}
 
-	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Events Per Send Attempt"))
-	int EventsPerSendAttempt;
-	void SetEventsPerSendAttempt(const int NewEventsPerSendAttempt) {this->EventsPerSendAttempt = NewEventsPerSendAttempt;}
-
-	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Logs Per Send Attempt"))
-	int LogsPerSendAttempt;
-	void SetLogsPerSendAttempt(const int NewLogsPerSendAttempt) {this->LogsPerSendAttempt = NewLogsPerSendAttempt;}
-
-	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Telemetry Entries Per Send Attempt"))
-	int TelemetryEntriesPerSendAttempt;
-	void SetTelemetryEntriesPerSendAttempt(const int NewTelemetryEntriesPerSendAttempt) {this->TelemetryEntriesPerSendAttempt = NewTelemetryEntriesPerSendAttempt;}
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Data Entries Per Send Attempt"))
+	int DataEntriesPerSendAttempt;
+	void SetDataEntriesPerSendAttempt(const int NewDataEntriesPerSendAttempt) {this->DataEntriesPerSendAttempt = NewDataEntriesPerSendAttempt;}
 
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Storage Entries Per Send Attempt"))
 	int StorageEntriesPerSendAttempt;

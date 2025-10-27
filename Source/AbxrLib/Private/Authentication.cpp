@@ -203,9 +203,7 @@ void Authentication::SetConfigFromPayload(const FConfigPayload& Payload)
 	if (!Payload.sendRetryInterval.IsEmpty()) Config->SetSendRetryIntervalSeconds(FCString::Atoi(*Payload.sendRetryInterval));
 	if (!Payload.sendNextBatchWait.IsEmpty()) Config->SetSendNextBatchWaitSeconds(FCString::Atoi(*Payload.sendNextBatchWait));
 	if (!Payload.stragglerTimeout.IsEmpty()) Config->SetStragglerTimeoutSeconds(FCString::Atoi(*Payload.stragglerTimeout));
-	if (!Payload.eventsPerSendAttempt.IsEmpty()) Config->SetEventsPerSendAttempt(FCString::Atoi(*Payload.eventsPerSendAttempt));
-	if (!Payload.logsPerSendAttempt.IsEmpty()) Config->SetLogsPerSendAttempt(FCString::Atoi(*Payload.logsPerSendAttempt));
-	if (!Payload.telemetryEntriesPerSendAttempt.IsEmpty()) Config->SetTelemetryEntriesPerSendAttempt(FCString::Atoi(*Payload.telemetryEntriesPerSendAttempt));
+	if (!Payload.dataEntriesPerSendAttempt.IsEmpty()) Config->SetDataEntriesPerSendAttempt(FCString::Atoi(*Payload.dataEntriesPerSendAttempt));
 	if (!Payload.storageEntriesPerSendAttempt.IsEmpty()) Config->SetStorageEntriesPerSendAttempt(FCString::Atoi(*Payload.storageEntriesPerSendAttempt));
 	if (!Payload.pruneSentItemsOlderThan.IsEmpty()) Config->SetPruneSentItemsOlderThanHours(FCString::Atoi(*Payload.pruneSentItemsOlderThan));
 	if (!Payload.maximumCachedItems.IsEmpty()) Config->SetMaximumCachedItems(FCString::Atoi(*Payload.maximumCachedItems));
