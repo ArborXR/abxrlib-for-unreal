@@ -6,6 +6,7 @@
 #include "JsonObjectConverter.h"
 #include "XRDMService.h"
 #include "Interfaces/IHttpResponse.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
@@ -96,6 +97,12 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 {
 	KeyboardAuthSuccess = false;
 	if (SessionId.IsEmpty()) SessionId = FGuid::NewGuid().ToString();
+
+	FString HMDName = TEXT("None");
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		HMDName = UHeadMountedDisplayFunctionLibrary::GetHMDDeviceName().ToString();
+	}
 	
 	FAuthPayload Payload;
 	Payload.appId = AppId;
@@ -106,7 +113,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	Payload.sessionId = SessionId;
 	Payload.partner = Partner;
 	Payload.ipAddress = TEXT("");
-	Payload.deviceModel = TEXT("");
+	Payload.deviceModel = HMDName;
 	Payload.geolocation = TMap<FString, FString>();
 	Payload.osVersion = FPlatformMisc::GetOSVersion();
 	Payload.xrdmVersion = TEXT("1.0.0");

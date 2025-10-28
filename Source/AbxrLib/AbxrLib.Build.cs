@@ -1,3 +1,4 @@
+using System.IO;
 using UnrealBuildTool;
 
 public class AbxrLib : ModuleRules
@@ -20,7 +21,9 @@ public class AbxrLib : ModuleRules
             "Slate",
             "SlateCore",
             "InputCore",
-            "ApplicationCore"
+            "ApplicationCore",
+            "HeadMountedDisplay",
+            "XRBase"
         ]);
         
         if (Target.Platform == UnrealTargetPlatform.Win64)
@@ -33,7 +36,7 @@ public class AbxrLib : ModuleRules
                 "Launch"
             ]);
 			
-            AdditionalPropertiesForReceipt.Add("AndroidPlugin", System.IO.Path.Combine(ModuleDirectory, "..", "..", "AbxrLib_UPL.xml"));
+            AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "..", "..", "AbxrLib_UPL.xml"));
         }
     }
 }
