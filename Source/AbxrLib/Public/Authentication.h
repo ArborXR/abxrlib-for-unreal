@@ -5,7 +5,6 @@
 #include <atomic>
 #include "Authentication.generated.h"
 
-
 UENUM(BlueprintType)
 enum class EPartner : uint8
 {
