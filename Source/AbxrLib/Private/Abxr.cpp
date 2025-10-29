@@ -1,7 +1,11 @@
 #include "Abxr.h"
+#include "AbxrLibConfiguration.h"
 #include "Authentication.h"
 #include "DataBatcher.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "InputDialogWidget.h"
+#include "Keyboard/InputWidget.h"
+#include "Keyboard/KeyboardPawn.h"
 #include "Kismet/GameplayStatics.h"
 
 TMap<FString, int64> UAbxr::AssessmentStartTimes;
@@ -185,20 +189,40 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 
 void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 {
+	// We separate logic for Windows and Android
 	TWeakObjectPtr<UWorld> Snap = GWorldWeak;
-	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText]
+	// Previous Logic
+	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText, KeyboardType, EmailDomain]()
 	{
 		UWorld* World = Snap.Get();
 		if (!IsValid(World) || !World->IsGameWorld() || World->GetNetMode()==NM_DedicatedServer) return;
-
-		auto* Dialog = UInputDialogWidget::ShowDialog(World, FText::FromString(PromptText), FText::FromString("Type here..."));
-		Dialog->OnAccepted.AddLambda([](const FString& Text)
+		
+		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		{
-			UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
-			Authentication::KeyboardAuthenticate(Text);
-		});
+			AKeyboardPawn* NewPawn = World->SpawnActor<AKeyboardPawn>(GetDefault<UAbxrLibConfiguration>()->KeyboardActorClass, FVector(0.f), FRotator(0.f));
+			NewPawn->Init(KeyboardType, PromptText);
+			NewPawn->OnInputCompletedDelegate.AddLambda([](const FString& Text)
+			{
+				UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
+				Authentication::KeyboardAuthenticate(Text);
+			});
+			World->GetFirstPlayerController()->Possess(NewPawn);
+		}
 
-		//APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
-		//if (!PC) return;
+		
+		if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+		{
+			// auto* Dialog = UInputDialogWidget::ShowDialog(World, FText::FromString(PromptText), FText::FromString("Type here..."));
+			TSubclassOf<UInputWidget> MenuWidgetClass = GetDefault<UAbxrLibConfiguration>()->InputMenuWidgetClass;
+			UInputWidget* InputWidget = UInputWidget::CreateInputWidget(Snap.Get(), KeyboardType, PromptText, MenuWidgetClass);
+			InputWidget->OnInputCompleted.AddLambda([](const FString& Text)
+			{
+				UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
+				Authentication::KeyboardAuthenticate(Text);
+			});
+		}
+
+		// APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
+		// if (!PC) return;
 	});
 }

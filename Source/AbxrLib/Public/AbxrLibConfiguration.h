@@ -3,6 +3,9 @@
 #include "Engine/DeveloperSettings.h"
 #include "AbxrLibConfiguration.generated.h"
 
+class AKeyboardPawn;
+class UInputWidget;
+
 UCLASS(config=Game, defaultconfig, BlueprintType, meta=(DisplayName="AbxrLib Configuration"))
 class ABXRLIB_API UAbxrLibConfiguration : public UDeveloperSettings
 {
@@ -98,4 +101,13 @@ public:
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Disable Scene Events"))
 	bool DisableSceneEvents;
 	void SetDisableSceneEvents(const bool NewDisableSceneEvents) {this->DisableSceneEvents = NewDisableSceneEvents;}
+
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="Input Menu Widget Class"))
+	TSubclassOf<UInputWidget> InputMenuWidgetClass;
+	void SetInputMenuWidgetClass(const TSubclassOf<UInputWidget>& NewInputMenuWidgetClass) {this->InputMenuWidgetClass = NewInputMenuWidgetClass;}
+
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Data Sending Rules", meta=(DisplayName="VR Keyboard Actor Class"))
+	TSubclassOf<AKeyboardPawn> KeyboardActorClass;
+	void SetKeyboardActorClass(const TSubclassOf<AKeyboardPawn>& NewKeyboardActorClass) {this->KeyboardActorClass = NewKeyboardActorClass;}
+
 };
