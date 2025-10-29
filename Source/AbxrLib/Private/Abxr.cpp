@@ -86,7 +86,7 @@ void UAbxr::Event(const FString& Name, const FVector& Position, TMap<FString, FS
 * @param Name      Name of the telemetry
 * @param Meta      Any additional information
 */
-void UAbxr::TelemetryEntry(const FString& Name, const TMap<FString, FString>& Meta)
+void UAbxr::Telemetry(const FString& Name, const TMap<FString, FString>& Meta)
 {
     DataBatcher::AddTelemetry(Name, Meta);
 }

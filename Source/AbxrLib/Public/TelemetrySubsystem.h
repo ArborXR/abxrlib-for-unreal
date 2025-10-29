@@ -17,6 +17,7 @@ class ABXRLIB_API UTelemetrySubsystem : public UGameInstanceSubsystem
 
 	private:
 	void CaptureTelemetry() const;
+	void CaptureFrameRate() const;
 	FTimerHandle TelemetryTimerHandle;
-	float SendInterval = 5.f;
+	FTimerHandle FrameRateTimerHandle;
 };

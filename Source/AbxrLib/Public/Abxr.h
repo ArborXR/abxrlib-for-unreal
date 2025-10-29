@@ -87,8 +87,8 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-	static void TelemetryEntry(const FString& Name, const TMap<FString, FString>& Meta);
-	static void TelemetryEntry(const FString& Name) { TelemetryEntry(Name, TMap<FString, FString>()); }
+	static void Telemetry(const FString& Name, const TMap<FString, FString>& Meta);
+	static void Telemetry(const FString& Name) { Telemetry(Name, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta);
