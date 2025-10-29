@@ -124,7 +124,6 @@ void DataBatcher::Send()
 
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(FAbxrDataPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
-	UE_LOG(LogTemp, Error, TEXT("AbxrLib - DATA JSON: %s"), *Json);
 
 	const FString Url = Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/collect/data"));
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();

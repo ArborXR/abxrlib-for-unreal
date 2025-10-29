@@ -52,7 +52,7 @@ void UTelemetrySubsystem::CaptureFrameRate() const
 {
     const float FPS = FApp::GetDeltaTime() > 0.f ? 1.f / FApp::GetDeltaTime() : 0.f;
     TMap<FString, FString> Meta;
-    Meta[TEXT("Per Second")] = FString::FromInt(FPS);
+    Meta.Add(TEXT("Per Second"), LexToString(FPS));
     UAbxr::Telemetry(TEXT("Frame Rate"), Meta);
 }
 
@@ -60,12 +60,12 @@ void UTelemetrySubsystem::CaptureTelemetry() const
 {
     const FPlatformMemoryStats MemStats = FPlatformMemory::GetStats();
     TMap<FString, FString> Meta;
-    Meta[TEXT("Used Physical")] = FString::FromInt(MemStats.UsedPhysical / 1024.0 / 1024.0) + TEXT(" MB");
+    Meta.Add(TEXT("Used Physical"), FString::FromInt(MemStats.UsedPhysical / 1024.0 / 1024.0) + TEXT(" MB"));
     UAbxr::Telemetry(TEXT("Memory"), Meta);
 #if PLATFORM_ANDROID
     Meta.Empty();
-    Meta[TEXT("Percentage")] = FString::FromInt(FAndroidMisc::GetBatteryState().Level) + TEXT("%");
-    Meta[TEXT("Temperature")] = FString::FromInt(FAndroidMisc::GetBatteryState().Temperature) + TEXT(" C");
+    Meta.Add(TEXT("Percentage"), FString::FromInt(FAndroidMisc::GetBatteryState().Level) + TEXT("%"));
+    Meta.Add(TEXT("Temperature"), FString::FromInt(FAndroidMisc::GetBatteryState().Temperature) + TEXT(" C"));
     UAbxr::Telemetry(TEXT("Battery"), Meta);
 #endif
     FVector PlayerLocation = FVector::ZeroVector;
@@ -85,14 +85,14 @@ void UTelemetrySubsystem::CaptureTelemetry() const
     //const FString MapName = GetWorld() ? GetWorld()->GetMapName() : TEXT("Unknown");
 
     Meta.Empty();
-    Meta[TEXT("x")] = FString::SanitizeFloat(PlayerLocation.X);
-    Meta[TEXT("y")] = FString::SanitizeFloat(PlayerLocation.Y);
-    Meta[TEXT("z")] = FString::SanitizeFloat(PlayerLocation.Z);
+    Meta.Add(TEXT("x"), LexToString(PlayerLocation.X));
+    Meta.Add(TEXT("y"), LexToString(PlayerLocation.Y));
+    Meta.Add(TEXT("z"), LexToString(PlayerLocation.Z));
     UAbxr::Telemetry(TEXT("Player Location"), Meta);
 
     Meta.Empty();
-    Meta[TEXT("Yaw")] = FString::SanitizeFloat(PlayerRotation.Yaw);
-    Meta[TEXT("Pitch")] = FString::SanitizeFloat(PlayerRotation.Pitch);
-    Meta[TEXT("Roll")] = FString::SanitizeFloat(PlayerRotation.Roll);
+    Meta.Add(TEXT("Yaw"), LexToString(PlayerRotation.Yaw));
+    Meta.Add(TEXT("Pitch"), LexToString(PlayerRotation.Pitch));
+    Meta.Add(TEXT("Roll"), LexToString(PlayerRotation.Roll));
     UAbxr::Telemetry(TEXT("Player Rotation"), Meta);
 }
