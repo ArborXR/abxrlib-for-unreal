@@ -54,6 +54,7 @@ void Authentication::Authenticate()
 					if (!AuthMechanism.prompt.IsEmpty())
 					{
 #if !PLATFORM_ANDROID  // TODO need to add support
+						UE_LOG(LogTemp, Log, TEXT("AbxrLib: Additional user authentication required (PIN/credentials)"));
 						KeyboardAuthenticate();
 #endif
 					}
