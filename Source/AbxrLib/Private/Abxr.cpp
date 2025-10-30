@@ -190,19 +190,13 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 {
 	// We separate logic for Windows and Android
-#if PLATFORM_ANDROID
-
-	return;
-#endif
 	TWeakObjectPtr<UWorld> Snap = GWorldWeak;
 	// Previous Logic
 	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText, KeyboardType, EmailDomain]()
 	{
 		UWorld* World = Snap.Get();
 		if (!IsValid(World) || !World->IsGameWorld() || World->GetNetMode()==NM_DedicatedServer) return;
-	#if PLATFORM_ANDROID
 		
-	#else
 		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		{
 			AKeyboardPawn* NewPawn = World->SpawnActor<AKeyboardPawn>(GetDefault<UAbxrLibConfiguration>()->KeyboardActorClass, FVector(0.f), FRotator(0.f));
@@ -227,7 +221,6 @@ void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardTy
 				Authentication::KeyboardAuthenticate(Text);
 			});
 		}
-	#endif
 
 		// APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
 		// if (!PC) return;
