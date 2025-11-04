@@ -31,6 +31,14 @@ void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
             GetDefault<UAbxrLibConfiguration>()->FrameRateTrackingPeriodSeconds,
             true // loop
         );
+
+        World->GetTimerManager().SetTimer(
+            PositionDataTimerHandle,
+            this,
+            &UTelemetrySubsystem::CapturePositionData,
+            GetDefault<UAbxrLibConfiguration>()->PositionCapturePeriodSeconds,
+            true // loop
+        );
     }
     else
     {
@@ -68,6 +76,10 @@ void UTelemetrySubsystem::CaptureTelemetry() const
     Meta.Add(TEXT("Temperature"), FString::FromInt(FAndroidMisc::GetBatteryState().Temperature) + TEXT(" C"));
     UAbxr::Telemetry(TEXT("Battery"), Meta);
 #endif
+}
+
+void UTelemetrySubsystem::CapturePositionData() const
+{
     FVector PlayerLocation = FVector::ZeroVector;
     FRotator PlayerRotation = FRotator::ZeroRotator;
     if (const UWorld* World = GetWorld())
@@ -84,7 +96,7 @@ void UTelemetrySubsystem::CaptureTelemetry() const
 
     //const FString MapName = GetWorld() ? GetWorld()->GetMapName() : TEXT("Unknown");
 
-    Meta.Empty();
+    TMap<FString, FString> Meta;
     Meta.Add(TEXT("x"), LexToString(PlayerLocation.X));
     Meta.Add(TEXT("y"), LexToString(PlayerLocation.Y));
     Meta.Add(TEXT("z"), LexToString(PlayerLocation.Z));

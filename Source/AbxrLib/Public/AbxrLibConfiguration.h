@@ -14,7 +14,7 @@ public:
 		RestUrl = TEXT("https://lib-backend.xrdm.app/");
 		EnableAutomaticTelemetry = true;
 		HeadsetControllerTracking = true;
-		PositionCapturePeriod = 1;
+		PositionCapturePeriodSeconds = 1;
 		EnableSceneEvents = true;
 		FrameRateTrackingPeriodSeconds = 0.5f;
 		TelemetryTrackingPeriodSeconds = 10;
@@ -60,8 +60,8 @@ public:
 	void SetHeadsetControllerTracking(const bool NewHeadsetControllerTracking) {this->HeadsetControllerTracking = NewHeadsetControllerTracking;}
 
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Player Tracking", meta=(DisplayName="Position Capture Period (seconds)"))
-	int PositionCapturePeriod;
-	void SetPositionCapturePeriod(const int NewPositionCapturePeriod) {this->PositionCapturePeriod = NewPositionCapturePeriod;}
+	int PositionCapturePeriodSeconds;
+	void SetPositionCapturePeriodSeconds(const int NewPositionCapturePeriodSeconds) {this->PositionCapturePeriodSeconds = NewPositionCapturePeriodSeconds;}
 
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Player Tracking", meta=(DisplayName="Enable Scene Events"))
 	bool EnableSceneEvents;
