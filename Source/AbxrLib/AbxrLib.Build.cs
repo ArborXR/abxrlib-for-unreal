@@ -7,7 +7,7 @@ public class AbxrLib : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicDependencyModuleNames.AddRange([
+        PublicDependencyModuleNames.AddRange(new string[] {
             "Core",
             "CoreUObject",
             "Engine",
@@ -24,7 +24,7 @@ public class AbxrLib : ModuleRules
             "ApplicationCore",
             "HeadMountedDisplay",
             "XRBase"
-        ]);
+        });
         
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
@@ -32,9 +32,9 @@ public class AbxrLib : ModuleRules
         }
         if (Target.Platform == UnrealTargetPlatform.Android)
         {
-            PrivateDependencyModuleNames.AddRange([
+            PrivateDependencyModuleNames.AddRange(new string[] {
                 "Launch"
-            ]);
+            });
 			
             AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "..", "..", "AbxrLib_UPL.xml"));
         }
