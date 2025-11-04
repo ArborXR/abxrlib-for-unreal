@@ -27,8 +27,6 @@ public:
 		PruneSentItemsOlderThanHours = 12;
 		MaximumCachedItems = 1024;
 		RetainLocalAfterSent = false;
-		DisableAutomaticTelemetry = false;
-		DisableSceneEvents = false;
 	}
 
 	// Where it appears in Project Settings
@@ -110,12 +108,4 @@ public:
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Retain Local After Sent"))
 	bool RetainLocalAfterSent;
 	void SetRetainLocalAfterSent(const bool NewRetainLocalAfterSent) {this->RetainLocalAfterSent = NewRetainLocalAfterSent;}
-
-	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Disable Automatic Telemetry"))
-	bool DisableAutomaticTelemetry;
-	void SetDisableAutomaticTelemetry(const bool NewDisableAutomaticTelemetry) {this->DisableAutomaticTelemetry = NewDisableAutomaticTelemetry;}
-
-	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Disable Scene Events"))
-	bool DisableSceneEvents;
-	void SetDisableSceneEvents(const bool NewDisableSceneEvents) {this->DisableSceneEvents = NewDisableSceneEvents;}
 };

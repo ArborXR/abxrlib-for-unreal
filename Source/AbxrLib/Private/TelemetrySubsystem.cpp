@@ -16,13 +16,16 @@ void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
     if (const UWorld* World = GetWorld())
     {
-        World->GetTimerManager().SetTimer(
-            TelemetryTimerHandle,
-            this,
-            &UTelemetrySubsystem::CaptureTelemetry,
-            GetDefault<UAbxrLibConfiguration>()->TelemetryTrackingPeriodSeconds,
-            true // loop
-        );
+        if (GetDefault<UAbxrLibConfiguration>()->EnableAutomaticTelemetry)
+        {
+            World->GetTimerManager().SetTimer(
+                TelemetryTimerHandle,
+                this,
+                &UTelemetrySubsystem::CaptureTelemetry,
+                GetDefault<UAbxrLibConfiguration>()->TelemetryTrackingPeriodSeconds,
+                true // loop
+            );
+        }
 
         World->GetTimerManager().SetTimer(
             FrameRateTimerHandle,
@@ -32,13 +35,16 @@ void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
             true // loop
         );
 
-        World->GetTimerManager().SetTimer(
-            PositionDataTimerHandle,
-            this,
-            &UTelemetrySubsystem::CapturePositionData,
-            GetDefault<UAbxrLibConfiguration>()->PositionCapturePeriodSeconds,
-            true // loop
-        );
+        if (GetDefault<UAbxrLibConfiguration>()->HeadsetControllerTracking)
+        {
+            World->GetTimerManager().SetTimer(
+                PositionDataTimerHandle,
+                this,
+                &UTelemetrySubsystem::CapturePositionData,
+                GetDefault<UAbxrLibConfiguration>()->PositionCapturePeriodSeconds,
+                true // loop
+            );
+        }
     }
     else
     {
