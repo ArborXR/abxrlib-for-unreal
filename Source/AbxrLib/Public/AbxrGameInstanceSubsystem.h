@@ -11,5 +11,10 @@ public:
 	virtual void Deinitialize() override;
 
 private:
+	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
+    
+	FString CurrentLevelName;
+	FDelegateHandle PostLoadMapHandle;
+	
 	bool bInitialized = false;
 };

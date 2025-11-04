@@ -1,14 +1,19 @@
 #include "AbxrGameInstanceSubsystem.h"
 #include "Abxr.h"
+#include "AbxrLibConfiguration.h"
 #include "DataBatcher.h"
 #include "XRDMService.h"
-#include "Engine/GameInstance.h"
+#include "Engine/Engine.h"
 
 void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	if (bInitialized) return;
 	bInitialized = true;
 	Super::Initialize(Collection);
+	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
+		this, 
+		&UAbxrGameInstanceSubsystem::OnPostLoadMapWithWorld
+	);
 #if PLATFORM_ANDROID
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -27,7 +32,25 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 void UAbxrGameInstanceSubsystem::Deinitialize()
 {
 	DataBatcher::Stop();
+	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
 	
 	Super::Deinitialize();
 	bInitialized = false;
+}
+
+void UAbxrGameInstanceSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
+{
+	if (!LoadedWorld) return;
+    
+	FString NewLevelName = LoadedWorld->GetName();
+	if (NewLevelName != CurrentLevelName)
+	{
+		CurrentLevelName = NewLevelName;
+		if (GetDefault<UAbxrLibConfiguration>()->EnableSceneEvents)
+		{
+			TMap<FString, FString> Meta;
+			Meta.Add(TEXT("Scene Name"), NewLevelName);
+			UAbxr::Event(TEXT("Scene Changed"), Meta);
+		}
+	}
 }
