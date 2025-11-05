@@ -3,6 +3,7 @@
 #include "DataBatcher.h"
 #include "InputDialogWidget.h"
 #include "LevelTracker.h"
+#include "XRDMService.h"
 #include "Kismet/GameplayStatics.h"
 
 TMap<FString, int64> UAbxr::AssessmentStartTimes;
@@ -210,4 +211,144 @@ void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardTy
 		//APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
 		//if (!PC) return;
 	});
+}
+
+FString UAbxr::GetDeviceId()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetDeviceId();
+	}
+
+	return TEXT("");
+}
+
+FString UAbxr::GetDeviceSerial()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetDeviceSerial();
+	}
+
+	return TEXT("");
+}
+
+FString UAbxr::GetDeviceTitle()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetDeviceTitle();
+	}
+
+	return TEXT("");
+}
+
+TArray<FString> UAbxr::GetDeviceTags()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetDeviceTags();
+	}
+
+	return TArray<FString>();
+}
+
+FString UAbxr::GetOrgId()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetOrgId();
+	}
+
+	return TEXT("");
+}
+
+FString UAbxr::GetOrgTitle()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetOrgTitle();
+	}
+
+	return TEXT("");
+}
+
+FString UAbxr::GetOrgSlug()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetOrgSlug();
+	}
+
+	return TEXT("");
+}
+
+FString UAbxr::GetMacAddressFixed()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetMacAddressFixed();
+	}
+
+	return TEXT("");
+}
+
+FString UAbxr::GetMacAddressRandom()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetMacAddressRandom();
+	}
+
+	return TEXT("");
+}
+
+bool UAbxr::GetIsAuthenticated()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetIsAuthenticated();
+	}
+
+	return false;
+}
+
+FString UAbxr::GetAccessToken()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetAccessToken();
+	}
+
+	return TEXT("");
+}
+
+FString UAbxr::GetRefreshToken()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetRefreshToken();
+	}
+
+	return TEXT("");
+}
+
+FDateTime UAbxr::GetExpiresDateUtc()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetExpiresDateUtc();
+	}
+
+	return FDateTime::MinValue();
+}
+
+FString UAbxr::GetFingerprint()
+{
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		return XRDMService->GetFingerprint();
+	}
+
+	return TEXT("");
 }
