@@ -43,7 +43,7 @@ void UAbxrGameInstanceSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
 {
 	if (!LoadedWorld) return;
     
-	FString NewLevelName = LoadedWorld->GetName();
+	const FString NewLevelName = LoadedWorld->GetName();
 	if (NewLevelName != LevelTracker::GetCurrentLevel())
 	{
 		LevelTracker::SetCurrentLevel(NewLevelName);

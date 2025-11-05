@@ -100,8 +100,6 @@ void UTelemetrySubsystem::CapturePositionData() const
         }
     }
 
-    //const FString MapName = GetWorld() ? GetWorld()->GetMapName() : TEXT("Unknown");
-
     TMap<FString, FString> Meta;
     Meta.Add(TEXT("x"), LexToString(PlayerLocation.X));
     Meta.Add(TEXT("y"), LexToString(PlayerLocation.Y));
