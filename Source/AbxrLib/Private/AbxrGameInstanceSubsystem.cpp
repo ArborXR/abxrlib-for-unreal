@@ -2,6 +2,7 @@
 #include "Abxr.h"
 #include "AbxrLibConfiguration.h"
 #include "DataBatcher.h"
+#include "LevelTracker.h"
 #include "XRDMService.h"
 #include "Engine/Engine.h"
 
@@ -43,9 +44,9 @@ void UAbxrGameInstanceSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
 	if (!LoadedWorld) return;
     
 	FString NewLevelName = LoadedWorld->GetName();
-	if (NewLevelName != CurrentLevelName)
+	if (NewLevelName != LevelTracker::GetCurrentLevel())
 	{
-		CurrentLevelName = NewLevelName;
+		LevelTracker::SetCurrentLevel(NewLevelName);
 		if (GetDefault<UAbxrLibConfiguration>()->EnableSceneEvents)
 		{
 			TMap<FString, FString> Meta;

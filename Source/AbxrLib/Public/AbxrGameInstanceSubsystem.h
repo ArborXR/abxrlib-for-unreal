@@ -12,9 +12,7 @@ public:
 
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
-    
-	FString CurrentLevelName;
-	FDelegateHandle PostLoadMapHandle;
 	
+	FDelegateHandle PostLoadMapHandle;
 	bool bInitialized = false;
 };

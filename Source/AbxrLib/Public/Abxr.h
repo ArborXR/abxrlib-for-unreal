@@ -72,12 +72,12 @@ public:
 	static void LogCritical(const FString& Text) { LogCritical(Text, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-	static void Log(const FString& Message, ELogLevel Level, const TMap<FString, FString>& Meta);
-	static void Log(const FString& Message, ELogLevel Level) { Log(Message, Level, TMap<FString, FString>()); }
-	static void Log(const FString& Message) { Log(Message, ELogLevel::Info, TMap<FString, FString>()); }
+	static void Log(const FString& Text, ELogLevel Level, TMap<FString, FString> Meta);
+	static void Log(const FString& Text, ELogLevel Level) { Log(Text, Level, TMap<FString, FString>()); }
+	static void Log(const FString& Text) { Log(Text, ELogLevel::Info, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-	static void Event(const FString& Name, const TMap<FString, FString>& Meta);
+	static void Event(const FString& Name, TMap<FString, FString> Meta);
 	static void Event(const FString& Name) { Event(Name, TMap<FString, FString>()); }
 	static void Event(const FString& Name, const FVector& Position, TMap<FString, FString>& Meta);
 	static void Event(const FString& Name, const FVector& Position)
@@ -87,7 +87,7 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
-	static void Telemetry(const FString& Name, const TMap<FString, FString>& Meta);
+	static void Telemetry(const FString& Name, TMap<FString, FString> Meta);
 	static void Telemetry(const FString& Name) { Telemetry(Name, TMap<FString, FString>()); }
 
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")

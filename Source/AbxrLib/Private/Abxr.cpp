@@ -2,6 +2,7 @@
 #include "Authentication.h"
 #include "DataBatcher.h"
 #include "InputDialogWidget.h"
+#include "LevelTracker.h"
 #include "Kismet/GameplayStatics.h"
 
 TMap<FString, int64> UAbxr::AssessmentStartTimes;
@@ -10,58 +11,65 @@ TMap<FString, int64> UAbxr::InteractionStartTimes;
 TMap<FString, int64> UAbxr::LevelStartTimes;
 TWeakObjectPtr<UWorld> UAbxr::GWorldWeak;
 
+FString LevelTracker::CurrentLevel = TEXT("N/A");
+
 void UAbxr::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    DataBatcher::AddLog("debug", Text, Meta);
+	Log(Text, ELogLevel::Debug, Meta);
 }
 
 void UAbxr::LogInfo(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    DataBatcher::AddLog("info", Text, Meta);
+	Log(Text, ELogLevel::Info, Meta);
 }
 
 void UAbxr::LogWarn(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    DataBatcher::AddLog("warn", Text, Meta);
+	Log(Text, ELogLevel::Warn, Meta);
 }
 
 void UAbxr::LogError(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    DataBatcher::AddLog("error", Text, Meta);
+	Log(Text, ELogLevel::Error, Meta);
 }
 
 void UAbxr::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
 {
-    DataBatcher::AddLog("critical", Text, Meta);
+	Log(Text, ELogLevel::Critical, Meta);
 }
 
-void UAbxr::Log(const FString& Message, ELogLevel Level, const TMap<FString, FString>& Meta)
+void UAbxr::Log(const FString& Text, const ELogLevel Level, TMap<FString, FString> Meta)
 {
+	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
+	FString LevelText;
     switch (Level)
     {
         case ELogLevel::Debug:
-            LogDebug(Message, Meta);
+    		LevelText = "debug";
             break;
         case ELogLevel::Info:
-            LogInfo(Message, Meta);
+    		LevelText = "info";
             break;
         case ELogLevel::Warn:
-            LogWarn(Message, Meta);
+    		LevelText = "warn";
             break;
         case ELogLevel::Error:
-            LogError(Message, Meta);
+    		LevelText = "error";
             break;
         case ELogLevel::Critical:
-            LogCritical(Message, Meta);
+    		LevelText = "critical";
             break;
         default:
-            LogInfo(Message, Meta);
+    		LevelText = "info";
             break;
     }
+
+	DataBatcher::AddLog(LevelText, Text, Meta);
 }
 
-void UAbxr::Event(const FString& Name, const TMap<FString, FString>& Meta)
+void UAbxr::Event(const FString& Name, TMap<FString, FString> Meta)
 {
+	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
 	DataBatcher::AddEvent(Name, Meta);
 }
 
@@ -86,8 +94,9 @@ void UAbxr::Event(const FString& Name, const FVector& Position, TMap<FString, FS
 * @param Name      Name of the telemetry
 * @param Meta      Any additional information
 */
-void UAbxr::Telemetry(const FString& Name, const TMap<FString, FString>& Meta)
+void UAbxr::Telemetry(const FString& Name, TMap<FString, FString> Meta)
 {
+	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
     DataBatcher::AddTelemetry(Name, Meta);
 }
 
