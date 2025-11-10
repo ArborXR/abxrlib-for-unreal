@@ -1,8 +1,12 @@
 #include "Abxr.h"
+
+#include "AbxrGameInstanceSubsystem.h"
 #include "Authentication.h"
 #include "DataBatcher.h"
 #include "InputDialogWidget.h"
+#include "KeyboardManager.h"
 #include "LevelTracker.h"
+#include "SimpleKeyboardWidget.h"
 #include "XRDMService.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -195,7 +199,36 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 
 void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 {
-	TWeakObjectPtr<UWorld> Snap = GWorldWeak;
+	UE_LOG(LogTemp, Error, TEXT("AbxrLib: 111"));
+	UWorld* World = GWorldWeak->GetWorld();
+	if (!World) return;
+	
+	APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+	if (!PC) return;
+	UE_LOG(LogTemp, Error, TEXT("AbxrLib: 222"));
+	// Replace with your widget BP class
+	//static TSubclassOf<USimpleKeyboardWidget> KeyboardClass =
+	//	StaticLoadClass(USimpleKeyboardWidget::StaticClass(), nullptr, TEXT("/Game/UI/WBP_SimpleKeyboard.WBP_SimpleKeyboard_C"));
+	//Script/UMGEditor.WidgetBlueprint'/Game/UI/WBP_SimpleKeyboard.WBP_SimpleKeyboard'
+
+	//UAbxrGameInstanceSubsystem* GI = Cast<UAbxrGameInstanceSubsystem>(World->GetGameInstance());
+
+	//if (!GI->KeyboardWidgetClass) return;
+	//UE_LOG(LogTemp, Error, TEXT("AbxrLib: 333"));
+	USimpleKeyboardWidget* Keyboard = UKeyboardManager::Get()->CreateKeyboardWidget(World);// CreateWidget<USimpleKeyboardWidget>(PC, GI->KeyboardWidgetClass);
+
+	if (!Keyboard) return;
+	UE_LOG(LogTemp, Error, TEXT("AbxrLib: 444"));
+	// Hook a callback to get the result
+	Keyboard->OnKeyboardDone.BindLambda([](const FString& Text)
+	{
+		// TODO: send this to your plugin logic
+		UE_LOG(LogTemp, Log, TEXT("Keyboard result: %s"), *Text);
+	});
+
+	Keyboard->AddToViewport(100);
+	UE_LOG(LogTemp, Error, TEXT("AbxrLib: 555"));
+	/*TWeakObjectPtr<UWorld> Snap = GWorldWeak;
 	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText]
 	{
 		UWorld* World = Snap.Get();
@@ -210,7 +243,7 @@ void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardTy
 
 		//APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
 		//if (!PC) return;
-	});
+	});*/
 }
 
 FString UAbxr::GetDeviceId()

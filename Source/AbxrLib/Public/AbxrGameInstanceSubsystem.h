@@ -1,4 +1,5 @@
 #pragma once
+#include "SimpleKeyboardWidget.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "AbxrGameInstanceSubsystem.generated.h"
 
@@ -9,6 +10,9 @@ class ABXRLIB_API UAbxrGameInstanceSubsystem : public UGameInstanceSubsystem
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<USimpleKeyboardWidget> KeyboardWidgetClass;
 
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
