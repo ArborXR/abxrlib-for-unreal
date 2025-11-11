@@ -8,6 +8,8 @@
 #include "LevelTracker.h"
 #include "SimpleKeyboardWidget.h"
 #include "XRDMService.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 TMap<FString, int64> UAbxr::AssessmentStartTimes;
@@ -199,12 +201,47 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 
 void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 {
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	FString FolderPath = TEXT("/AbxrLib");
+	TArray<FAssetData> AssetData;
+	AssetRegistry.GetAssetsByPath(FName(*FolderPath), AssetData, true); // true = recursive
+    
+	UE_LOG(LogTemp, Warning, TEXT("=== Assets in %s ==="), *FolderPath);
+	for (const FAssetData& Asset : AssetData)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Asset: %s"), *Asset.AssetName.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Full Path: %s"), *Asset.GetObjectPathString());
+		UE_LOG(LogTemp, Warning, TEXT("Class: %s"), *Asset.AssetClassPath.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("---"));
+	}
+	
 	UE_LOG(LogTemp, Error, TEXT("AbxrLib: 111"));
 	UWorld* World = GWorldWeak->GetWorld();
 	if (!World) return;
 	
 	APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
 	if (!PC) return;
+    
+	TSoftClassPtr<USimpleKeyboardWidget> BPClassRef(FSoftObjectPath(TEXT("/AbxrLib/UI/WBP_SimpleKeyboard.WBP_SimpleKeyboard_C")));
+	UClass* LoadedClass = BPClassRef.LoadSynchronous();
+    
+	if (LoadedClass)
+	{
+		USimpleKeyboardWidget* Widget = CreateWidget<USimpleKeyboardWidget>(World, LoadedClass);
+        
+		// Create actor to hold the widget component
+		FVector Location = FVector(100, 0, 100); // 100cm forward, 100cm up
+		AActor* WidgetActor = World->SpawnActor<AActor>(AActor::StaticClass(), Location, FRotator::ZeroRotator);
+        
+		UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(WidgetActor);
+		WidgetComp->SetWidget(Widget);
+		WidgetComp->SetWidgetSpace(EWidgetSpace::World);
+		WidgetComp->RegisterComponent();
+		WidgetActor->SetRootComponent(WidgetComp);
+	}
+	
 	UE_LOG(LogTemp, Error, TEXT("AbxrLib: 222"));
 	// Replace with your widget BP class
 	//static TSubclassOf<USimpleKeyboardWidget> KeyboardClass =

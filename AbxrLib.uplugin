@@ -7,6 +7,9 @@
   "Category": "VR Utility",
   "CreatedBy": "ArborXR",
   "EnabledByDefault": true,
+  "CanContainContent": true,
+  "IsBetaVersion": false,
+  "Installed": false,
   "Modules": [
     {
       "Name": "AbxrLib",
