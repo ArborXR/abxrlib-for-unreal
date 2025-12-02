@@ -77,7 +77,7 @@ public:
 	static bool Authenticated()
 	{
 		const FDateTime Now = FDateTime::UtcNow();
-		return Now.ToUnixTimestamp() <= TokenExpiry;
+		return !AuthToken.IsEmpty() && !ApiSecret.IsEmpty() && Now.ToUnixTimestamp() <= TokenExpiry && NeedKeyboardAuth == false;
 	}
 	
 	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
@@ -110,7 +110,7 @@ private:
 	static int TokenExpiry;
 	static FAuthMechanism AuthMechanism;
 	static int FailedAuthAttempts;
-	static bool KeyboardAuthSuccess;
+	static std::optional<bool> NeedKeyboardAuth;
 
 	static FString OrgId;
 	static FString DeviceId;

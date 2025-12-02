@@ -21,7 +21,7 @@ FString Authentication::SessionId;
 int Authentication::TokenExpiry;
 FAuthMechanism Authentication::AuthMechanism;
 int Authentication::FailedAuthAttempts = 0;
-bool Authentication::KeyboardAuthSuccess = false;
+std::optional<bool> Authentication::NeedKeyboardAuth;
 FString Authentication::OrgId;
 FString Authentication::DeviceId;
 FString Authentication::AuthSecret;
@@ -53,10 +53,14 @@ void Authentication::Authenticate()
 				{
 					if (!AuthMechanism.prompt.IsEmpty())
 					{
-#if !PLATFORM_ANDROID  // TODO need to add support
-						UE_LOG(LogTemp, Log, TEXT("AbxrLib: Additional user authentication required (PIN/credentials)"));
+#if !PLATFORM_ANDROID
 						KeyboardAuthenticate();
 #endif
+					}
+					else
+					{
+						NeedKeyboardAuth = false;
+						UE_LOG(LogTemp, Log, TEXT("AbxrLib: Authentication fully completed"));
 					}
 				});
 			}
@@ -96,7 +100,6 @@ void Authentication::CheckReauthentication()
 
 void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 {
-	KeyboardAuthSuccess = false;
 	if (SessionId.IsEmpty()) SessionId = FGuid::NewGuid().ToString();
 
 	FString HMDName = TEXT("None");
@@ -165,7 +168,6 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 				TokenExpiry = FCString::Atoi(*Expiry);
 			}
 			
-			KeyboardAuthSuccess = true;
 			OnComplete(true);
 			UE_LOG(LogTemp, Log, TEXT("AbxrLib - Authenticated successfully"));
 		}
@@ -239,6 +241,7 @@ void Authentication::GetArborData()
 
 void Authentication::KeyboardAuthenticate()
 {
+	NeedKeyboardAuth = true;
 	FString Prompt = TEXT("");
 	if (FailedAuthAttempts > 0) Prompt = TEXT("Authentication Failed (") + FString::FromInt(FailedAuthAttempts) + ")\n";
 	Prompt.Append(AuthMechanism.prompt);
@@ -254,7 +257,7 @@ void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
 	{
 		if (bSuccess)
 		{
-			//KeyboardHandler.Destroy();
+			NeedKeyboardAuth = false;
 			FailedAuthAttempts = 0;
 		}
 		else
@@ -301,6 +304,6 @@ void Authentication::Reset()
 	TokenExpiry = 0;
 	AuthMechanism = FAuthMechanism();
 	FailedAuthAttempts = 0;
-	KeyboardAuthSuccess = false;
+	NeedKeyboardAuth.reset();
 }
 
