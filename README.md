@@ -56,11 +56,16 @@ Developers can implement their own backend services by following the ABXR protoc
 
 ### Unreal Plugin Installation
 
-1. Download the plugin from the GitHub repository.
-2. Copy the plugin folder to your project's `Plugins` directory.
-3. Open your Unreal project and go to `Edit > Plugins`.
-4. Find `ABXRLib SDK` and enable it.
-5. Once imported, you will see `ABXRLib SDK` configuration options in your Project Settings.
+1. Make sure your project can build C++
+- If your project is Blueprint-only:
+  1. Add C++ Class → pick anything (e.g., Actor) → Create Class
+  2. Let Unreal generate the Visual Studio / Rider / Xcode project and compile once
+- Now your project is a C++ project, which is required for C++ plugins
+2. Close the Unreal Editor
+3. In your project folder (where MyGame.uproject is), create a /Plugins directory if it doesn't already exist
+4. Into this folder, clone or download the plugin from the GitHub repository - https://github.com/ArborXR/abxrlib-for-unity
+5. Right-click your .uproject file → Generate Visual Studio project files (or equivalent)
+6. Open the generated .sln file in your IDE of choice and build
 
 ---
 
