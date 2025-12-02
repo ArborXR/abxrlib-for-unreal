@@ -192,7 +192,7 @@ void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardTy
 	// We separate logic for Windows and Android
 	TWeakObjectPtr<UWorld> Snap = GWorldWeak;
 	// Previous Logic
-	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText, KeyboardType, EmailDomain]()
+	AsyncTask(ENamedThreads::GameThread, [Snap, PromptText, KeyboardType, EmailDomain]
 	{
 		UWorld* World = Snap.Get();
 		if (!IsValid(World) || !World->IsGameWorld() || World->GetNetMode()==NM_DedicatedServer) return;
@@ -201,11 +201,6 @@ void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardTy
 		{
 			AKeyboardPawn* NewPawn = World->SpawnActor<AKeyboardPawn>(GetDefault<UAbxrLibConfiguration>()->KeyboardActorClass, FVector(0.f), FRotator(0.f));
 			NewPawn->Init(KeyboardType, PromptText);
-			NewPawn->OnInputCompletedDelegate.AddLambda([](const FString& Text)
-			{
-				UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
-				Authentication::KeyboardAuthenticate(Text);
-			});
 			World->GetFirstPlayerController()->Possess(NewPawn);
 		}
 
@@ -214,15 +209,7 @@ void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardTy
 		{
 			// auto* Dialog = UInputDialogWidget::ShowDialog(World, FText::FromString(PromptText), FText::FromString("Type here..."));
 			TSubclassOf<UInputWidget> MenuWidgetClass = GetDefault<UAbxrLibConfiguration>()->InputMenuWidgetClass;
-			UInputWidget* InputWidget = UInputWidget::CreateInputWidget(Snap.Get(), KeyboardType, PromptText, MenuWidgetClass);
-			InputWidget->OnInputCompleted.AddLambda([](const FString& Text)
-			{
-				UE_LOG(LogTemp, Log, TEXT("User typed: %s"), *Text);
-				Authentication::KeyboardAuthenticate(Text);
-			});
+			UInputWidget::CreateInputWidget(Snap.Get(), KeyboardType, PromptText, MenuWidgetClass);
 		}
-
-		// APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
-		// if (!PC) return;
 	});
 }
