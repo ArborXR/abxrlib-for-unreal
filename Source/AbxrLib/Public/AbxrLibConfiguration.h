@@ -16,6 +16,8 @@ public:
 		HeadsetControllerTracking = true;
 		PositionCapturePeriodSeconds = 1;
 		EnableSceneEvents = true;
+		EnableAutoStartAuth = true;
+		AuthenticationStartDelay = 0;
 		FrameRateTrackingPeriodSeconds = 0.5f;
 		TelemetryTrackingPeriodSeconds = 10;
 		SendRetriesOnFailure = 3;
@@ -64,6 +66,14 @@ public:
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Player Tracking", meta=(DisplayName="Enable Scene Events"))
 	bool EnableSceneEvents;
 	void SetEnableSceneEvents(const bool NewEnableSceneEvents) {this->EnableSceneEvents = NewEnableSceneEvents;}
+
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Authentication Control", meta=(DisplayName="Enable Auto Start Authentication"))
+	bool EnableAutoStartAuth;
+	void SetEnableAutoStartAuth(const bool NewEnableAutoStartAuth) {this->EnableAutoStartAuth = NewEnableAutoStartAuth;}
+
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Authentication Control", meta=(DisplayName="Authentication Start Delay (seconds)"))
+	int AuthenticationStartDelay;
+	void SetAuthenticationStartDelay(const bool NewAuthenticationStartDelay) {this->AuthenticationStartDelay = NewAuthenticationStartDelay;}
 
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Telemetry Tracking Period (seconds)"))
 	double TelemetryTrackingPeriodSeconds;

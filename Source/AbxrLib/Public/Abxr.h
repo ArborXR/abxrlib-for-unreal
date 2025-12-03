@@ -47,6 +47,7 @@ class ABXRLIB_API UAbxr : public UBlueprintFunctionLibrary
 
 public:
 	static void SetWorld(UWorld* World) { GWorldWeak = World; }
+	static UWorld* GetCurrentWorld() { return GWorldWeak.Get(); }
 	
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void Authenticate() { Authentication::Authenticate(); }

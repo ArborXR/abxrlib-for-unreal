@@ -26,7 +26,28 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 		UE_LOG(LogTemp, Error, TEXT("Failed to get XRDM Service singleton"));
 	}
 #endif
-	UAbxr::Authenticate();
+	if (GetDefault<UAbxrLibConfiguration>()->EnableAutoStartAuth)
+	{
+		if (GetDefault<UAbxrLibConfiguration>()->AuthenticationStartDelay > 0)
+		{
+			UAbxr::GetCurrentWorld()->GetTimerManager().SetTimer(
+					AuthenticationTimerHandle,
+					this,
+					&UAbxrGameInstanceSubsystem::StartAuthAfterDelay,
+					GetDefault<UAbxrLibConfiguration>()->AuthenticationStartDelay,
+					false // don't loop
+				);
+		}
+		else
+		{
+			UAbxr::Authenticate();
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("AbxrLib: Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
+	}
+	
 	DataBatcher::Start();
 }
 
@@ -54,4 +75,9 @@ void UAbxrGameInstanceSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
 			UAbxr::Event(TEXT("Scene Changed"), Meta);
 		}
 	}
+}
+
+void UAbxrGameInstanceSubsystem::StartAuthAfterDelay()
+{
+	UAbxr::Authenticate();
 }

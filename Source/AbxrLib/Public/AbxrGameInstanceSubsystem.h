@@ -12,7 +12,9 @@ public:
 
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
+	void StartAuthAfterDelay();
 	
+	FTimerHandle AuthenticationTimerHandle;
 	FDelegateHandle PostLoadMapHandle;
 	bool bInitialized = false;
 };
