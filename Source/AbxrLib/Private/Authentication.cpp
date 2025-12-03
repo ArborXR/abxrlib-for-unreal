@@ -36,7 +36,6 @@ std::atomic<bool> Authentication::bShouldStop{false};
 
 void Authentication::Authenticate()
 {
-	Reset();
 	GetConfigData();
 	DeviceId = FGuid::NewGuid().ToString();
 #if PLATFORM_ANDROID
@@ -90,6 +89,9 @@ void Authentication::CheckReauthentication()
 {
 	if (TokenExpiry - FDateTime::UtcNow().ToUnixTimestamp() <= 120)
 	{
+		// Clear authentication state to stop data transmission
+		ClearAuthenticationState();
+		
 		// Marshal back to game thread
 		AsyncTask(ENamedThreads::GameThread, []
 		{
@@ -295,15 +297,26 @@ TMap<FString, FString> Authentication::CreateAuthMechanismDict()
 	return Dict;
 }
 
-// TODO maybe this auth class should be static and Unreal prefers to store the objects somewhere
-void Authentication::Reset()
+void Authentication::ClearAuthenticationState()
 {
 	AuthToken = TEXT("");
 	ApiSecret = TEXT("");
-	SessionId = TEXT("");
 	TokenExpiry = 0;
-	AuthMechanism = FAuthMechanism();
-	FailedAuthAttempts = 0;
 	NeedKeyboardAuth.reset();
-}
+	SessionId = TEXT("");
+	AuthMechanism = FAuthMechanism();
 
+	// Clear cached user data
+	//_responseData = null;
+	//_authResponseModuleData = null;
+
+	// Clear stored auth value
+	//_enteredAuthValue = null;
+	
+	FailedAuthAttempts = 0;
+
+	// Reset auth handoff tracking
+	//_sessionUsedAuthHandoff = false;
+
+	UE_LOG(LogTemp, Log, TEXT("AbxrLib: Authentication state cleared - data transmission stopped"));
+}

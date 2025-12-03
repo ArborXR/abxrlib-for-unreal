@@ -91,7 +91,7 @@ public:
 
 private:
 	static TMap<FString, FString> CreateAuthMechanismDict();
-	static void Reset();
+	static void ClearAuthenticationState();
 	static void AuthRequest(TFunction<void(bool)> OnComplete);
 	static void GetConfiguration(TFunction<void(bool)> OnComplete);
 	static void SetConfigFromPayload(const FConfigPayload& Payload);
