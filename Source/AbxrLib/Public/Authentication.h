@@ -38,6 +38,28 @@ struct FAuthPayload
 };
 
 USTRUCT()
+struct FModuleData
+{
+	GENERATED_BODY()
+
+	UPROPERTY() TMap<FString, FString> Values;
+};
+
+USTRUCT()
+struct FAuthResponse
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString token;
+	UPROPERTY() FString secret;
+	UPROPERTY() TMap<FString, FString> userData;
+	UPROPERTY() FString userId;
+	UPROPERTY() FString appId;
+	UPROPERTY() FString packageName;
+	UPROPERTY() TArray<FModuleData> modules;
+};
+
+USTRUCT()
 struct FAuthMechanism
 {
 	GENERATED_BODY()
@@ -74,11 +96,12 @@ public:
 	static void Authenticate();
 	static void PollForReAuth();
 	static void SetSessionId(const FString& sessionId) { SessionId = sessionId; }
+	static FAuthResponse GetAuthResponse() { return ResponseData; }
 	
 	static bool Authenticated()
 	{
 		const FDateTime Now = FDateTime::UtcNow();
-		return !AuthToken.IsEmpty() && !ApiSecret.IsEmpty() && Now.ToUnixTimestamp() <= TokenExpiry && NeedKeyboardAuth == false;
+		return !ResponseData.token.IsEmpty() && !ResponseData.secret.IsEmpty() && Now.ToUnixTimestamp() <= TokenExpiry && NeedKeyboardAuth == false;
 	}
 	
 	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
@@ -105,8 +128,8 @@ private:
 	static void ReAuthThreadFunction();
 	static void CheckReauthentication();
 
-	static FString AuthToken;
-	static FString ApiSecret;
+	static FAuthResponse ResponseData;
+	
 	static FString SessionId;
 	static int TokenExpiry;
 	static FAuthMechanism AuthMechanism;

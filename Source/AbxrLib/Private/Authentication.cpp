@@ -15,8 +15,6 @@
 #include "Interfaces/IPluginManager.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-FString Authentication::AuthToken;
-FString Authentication::ApiSecret;
 FString Authentication::SessionId;
 int Authentication::TokenExpiry;
 FAuthMechanism Authentication::AuthMechanism;
@@ -33,6 +31,7 @@ FString Authentication::XrdmVersion;
 FString Authentication::IpAddress;
 std::thread Authentication::ReAuthThread;
 std::atomic<bool> Authentication::bShouldStop{false};
+FAuthResponse Authentication::ResponseData;
 
 void Authentication::Authenticate()
 {
@@ -54,6 +53,8 @@ void Authentication::Authenticate()
 					{
 #if !PLATFORM_ANDROID
 						KeyboardAuthenticate();
+#else
+						NeedKeyboardAuth = false; // TODO can't do this yet
 #endif
 					}
 					else
@@ -141,38 +142,41 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	{
 		if (!bWasSuccessful || !Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
 		{
-			UE_LOG(LogTemp, Error, TEXT("AbxrLib - Authentication failed : %s"), *Response->GetContentAsString());
+			UE_LOG(LogTemp, Error, TEXT("AbxrLib: Authentication failed : %s"), *Response->GetContentAsString());
 			OnComplete(false);
 			return;
 		}
 		
 		const FString Body = Response->GetContentAsString();
-		TSharedPtr<FJsonObject> JsonObject;
-		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
-		if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
+
+		FAuthResponse AuthResponse;
+		if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAuthResponse>(Body, &AuthResponse, 0, 0))
 		{
-			JsonObject->TryGetStringField(TEXT("token"), AuthToken);
-			JsonObject->TryGetStringField(TEXT("secret"), ApiSecret);
-
-			TArray<FString> Parts;
-			AuthToken.ParseIntoArray(Parts, TEXT("."));
-			const FString PayloadBase64 = Parts[1];
-
-			FString DecodedPayloadJson;
-			FBase64::Decode(PayloadBase64, DecodedPayloadJson);
-
-			TSharedPtr<FJsonObject> PayloadJson;
-			Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
-			if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
-			{
-				const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find("exp");
-				const FString Expiry = (*ValuePtr)->AsString();
-				TokenExpiry = FCString::Atoi(*Expiry);
-			}
-			
-			OnComplete(true);
-			UE_LOG(LogTemp, Log, TEXT("AbxrLib - Authenticated successfully"));
+			UE_LOG(LogTemp, Error, TEXT("AbxrLib: Failed to parse auth response JSON: %s"), *Body);
+			OnComplete(false);
+			return;
 		}
+
+		ResponseData = AuthResponse;
+
+		TArray<FString> Parts;
+		ResponseData.token.ParseIntoArray(Parts, TEXT("."));
+		const FString PayloadBase64 = Parts[1];
+
+		FString DecodedPayloadJson;
+		FBase64::Decode(PayloadBase64, DecodedPayloadJson);
+
+		TSharedPtr<FJsonObject> PayloadJson;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
+		if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
+		{
+			const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find("exp");
+			const FString Expiry = (*ValuePtr)->AsString();
+			TokenExpiry = FCString::Atoi(*Expiry);
+		}
+		
+		OnComplete(true);
+		UE_LOG(LogTemp, Log, TEXT("AbxrLib: Authenticated successfully"));
 	});
 	
 	Request->ProcessRequest();
@@ -273,12 +277,12 @@ void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
 
 void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json)
 {
-	Request->SetHeader("Authorization", "Bearer " + AuthToken);
+	Request->SetHeader("Authorization", "Bearer " + ResponseData.token);
 
 	const FString UnixTime = LexToString(FDateTime::UtcNow().ToUnixTimestamp());
 	Request->SetHeader("x-abxrlib-timestamp", UnixTime);
 
-	FString HashString = AuthToken + ApiSecret + UnixTime;
+	FString HashString = ResponseData.token + ResponseData.secret + UnixTime;
 	if (!Json.IsEmpty())
 	{
 		const uint32 CRC = Utils::ComputeCRC32(Json);
@@ -299,15 +303,13 @@ TMap<FString, FString> Authentication::CreateAuthMechanismDict()
 
 void Authentication::ClearAuthenticationState()
 {
-	AuthToken = TEXT("");
-	ApiSecret = TEXT("");
+	ResponseData = FAuthResponse();
 	TokenExpiry = 0;
 	NeedKeyboardAuth.reset();
 	SessionId = TEXT("");
 	AuthMechanism = FAuthMechanism();
 
 	// Clear cached user data
-	//_responseData = null;
 	//_authResponseModuleData = null;
 
 	// Clear stored auth value

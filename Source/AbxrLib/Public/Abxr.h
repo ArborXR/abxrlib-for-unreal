@@ -225,6 +225,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static void StartNewSession();
 
+	// Get the learner/user data from the most recent authentication completion
+	// This is the userData object from the authentication response, containing user preferences and information
+	// Returns an empty map if no authentication has completed yet
+	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
+	static TMap<FString, FString> GetUserData() { return Authentication::GetAuthResponse().userData; }
+
 private:
 	static TMap<FString, int64> AssessmentStartTimes;
 	static TMap<FString, int64> ObjectiveStartTimes;
