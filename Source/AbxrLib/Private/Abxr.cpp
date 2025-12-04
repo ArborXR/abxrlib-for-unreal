@@ -352,3 +352,9 @@ FString UAbxr::GetFingerprint()
 
 	return TEXT("");
 }
+
+void UAbxr::StartNewSession()
+{
+	Authentication::SetSessionId(FGuid::NewGuid().ToString());
+	Authenticate();
+}

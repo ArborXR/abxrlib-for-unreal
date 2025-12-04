@@ -218,6 +218,12 @@ public:
 	// Gets the device fingerprint
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static FString GetFingerprint();
+	
+	// Start a new session with a fresh session identifier
+	// Generates a new session ID and performs fresh authentication
+	// Useful for starting new training experiences or resetting user context
+	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
+	static void StartNewSession();
 
 private:
 	static TMap<FString, int64> AssessmentStartTimes;

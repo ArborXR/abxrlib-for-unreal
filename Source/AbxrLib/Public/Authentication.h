@@ -73,6 +73,7 @@ class Authentication
 public:
 	static void Authenticate();
 	static void PollForReAuth();
+	static void SetSessionId(const FString& sessionId) { SessionId = sessionId; }
 	
 	static bool Authenticated()
 	{
