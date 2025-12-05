@@ -49,7 +49,7 @@ void Authentication::Authenticate()
 			{
 				GetConfiguration([](const bool)
 				{
-					if (!AuthMechanism.prompt.IsEmpty())
+					if (!AuthMechanism.Prompt.IsEmpty())
 					{
 #if !PLATFORM_ANDROID
 						KeyboardAuthenticate();
@@ -112,22 +112,22 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	}
 	
 	FAuthPayload Payload;
-	Payload.appId = AppId;
-	Payload.orgId = OrgId;
-	Payload.authSecret = AuthSecret;
-	Payload.deviceId = DeviceId;
-	Payload.tags = { };
-	Payload.sessionId = SessionId;
-	Payload.partner = Partner;
-	Payload.ipAddress = TEXT("");
-	Payload.deviceModel = HMDName;
-	Payload.geolocation = TMap<FString, FString>();
-	Payload.osVersion = FPlatformMisc::GetOSVersion();
-	Payload.xrdmVersion = TEXT("1.0.0");
-	Payload.appVersion = TEXT("1.0.0");
-	Payload.unrealVersion = FString::Printf(TEXT("%d.%d.%d"), ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION, ENGINE_PATCH_VERSION);
-	Payload.abxrLibVersion = IPluginManager::Get().FindPlugin(TEXT("AbxrLib"))->GetDescriptor().VersionName;
-	Payload.authMechanism = CreateAuthMechanismDict();
+	Payload.AppId = AppId;
+	Payload.OrgId = OrgId;
+	Payload.AuthSecret = AuthSecret;
+	Payload.DeviceId = DeviceId;
+	Payload.Tags = { };
+	Payload.SessionId = SessionId;
+	Payload.Partner = Partner;
+	Payload.IpAddress = TEXT("");
+	Payload.DeviceModel = HMDName;
+	Payload.Geolocation = TMap<FString, FString>();
+	Payload.OsVersion = FPlatformMisc::GetOSVersion();
+	Payload.XrdmVersion = TEXT("1.0.0");
+	Payload.AppVersion = TEXT("1.0.0");
+	Payload.UnrealVersion = FString::Printf(TEXT("%d.%d.%d"), ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION, ENGINE_PATCH_VERSION);
+	Payload.AbxrLibVersion = IPluginManager::Get().FindPlugin(TEXT("AbxrLib"))->GetDescriptor().VersionName;
+	Payload.AuthMechanism = CreateAuthMechanismDict();
 
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
@@ -156,11 +156,11 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 			OnComplete(false);
 			return;
 		}
-
+		
 		ResponseData = AuthResponse;
 
 		TArray<FString> Parts;
-		ResponseData.token.ParseIntoArray(Parts, TEXT("."));
+		ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
 		const FString PayloadBase64 = Parts[1];
 
 		FString DecodedPayloadJson;
@@ -197,7 +197,7 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 			FConfigPayload Config;
 			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
 			SetConfigFromPayload(Config);
-			AuthMechanism = Config.authMechanism;
+			AuthMechanism = Config.AuthMechanism;
 			UE_LOG(LogTemp, Log, TEXT("AbxrLib - GetConfiguration() successful"));
 			OnComplete(true);
 		}
@@ -214,16 +214,16 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 void Authentication::SetConfigFromPayload(const FConfigPayload& Payload)
 {
 	UAbxrLibConfiguration* Config = GetMutableDefault<UAbxrLibConfiguration>();
-    if (!Payload.restUrl.IsEmpty()) Config->SetRestUrl(Payload.restUrl);
-	if (!Payload.sendRetriesOnFailure.IsEmpty()) Config->SetSendRetriesOnFailure(FCString::Atoi(*Payload.sendRetriesOnFailure));
-	if (!Payload.sendRetryInterval.IsEmpty()) Config->SetSendRetryIntervalSeconds(FCString::Atoi(*Payload.sendRetryInterval));
-	if (!Payload.sendNextBatchWait.IsEmpty()) Config->SetSendNextBatchWaitSeconds(FCString::Atoi(*Payload.sendNextBatchWait));
-	if (!Payload.stragglerTimeout.IsEmpty()) Config->SetStragglerTimeoutSeconds(FCString::Atoi(*Payload.stragglerTimeout));
-	if (!Payload.dataEntriesPerSendAttempt.IsEmpty()) Config->SetDataEntriesPerSendAttempt(FCString::Atoi(*Payload.dataEntriesPerSendAttempt));
-	if (!Payload.storageEntriesPerSendAttempt.IsEmpty()) Config->SetStorageEntriesPerSendAttempt(FCString::Atoi(*Payload.storageEntriesPerSendAttempt));
-	if (!Payload.pruneSentItemsOlderThan.IsEmpty()) Config->SetPruneSentItemsOlderThanHours(FCString::Atoi(*Payload.pruneSentItemsOlderThan));
-	if (!Payload.maximumCachedItems.IsEmpty()) Config->SetMaximumCachedItems(FCString::Atoi(*Payload.maximumCachedItems));
-	if (!Payload.retainLocalAfterSent.IsEmpty()) Config->SetRetainLocalAfterSent(Payload.retainLocalAfterSent.ToBool());
+    if (!Payload.RestUrl.IsEmpty()) Config->SetRestUrl(Payload.RestUrl);
+	if (!Payload.SendRetriesOnFailure.IsEmpty()) Config->SetSendRetriesOnFailure(FCString::Atoi(*Payload.SendRetriesOnFailure));
+	if (!Payload.SendRetryInterval.IsEmpty()) Config->SetSendRetryIntervalSeconds(FCString::Atoi(*Payload.SendRetryInterval));
+	if (!Payload.SendNextBatchWait.IsEmpty()) Config->SetSendNextBatchWaitSeconds(FCString::Atoi(*Payload.SendNextBatchWait));
+	if (!Payload.StragglerTimeout.IsEmpty()) Config->SetStragglerTimeoutSeconds(FCString::Atoi(*Payload.StragglerTimeout));
+	if (!Payload.DataEntriesPerSendAttempt.IsEmpty()) Config->SetDataEntriesPerSendAttempt(FCString::Atoi(*Payload.DataEntriesPerSendAttempt));
+	if (!Payload.StorageEntriesPerSendAttempt.IsEmpty()) Config->SetStorageEntriesPerSendAttempt(FCString::Atoi(*Payload.StorageEntriesPerSendAttempt));
+	if (!Payload.PruneSentItemsOlderThan.IsEmpty()) Config->SetPruneSentItemsOlderThanHours(FCString::Atoi(*Payload.PruneSentItemsOlderThan));
+	if (!Payload.MaximumCachedItems.IsEmpty()) Config->SetMaximumCachedItems(FCString::Atoi(*Payload.MaximumCachedItems));
+	if (!Payload.RetainLocalAfterSent.IsEmpty()) Config->SetRetainLocalAfterSent(Payload.RetainLocalAfterSent.ToBool());
 }
 
 void Authentication::GetConfigData()
@@ -250,15 +250,15 @@ void Authentication::KeyboardAuthenticate()
 	NeedKeyboardAuth = true;
 	FString Prompt = TEXT("");
 	if (FailedAuthAttempts > 0) Prompt = TEXT("Authentication Failed (") + FString::FromInt(FailedAuthAttempts) + ")\n";
-	Prompt.Append(AuthMechanism.prompt);
-	UAbxr::PresentKeyboard(Prompt, AuthMechanism.type, AuthMechanism.domain);
+	Prompt.Append(AuthMechanism.Prompt);
+	UAbxr::PresentKeyboard(Prompt, AuthMechanism.Type, AuthMechanism.Domain);
 	FailedAuthAttempts++;
 }
 
 void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
 {
-	FString OriginalPrompt = AuthMechanism.prompt;
-	AuthMechanism.prompt = KeyboardInput;
+	FString OriginalPrompt = AuthMechanism.Prompt;
+	AuthMechanism.Prompt = KeyboardInput;
 	AuthRequest([OriginalPrompt](const bool bSuccess)
 	{
 		if (bSuccess)
@@ -268,7 +268,7 @@ void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
 		}
 		else
 		{
-			AuthMechanism.prompt = OriginalPrompt;
+			AuthMechanism.Prompt = OriginalPrompt;
 			KeyboardAuthenticate();
 		}
 	});
@@ -277,12 +277,12 @@ void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
 
 void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json)
 {
-	Request->SetHeader("Authorization", "Bearer " + ResponseData.token);
+	Request->SetHeader("Authorization", "Bearer " + ResponseData.Token);
 
 	const FString UnixTime = LexToString(FDateTime::UtcNow().ToUnixTimestamp());
 	Request->SetHeader("x-abxrlib-timestamp", UnixTime);
 
-	FString HashString = ResponseData.token + ResponseData.secret + UnixTime;
+	FString HashString = ResponseData.Token + ResponseData.Secret + UnixTime;
 	if (!Json.IsEmpty())
 	{
 		const uint32 CRC = Utils::ComputeCRC32(Json);
@@ -295,9 +295,9 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 TMap<FString, FString> Authentication::CreateAuthMechanismDict()
 {
 	TMap<FString, FString> Dict;
-	if (!AuthMechanism.type.IsEmpty()) Dict.Add(TEXT("type"), AuthMechanism.type);
-	if (!AuthMechanism.prompt.IsEmpty()) Dict.Add(TEXT("prompt"), AuthMechanism.prompt);
-	if (!AuthMechanism.domain.IsEmpty()) Dict.Add(TEXT("domain"), AuthMechanism.domain);
+	if (!AuthMechanism.Type.IsEmpty()) Dict.Add(TEXT("type"), AuthMechanism.Type);
+	if (!AuthMechanism.Prompt.IsEmpty()) Dict.Add(TEXT("prompt"), AuthMechanism.Prompt);
+	if (!AuthMechanism.Domain.IsEmpty()) Dict.Add(TEXT("domain"), AuthMechanism.Domain);
 	return Dict;
 }
 

@@ -18,31 +18,34 @@ struct FAuthPayload
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FString appId;
-	UPROPERTY() FString orgId;
-	UPROPERTY() FString authSecret;
-	UPROPERTY() FString deviceId;
-	UPROPERTY() FString userId;
-	UPROPERTY() TArray<FString> tags;
-	UPROPERTY() FString sessionId;
-	UPROPERTY() FString partner;
-	UPROPERTY() FString ipAddress;
-	UPROPERTY() FString deviceModel;
-	UPROPERTY() TMap<FString, FString> geolocation;
-	UPROPERTY() FString osVersion;
-	UPROPERTY() FString xrdmVersion;
-	UPROPERTY() FString appVersion;
-	UPROPERTY() FString unrealVersion;
-	UPROPERTY() FString abxrLibVersion;
-	UPROPERTY() TMap<FString, FString> authMechanism;
+	UPROPERTY() FString AppId;
+	UPROPERTY() FString OrgId;
+	UPROPERTY() FString AuthSecret;
+	UPROPERTY() FString DeviceId;
+	UPROPERTY() FString UserId;
+	UPROPERTY() TArray<FString> Tags;
+	UPROPERTY() FString SessionId;
+	UPROPERTY() FString Partner;
+	UPROPERTY() FString IpAddress;
+	UPROPERTY() FString DeviceModel;
+	UPROPERTY() TMap<FString, FString> Geolocation;
+	UPROPERTY() FString OsVersion;
+	UPROPERTY() FString XrdmVersion;
+	UPROPERTY() FString AppVersion;
+	UPROPERTY() FString UnrealVersion;
+	UPROPERTY() FString AbxrLibVersion;
+	UPROPERTY() TMap<FString, FString> AuthMechanism;
 };
 
 USTRUCT()
 struct FModuleData
 {
 	GENERATED_BODY()
-
-	UPROPERTY() TMap<FString, FString> Values;
+	
+	UPROPERTY() FString Id;
+	UPROPERTY() FString Name;
+	UPROPERTY() FString Target;
+	UPROPERTY() int Order;
 };
 
 USTRUCT()
@@ -50,13 +53,13 @@ struct FAuthResponse
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FString token;
-	UPROPERTY() FString secret;
-	UPROPERTY() TMap<FString, FString> userData;
-	UPROPERTY() FString userId;
-	UPROPERTY() FString appId;
-	UPROPERTY() FString packageName;
-	UPROPERTY() TArray<FModuleData> modules;
+	UPROPERTY() FString Token;
+	UPROPERTY() FString Secret;
+	UPROPERTY() TMap<FString, FString> UserData;
+	UPROPERTY() FString UserId;
+	UPROPERTY() FString AppId;
+	UPROPERTY() FString PackageName;
+	UPROPERTY() TArray<FModuleData> Modules;
 };
 
 USTRUCT()
@@ -64,9 +67,9 @@ struct FAuthMechanism
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FString type;
-	UPROPERTY() FString prompt;
-	UPROPERTY() FString domain;
+	UPROPERTY() FString Type;
+	UPROPERTY() FString Prompt;
+	UPROPERTY() FString Domain;
 };
 
 USTRUCT()
@@ -74,20 +77,20 @@ struct FConfigPayload
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FAuthMechanism authMechanism;
-	UPROPERTY() FString frameRateCapturePeriod;
-	UPROPERTY() FString telemetryCapturePeriod;
-	UPROPERTY() FString restUrl;
-	UPROPERTY() FString sendRetriesOnFailure;
-	UPROPERTY() FString sendRetryInterval;
-	UPROPERTY() FString sendNextBatchWait;
-	UPROPERTY() FString stragglerTimeout;
-	UPROPERTY() FString dataEntriesPerSendAttempt;
-	UPROPERTY() FString storageEntriesPerSendAttempt;
-	UPROPERTY() FString pruneSentItemsOlderThan;
-	UPROPERTY() FString maximumCachedItems;
-	UPROPERTY() FString retainLocalAfterSent;
-	UPROPERTY() FString positionCapturePeriod;
+	UPROPERTY() FAuthMechanism AuthMechanism;
+	UPROPERTY() FString FrameRateCapturePeriod;
+	UPROPERTY() FString TelemetryCapturePeriod;
+	UPROPERTY() FString RestUrl;
+	UPROPERTY() FString SendRetriesOnFailure;
+	UPROPERTY() FString SendRetryInterval;
+	UPROPERTY() FString SendNextBatchWait;
+	UPROPERTY() FString StragglerTimeout;
+	UPROPERTY() FString DataEntriesPerSendAttempt;
+	UPROPERTY() FString StorageEntriesPerSendAttempt;
+	UPROPERTY() FString PruneSentItemsOlderThan;
+	UPROPERTY() FString MaximumCachedItems;
+	UPROPERTY() FString RetainLocalAfterSent;
+	UPROPERTY() FString PositionCapturePeriod;
 };
 
 class Authentication
@@ -101,7 +104,7 @@ public:
 	static bool Authenticated()
 	{
 		const FDateTime Now = FDateTime::UtcNow();
-		return !ResponseData.token.IsEmpty() && !ResponseData.secret.IsEmpty() && Now.ToUnixTimestamp() <= TokenExpiry && NeedKeyboardAuth == false;
+		return !ResponseData.Token.IsEmpty() && !ResponseData.Secret.IsEmpty() && Now.ToUnixTimestamp() <= TokenExpiry && NeedKeyboardAuth == false;
 	}
 	
 	static void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
