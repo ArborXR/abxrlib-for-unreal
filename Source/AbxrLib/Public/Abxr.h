@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Authentication.h"
 #include "Engine/World.h"
+#include "GameFramework/SaveGame.h"
 #include "UObject/WeakObjectPtr.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Abxr.generated.h"
@@ -38,6 +39,15 @@ enum class EInteractionType : uint8
 	Matching     UMETA(DisplayName = "matching"),
 	Performance  UMETA(DisplayName = "performance"),
 	Sequencing   UMETA(DisplayName = "sequencing")
+};
+
+UCLASS()
+class USuperMetaSave : public USaveGame
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY() TMap<FString, FString> SuperMetaData;
 };
 
 UCLASS()
@@ -231,6 +241,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AbxrLib")
 	static TMap<FString, FString> GetUserData() { return Authentication::GetAuthResponse().UserData; }
 
+	// Register a super metadata that will be automatically included in all events
+	// super metadata persist across app sessions and are stored locally
+	static void Register(const FString& Key, const FString& Value);
+
+	// Register a super metadata only if it doesn't already exist
+	// Will not overwrite existing super metadata with the same key
+	static void RegisterOnce(const FString& Key, const FString& Value);
+	
+	// Remove a super metadata entry
+	static void Unregister(const FString& Key);
+
+	// Clear all super metadata
+	// Clears all super metadata from persistent storage
+	static void Reset();
+
+	// Get a copy of all current super metadata
+	static TMap<FString, FString> GetSuperMetaData();
+
+	static void LoadSuperMetaData();
+
 private:
 	static TMap<FString, int64> AssessmentStartTimes;
 	static TMap<FString, int64> ObjectiveStartTimes;
@@ -238,5 +268,15 @@ private:
 	static TMap<FString, int64> LevelStartTimes;
 	static TWeakObjectPtr<UWorld> GWorldWeak;
 
+	static TMap<FString, FString> SuperMetaData;
+	static const FString SuperMetaDataKey;
+
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
+	static void Register(const FString& Key, const FString& Value, bool Overwrite);
+	static void SaveSuperMetaData();
+	static bool IsReservedSuperMetaDataKey(const FString& Key);
+
+	// Private helper function to merge super metadata and module info into metadata
+	// Ensures data-specific metadata take precedence over super metadata and module info
+	static TMap<FString, FString> MergeSuperMetaData(TMap<FString, FString>& Meta);
 };

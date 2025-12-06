@@ -26,6 +26,7 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 		UE_LOG(LogTemp, Error, TEXT("Failed to get XRDM Service singleton"));
 	}
 #endif
+	UAbxr::LoadSuperMetaData();
 	if (GetDefault<UAbxrLibConfiguration>()->EnableAutoStartAuth)
 	{
 		if (GetDefault<UAbxrLibConfiguration>()->AuthenticationStartDelay > 0)

@@ -11,8 +11,10 @@ TMap<FString, int64> UAbxr::ObjectiveStartTimes;
 TMap<FString, int64> UAbxr::InteractionStartTimes;
 TMap<FString, int64> UAbxr::LevelStartTimes;
 TWeakObjectPtr<UWorld> UAbxr::GWorldWeak;
-
+TMap<FString, FString> UAbxr::SuperMetaData = TMap<FString, FString>();
+const FString UAbxr::SuperMetaDataKey = TEXT("AbxrSuperMetaData");
 FString LevelTracker::CurrentLevel = TEXT("N/A");
+
 
 void UAbxr::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
 {
@@ -42,6 +44,7 @@ void UAbxr::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
 void UAbxr::Log(const FString& Text, const ELogLevel Level, TMap<FString, FString> Meta)
 {
 	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
+	MergeSuperMetaData(Meta);
 	FString LevelText;
     switch (Level)
     {
@@ -71,6 +74,7 @@ void UAbxr::Log(const FString& Text, const ELogLevel Level, TMap<FString, FStrin
 void UAbxr::Event(const FString& Name, TMap<FString, FString> Meta)
 {
 	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
+	MergeSuperMetaData(Meta);
 	DataBatcher::AddEvent(Name, Meta);
 }
 
@@ -98,6 +102,7 @@ void UAbxr::Event(const FString& Name, const FVector& Position, TMap<FString, FS
 void UAbxr::Telemetry(const FString& Name, TMap<FString, FString> Meta)
 {
 	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
+	MergeSuperMetaData(Meta);
     DataBatcher::AddTelemetry(Name, Meta);
 }
 
@@ -357,4 +362,93 @@ void UAbxr::StartNewSession()
 {
 	Authentication::SetSessionId(FGuid::NewGuid().ToString());
 	Authenticate();
+}
+
+void UAbxr::Register(const FString& Key, const FString& Value, const bool Overwrite)
+{
+	if (IsReservedSuperMetaDataKey(Key))
+	{
+		const FString ErrorMessage = TEXT("AbxrLib: Cannot register super metadata with reserved key '") + Key +
+			TEXT("'. Reserved keys are: module, moduleName, moduleId, moduleOrder");
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *ErrorMessage);
+		TMap<FString, FString> Meta;
+		Meta.Add(TEXT("attempted_key"), Key);
+		Meta.Add(TEXT("attempted_value"), Value);
+		Meta.Add(TEXT("error_type"), TEXT("reserved_super_metadata_key"));
+		return;
+	}
+
+	if (Overwrite || !SuperMetaData.Contains(Key))
+	{
+		SuperMetaData.Add(Key, Value);
+		SaveSuperMetaData();
+	}
+}
+
+void UAbxr::Register(const FString& Key, const FString& Value)
+{
+	Register(Key, Value, true);
+}
+
+void UAbxr::RegisterOnce(const FString& Key, const FString& Value)
+{
+	Register(Key, Value, false);
+}
+
+void UAbxr::Unregister(const FString& Key)
+{
+	SuperMetaData.Remove(Key);
+	SaveSuperMetaData();
+}
+
+void UAbxr::Reset()
+{
+	SuperMetaData.Empty();
+	SaveSuperMetaData();
+}
+
+TMap<FString, FString> UAbxr::GetSuperMetaData()
+{
+	return SuperMetaData;
+}
+
+void UAbxr::LoadSuperMetaData()
+{
+	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(SuperMetaDataKey, 0))
+	{
+		if (const USuperMetaSave* SaveObject = Cast<USuperMetaSave>(Loaded))
+		{
+			SuperMetaData = SaveObject->SuperMetaData;
+		}
+	}
+}
+
+void UAbxr::SaveSuperMetaData()
+{
+	USuperMetaSave* SaveObject = Cast<USuperMetaSave>(UGameplayStatics::CreateSaveGameObject(USuperMetaSave::StaticClass()));
+	if (!SaveObject) return;
+
+	SaveObject->SuperMetaData = SuperMetaData;
+	UGameplayStatics::SaveGameToSlot(SaveObject, SuperMetaDataKey, 0);
+}
+
+TMap<FString, FString> UAbxr::MergeSuperMetaData(TMap<FString, FString>& Meta)
+{
+	// Add super metadata to metadata (includes manually-set moduleName/moduleId/moduleOrder when no LMS modules)
+	// Auth-provided module metadata takes precedence, so manually-set values only appear when no LMS modules exist
+	for (const TPair<FString, FString>& SuperMetaDataKeyValue : SuperMetaData)
+	{
+		// super metadata don't overwrite data-specific metadata or auth-provided module info
+		if (!Meta.Contains(SuperMetaDataKeyValue.Key))
+		{
+			Meta.Add(SuperMetaDataKeyValue.Key, SuperMetaDataKeyValue.Value);
+		}
+	}
+	
+	return Meta;
+}
+
+bool UAbxr::IsReservedSuperMetaDataKey(const FString& Key)
+{
+	return Key == TEXT("module") || Key == TEXT("moduleName") || Key == TEXT("moduleId") || Key == TEXT("moduleOrder");
 }
