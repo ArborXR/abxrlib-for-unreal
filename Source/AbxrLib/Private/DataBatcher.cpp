@@ -101,7 +101,7 @@ void DataBatcher::AddLog(const FString& Level, const FString& Text, const TMap<F
 void DataBatcher::Send()
 {
 	const int64 UnixSeconds = FDateTime::UtcNow().ToUnixTimestamp();
-	if (UnixSeconds - LastCallTime < MaxCallFrequencySeconds) return;
+	if (UnixSeconds - LastCallTime < GetDefault<UAbxrLibConfiguration>()->MaxCallFrequencySeconds) return;
 	LastCallTime = UnixSeconds;
 	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
 	if (!Authentication::Authenticated()) return;

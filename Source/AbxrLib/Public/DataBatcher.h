@@ -68,6 +68,4 @@ private:
 	static bool bStarted;
 	static double NextAt;
 	static FTSTicker::FDelegateHandle Ticker;
-
-	static constexpr double MaxCallFrequencySeconds = 1.0;
 };

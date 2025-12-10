@@ -93,13 +93,13 @@ bool UAbxrLibConfiguration::IsValid() const
         return false;
     }
 
-    /*if (MaxCallFrequencySeconds < 0.1f || MaxCallFrequencySeconds > 60.0f)
+    if (MaxCallFrequencySeconds < 0.1f || MaxCallFrequencySeconds > 60.0f)
     {
         UE_LOG(LogTemp, Error, TEXT("AbxrLib: Configuration validation failed - "
                                     "MaxCallFrequencySeconds must be between 0.1 and 60, got %s"),
                                     *LexToString(MaxCallFrequencySeconds));
         return false;
-    }*/
+    }
 
     if (DataEntriesPerSendAttempt < 1 || DataEntriesPerSendAttempt > 1000)
     {

@@ -81,6 +81,10 @@ public:
 	int StragglerTimeoutSeconds;
 	void SetStragglerTimeoutSeconds(const int NewStragglerTimeoutSeconds) {this->StragglerTimeoutSeconds = NewStragglerTimeoutSeconds;}
 
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Maximum Data Send Frequency Seconds"))
+	int MaxCallFrequencySeconds;
+	void SetMaxCallFrequencySeconds(const int NewMaxCallFrequencySeconds) {this->MaxCallFrequencySeconds = NewMaxCallFrequencySeconds;}
+
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Data Entries Per Send Attempt"))
 	int DataEntriesPerSendAttempt;
 	void SetDataEntriesPerSendAttempt(const int NewDataEntriesPerSendAttempt) {this->DataEntriesPerSendAttempt = NewDataEntriesPerSendAttempt;}
