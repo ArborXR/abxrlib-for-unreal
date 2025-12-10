@@ -35,6 +35,7 @@ FAuthResponse Authentication::ResponseData;
 
 void Authentication::Authenticate()
 {
+	if (!GetDefault<UAbxrLibConfiguration>()->IsValid()) return;
 	GetConfigData();
 	DeviceId = FGuid::NewGuid().ToString();
 #if PLATFORM_ANDROID

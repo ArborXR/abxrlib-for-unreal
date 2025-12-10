@@ -113,3 +113,45 @@ FString Utils::CombineUrl(const FString& Base, const FString& Path)
 
 	return NormalizedBase + TEXT("/") + NormalizedPath;
 }
+
+bool Utils::IsUuidFormat(const FString& Input)
+{
+	static const FRegexPattern UuidPattern(
+		TEXT("^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$")
+	);
+
+	FRegexMatcher Matcher(UuidPattern, Input);
+	return Matcher.FindNext(); // with ^ and $ this means full-string match
+}
+
+bool Utils::IsValidUrl(const FString& InUrl)
+{
+	FString Url = InUrl;
+	Url.TrimStartAndEndInline();
+
+	if (Url.IsEmpty()) return false;
+
+	// Find the scheme separator "://"
+	int32 SchemeEndIndex;
+	if (!Url.FindChar(TEXT(':'), SchemeEndIndex)) return false; // no ":"
+
+	// Require exactly "://"
+	if (!Url.Mid(SchemeEndIndex, 3).Equals(TEXT("://"))) return false;
+
+	// Extract and validate scheme
+	const FString Scheme = Url.Left(SchemeEndIndex);
+
+	const bool bIsHttp  = Scheme.Equals(TEXT("http"),  ESearchCase::IgnoreCase);
+	const bool bIsHttps = Scheme.Equals(TEXT("https"), ESearchCase::IgnoreCase);
+
+	if (!bIsHttp && !bIsHttps) return false;
+
+	// Ensure there’s something after "://"
+	const FString Remainder = Url.Mid(SchemeEndIndex + 3);
+	if (Remainder.IsEmpty()) return false;
+
+	// Reject spaces in the URL
+	if (Remainder.Contains(TEXT(" "))) return false;
+
+	return true;
+}

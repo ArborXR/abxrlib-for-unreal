@@ -9,28 +9,10 @@ class ABXRLIB_API UAbxrLibConfiguration : public UDeveloperSettings
 	GENERATED_BODY()
 
 public:
-	UAbxrLibConfiguration()
-	{
-		RestUrl = TEXT("https://lib-backend.xrdm.app/");
-		EnableAutomaticTelemetry = true;
-		HeadsetControllerTracking = true;
-		PositionCapturePeriodSeconds = 1;
-		EnableSceneEvents = true;
-		EnableAutoStartAuth = true;
-		AuthenticationStartDelay = 0;
-		FrameRateTrackingPeriodSeconds = 0.5f;
-		TelemetryTrackingPeriodSeconds = 10;
-		SendRetriesOnFailure = 3;
-		SendRetryIntervalSeconds = 3;
-		SendNextBatchWaitSeconds = 30;
-		StragglerTimeoutSeconds = 15;
-		DataEntriesPerSendAttempt = 32;
-		StorageEntriesPerSendAttempt = 16;
-		PruneSentItemsOlderThanHours = 12;
-		MaximumCachedItems = 1024;
-		RetainLocalAfterSent = false;
-	}
-
+	UAbxrLibConfiguration();
+	
+	bool IsValid() const;
+	
 	// Where it appears in Project Settings
 	virtual FName GetCategoryName() const override { return TEXT("Plugins"); }
 	virtual FName GetSectionName() const override { return TEXT("AbxrLib"); }
