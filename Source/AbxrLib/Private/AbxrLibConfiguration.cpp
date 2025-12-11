@@ -16,6 +16,7 @@ UAbxrLibConfiguration::UAbxrLibConfiguration()
 	SendRetryIntervalSeconds = 3;
 	SendNextBatchWaitSeconds = 30;
 	StragglerTimeoutSeconds = 15;
+	MaxCallFrequencySeconds = 1;
 	DataEntriesPerSendAttempt = 32;
 	StorageEntriesPerSendAttempt = 16;
 	PruneSentItemsOlderThanHours = 12;
