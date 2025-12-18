@@ -45,7 +45,7 @@ struct FModuleData
 	UPROPERTY() FString Id;
 	UPROPERTY() FString Name;
 	UPROPERTY() FString Target;
-	UPROPERTY() int Order;
+	UPROPERTY() int Order = 0;
 };
 
 USTRUCT()
