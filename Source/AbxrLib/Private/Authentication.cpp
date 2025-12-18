@@ -52,11 +52,7 @@ void Authentication::Authenticate()
 				{
 					if (!AuthMechanism.Prompt.IsEmpty())
 					{
-#if !PLATFORM_ANDROID
 						KeyboardAuthenticate();
-#else
-						NeedKeyboardAuth = false; // TODO can't do this yet
-#endif
 					}
 					else
 					{
