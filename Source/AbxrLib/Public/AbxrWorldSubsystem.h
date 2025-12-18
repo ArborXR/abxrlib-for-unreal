@@ -9,6 +9,7 @@ class ABXRLIB_API UAbxrWorldSubsystem : public UWorldSubsystem
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
+	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
 private:
 	bool bWorldReady = false;

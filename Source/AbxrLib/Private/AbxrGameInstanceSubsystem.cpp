@@ -11,7 +11,7 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 	if (bInitialized) return;
 	bInitialized = true;
 	Super::Initialize(Collection);
-	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
+	/*PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
 		this, 
 		&UAbxrGameInstanceSubsystem::OnPostLoadMapWithWorld
 	);
@@ -49,7 +49,7 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 		UE_LOG(LogTemp, Log, TEXT("AbxrLib: Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
 	}
 	
-	DataBatcher::Start();
+	DataBatcher::Start();*/
 }
 
 void UAbxrGameInstanceSubsystem::Deinitialize()

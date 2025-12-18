@@ -1,5 +1,6 @@
 #include "AbxrWorldSubsystem.h"
 #include "Abxr.h"
+#include "VRPopupLibrary.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 
@@ -17,4 +18,13 @@ void UAbxrWorldSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
 	bWorldReady = false;
+}
+
+void UAbxrWorldSubsystem::OnWorldBeginPlay(UWorld& InWorld)
+{
+	FTimerHandle Handle;
+	InWorld.GetTimerManager().SetTimer(Handle, [&InWorld]
+	{
+		UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(&InWorld, 1000.f, 0.f);
+	}, 0.2f, false);
 }
