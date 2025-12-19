@@ -66,6 +66,8 @@ static UWidgetInteractionComponent* EnsureWIC(APawn* Pawn, USceneComponent* Atta
     WIC->InteractionDistance = 1000.f;
     WIC->VirtualUserIndex    = 0;
     WIC->PointerIndex        = PointerIndex;
+	WIC->bEnableHitTesting = true;
+	WIC->TraceChannel = ECC_Visibility;
 
     // IMPORTANT: makes a visible line/sphere so you know it's alive
     WIC->bShowDebug = true;
