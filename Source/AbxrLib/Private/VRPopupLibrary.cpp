@@ -22,19 +22,8 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(
         UE_LOG(LogTemp, Warning, TEXT("SpawnPopupButtonInFrontOfPlayer: World is null"));
         return nullptr;
     }
-
-    // Hard-coded asset path to BP_VRPopupActor
-    // Make sure this matches your "Copy Reference", with _C at the end
-    /*const TCHAR* PopupActorPath = TEXT("Blueprint'/Game/VRPopup/BP_VRPopupActor.BP_VRPopupActor_C'");
     
-    UClass* PopupActorClass = LoadClass<AActor>(nullptr, PopupActorPath);
-    if (!PopupActorClass)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SpawnPopupButtonInFrontOfPlayer: Failed to load class from path: %s"), PopupActorPath);
-        return nullptr;
-    }*/
-
-    TSoftClassPtr<AActor> PopupActorPtr(FSoftObjectPath(TEXT("/AbxrLib/BP_VRPopupActor.BP_VRPopupActor_C")));
+    TSoftClassPtr<AActor> PopupActorPtr(FSoftObjectPath(TEXT("/AbxrLib/UI/BP_VRPopupActor.BP_VRPopupActor_C")));
     UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();
 
     if (!PopupActorClass)
