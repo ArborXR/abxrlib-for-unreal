@@ -12,5 +12,8 @@ public:
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
 private:
+	UFUNCTION()
+	void HandlePopupClicked(const FText& ButtonText);
+
 	bool bWorldReady = false;
 };
