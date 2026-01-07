@@ -25,6 +25,6 @@ void UAbxrWorldSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	FTimerHandle Handle;
 	InWorld.GetTimerManager().SetTimer(Handle, [&InWorld]
 	{
-		UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(&InWorld, 1000.f, 0.f);
+		UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(&InWorld, 400.f, 0.f);
 	}, 0.2f, false);
 }
