@@ -22,46 +22,51 @@ void UAbxrWorldSubsystem::Deinitialize()
 	bWorldReady = false;
 }
 
-void UAbxrWorldSubsystem::OnWorldBeginPlay(UWorld& InWorld)
+// In UAbxrWorldSubsystem.cpp
+void UAbxrWorldSubsystem::ShowKeyboardUI(float Distance, float VerticalOffset)
 {
-	FTimerHandle Handle;
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShowKeyboardUI: No World"));
+		return;
+	}
 
-	// Use a weak pointer so the lambda doesn't keep a dead subsystem alive.
+	// Keep handle as a member if you want to cancel later; local is fine if you don't care
+	FTimerHandle Handle;
 	TWeakObjectPtr WeakThis(this);
 
-	InWorld.GetTimerManager().SetTimer(Handle, [&InWorld, WeakThis]
+	World->GetTimerManager().SetTimer(Handle, [World, WeakThis, Distance, VerticalOffset]()
 	{
-		if (!WeakThis.IsValid())
-		{
-			return;
-		}
+		if (!WeakThis.IsValid() || !World) return;
 
-		AActor* Spawned = UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(&InWorld, 400.f, 0.f);
+		AActor* Spawned = UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(World, Distance, VerticalOffset);
 		if (!Spawned)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Popup spawn failed"));
+			UE_LOG(LogTemp, Warning, TEXT("ShowKeyboardUI: Popup spawn failed"));
 			return;
 		}
 
 		UWidgetComponent* WC = Spawned->FindComponentByClass<UWidgetComponent>();
 		if (!WC)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Spawned popup has no WidgetComponent: %s"), *GetNameSafe(Spawned));
+			UE_LOG(LogTemp, Warning, TEXT("ShowKeyboardUI: Spawned popup has no WidgetComponent: %s"), *GetNameSafe(Spawned));
 			return;
 		}
 
 		UVRPopupWidget* PopupWidget = Cast<UVRPopupWidget>(WC->GetUserWidgetObject());
 		if (!PopupWidget)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Widget is not UVRPopupWidget. Got: %s"), *GetNameSafe(WC->GetUserWidgetObject()));
+			UE_LOG(LogTemp, Warning, TEXT("ShowKeyboardUI: Widget is not UVRPopupWidget. Got: %s"), *GetNameSafe(WC->GetUserWidgetObject()));
 			return;
 		}
 
-		// Bind C++ handler
+		PopupWidget->OnPopupButtonClicked.RemoveAll(WeakThis.Get()); // avoid double-binding
 		PopupWidget->OnPopupButtonClicked.AddDynamic(WeakThis.Get(), &UAbxrWorldSubsystem::HandlePopupClicked);
 
-		UE_LOG(LogTemp, Log, TEXT("Bound popup click delegate. Current text: %s"),
+		UE_LOG(LogTemp, Log, TEXT("ShowKeyboardUI: Bound popup click delegate. Current text: %s"),
 			*PopupWidget->CurrentButtonText.ToString());
+
 	}, 0.2f, false);
 }
 

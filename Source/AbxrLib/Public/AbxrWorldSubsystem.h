@@ -9,7 +9,9 @@ class ABXRLIB_API UAbxrWorldSubsystem : public UWorldSubsystem
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
-	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+	
+	UFUNCTION(BlueprintCallable)
+	void ShowKeyboardUI(float Distance = 400.f, float VerticalOffset = 0.f);
 
 private:
 	UFUNCTION()
