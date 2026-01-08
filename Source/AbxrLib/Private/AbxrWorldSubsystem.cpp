@@ -1,8 +1,8 @@
 #include "AbxrWorldSubsystem.h"
 #include "Abxr.h"
-#include "VRPopupLibrary.h"
+#include "UI/VRPopupLibrary.h"
 #include "Components/WidgetComponent.h"
-#include "VRPopupWidget.h"
+#include "UI/VRPopupWidget.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 

@@ -1,5 +1,5 @@
 // VRPopupWidget.cpp
-#include "VRPopupWidget.h"
+#include "UI/VRPopupWidget.h"
 
 void UVRPopupWidget::NotifyClicked()
 {

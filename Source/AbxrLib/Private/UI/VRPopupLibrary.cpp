@@ -1,6 +1,4 @@
-// VRPopupLibrary.cpp
-
-#include "VRPopupLibrary.h"
+#include "UI/VRPopupLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
