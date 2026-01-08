@@ -3,10 +3,7 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 
-AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(
-    UObject* WorldContextObject,
-    float Distance,
-    float VerticalOffset)
+AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextObject)
 {
     if (!WorldContextObject)
     {
@@ -43,8 +40,8 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(
     PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
     FVector Forward = ViewRotation.Vector();
-    FVector SpawnLocation = ViewLocation + Forward * Distance;
-    SpawnLocation.Z += VerticalOffset;
+    FVector SpawnLocation = ViewLocation + Forward * 400;  // Distance
+    SpawnLocation.Z += 0;  // Vertical offset
 
     // Make it face the player, but keep it level if you want
     FRotator SpawnRotation = ViewRotation;
@@ -55,13 +52,7 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(
     Params.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-    AActor* Spawned = World->SpawnActor<AActor>(
-        PopupActorClass,
-        SpawnLocation,
-        SpawnRotation,
-        Params
-    );
-
+    AActor* Spawned = World->SpawnActor<AActor>(PopupActorClass, SpawnLocation, SpawnRotation, Params);
     if (!Spawned)
     {
         UE_LOG(LogTemp, Warning, TEXT("SpawnPopupButtonInFrontOfPlayer: Failed to spawn popup actor"));

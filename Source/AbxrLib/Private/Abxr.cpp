@@ -1,5 +1,5 @@
 #include "Abxr.h"
-#include "AbxrWorldSubsystem.h"
+#include "UI/AbxrUISubsystem.h"
 #include "Authentication.h"
 #include "DataBatcher.h"
 #include "LevelTracker.h"
@@ -200,10 +200,11 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 
 void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 {
-	TWeakObjectPtr<UWorld> Snap = GWorldWeak;
-	if (UAbxrWorldSubsystem* Subsys = Snap.Get()->GetSubsystem<UAbxrWorldSubsystem>())
+	const TWeakObjectPtr<UWorld> Snap = GWorldWeak;
+	const UWorld* World = Snap.Get();
+	if (UAbxrUISubsystem* Subsys = World->GetGameInstance()->GetSubsystem<UAbxrUISubsystem>())
 	{
-		Subsys->ShowKeyboardUI(400.f, 0.f);
+		Subsys->ShowKeyboardUI();
 	}
 }
 
