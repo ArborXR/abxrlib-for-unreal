@@ -4,25 +4,25 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
-
-static void UpdatePopupInFrontOfPlayer(UWorld* World, APlayerController* PC, AActor* Popup, float DistanceCm, float ZOffsetCm)
+static void UpdatePopupInFrontOfPlayer(UWorld* World, APlayerController* PC, AActor* Popup, float DistanceCm, float FixedWorldZ)
 {
-    if (!World || !PC || !Popup)
-    {
-        return;
-    }
+    if (!World || !PC || !Popup) return;
 
     FVector ViewLocation;
     FRotator ViewRotation;
     PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
-    const FVector Forward = ViewRotation.Vector();
-    FVector TargetLoc = ViewLocation + Forward * DistanceCm;
-    TargetLoc.Z += ZOffsetCm;
+    // Use yaw-only so pitch doesn't move it up/down or change perceived distance
+    const FRotator YawRot(0.f, ViewRotation.Yaw, 0.f);
+    const FVector Forward = YawRot.Vector();
 
-    FRotator TargetRot = ViewRotation;
-    TargetRot.Pitch = 0.f;
-    TargetRot.Roll = 0.f;
+    FVector TargetLoc = ViewLocation + Forward * DistanceCm;
+
+    // Lock height (no head bob)
+    TargetLoc.Z = FixedWorldZ;
+
+    // Face the player (yaw-only)
+    const FRotator TargetRot(0.f, ViewRotation.Yaw, 0.f);
 
     Popup->SetActorLocationAndRotation(TargetLoc, TargetRot, false, nullptr, ETeleportType::TeleportPhysics);
 }
@@ -65,10 +65,10 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextOb
 
     FVector Forward = ViewRotation.Vector();
     const float DistanceCm = 80.f;   // ~0.8m in front of HMD
-    const float ZOffsetCm  = -15.f;  // slightly below eye line
+    //const float ZOffsetCm  = -10.f;  // slightly below eye line
 
     FVector SpawnLocation = ViewLocation + Forward * DistanceCm;
-    SpawnLocation.Z += ZOffsetCm;
+    //SpawnLocation.Z += ZOffsetCm;
 
     // Make it face the player, but keep it level if you want
     FRotator SpawnRotation = ViewRotation;
@@ -94,9 +94,11 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextOb
     // Store the timer handle in a shared ref so the lambda can clear itself.
     TSharedRef<FTimerHandle, ESPMode::ThreadSafe> FollowHandle = MakeShared<FTimerHandle, ESPMode::ThreadSafe>();
 
+    const float FixedWorldZ = SpawnLocation.Z;
+
     World->GetTimerManager().SetTimer(
         *FollowHandle,
-        [WeakWorld, WeakPopup, FollowHandle, DistanceCm, ZOffsetCm]()
+        [WeakWorld, WeakPopup, FollowHandle, DistanceCm, FixedWorldZ]()
         {
             if (!WeakWorld.IsValid())
             {
@@ -117,13 +119,13 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextOb
                 return;
             }
 
-            UpdatePopupInFrontOfPlayer(W, PC2, WeakPopup.Get(), DistanceCm, ZOffsetCm);
+            UpdatePopupInFrontOfPlayer(W, PC2, WeakPopup.Get(), DistanceCm, FixedWorldZ);
         },
         1.0f / 60.0f,
         true);
 
     // Make sure it starts at the right spot immediately
-    UpdatePopupInFrontOfPlayer(World, PC, Spawned, DistanceCm, ZOffsetCm);
+    UpdatePopupInFrontOfPlayer(World, PC, Spawned, DistanceCm, FixedWorldZ);
 
     return Spawned;
 }
