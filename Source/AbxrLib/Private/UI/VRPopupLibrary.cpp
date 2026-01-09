@@ -2,6 +2,30 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "TimerManager.h"
+
+
+static void UpdatePopupInFrontOfPlayer(UWorld* World, APlayerController* PC, AActor* Popup, float DistanceCm, float ZOffsetCm)
+{
+    if (!World || !PC || !Popup)
+    {
+        return;
+    }
+
+    FVector ViewLocation;
+    FRotator ViewRotation;
+    PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
+
+    const FVector Forward = ViewRotation.Vector();
+    FVector TargetLoc = ViewLocation + Forward * DistanceCm;
+    TargetLoc.Z += ZOffsetCm;
+
+    FRotator TargetRot = ViewRotation;
+    TargetRot.Pitch = 0.f;
+    TargetRot.Roll = 0.f;
+
+    Popup->SetActorLocationAndRotation(TargetLoc, TargetRot, false, nullptr, ETeleportType::TeleportPhysics);
+}
 
 AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextObject)
 {
@@ -18,7 +42,7 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextOb
         return nullptr;
     }
     
-    TSoftClassPtr<AActor> PopupActorPtr(FSoftObjectPath(TEXT("/AbxrLib/UI/BP_VRPopupActor.BP_VRPopupActor_C")));
+    TSoftClassPtr<AActor> PopupActorPtr(FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C")));
     UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();
 
     if (!PopupActorClass)
@@ -40,8 +64,11 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextOb
     PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
     FVector Forward = ViewRotation.Vector();
-    FVector SpawnLocation = ViewLocation + Forward * 400;  // Distance
-    SpawnLocation.Z += 0;  // Vertical offset
+    const float DistanceCm = 80.f;   // ~0.8m in front of HMD
+    const float ZOffsetCm  = -15.f;  // slightly below eye line
+
+    FVector SpawnLocation = ViewLocation + Forward * DistanceCm;
+    SpawnLocation.Z += ZOffsetCm;
 
     // Make it face the player, but keep it level if you want
     FRotator SpawnRotation = ViewRotation;
@@ -56,7 +83,47 @@ AActor* UVRPopupLibrary::SpawnPopupButtonInFrontOfPlayer(UObject* WorldContextOb
     if (!Spawned)
     {
         UE_LOG(LogTemp, Warning, TEXT("SpawnPopupButtonInFrontOfPlayer: Failed to spawn popup actor"));
+        return nullptr;
     }
+
+    // Keep the popup in front of the player's view (VR-friendly "Option A").
+    // Uses weak pointers so we don't keep dead objects alive.
+    TWeakObjectPtr<UWorld> WeakWorld(World);
+    TWeakObjectPtr<AActor> WeakPopup(Spawned);
+
+    // Store the timer handle in a shared ref so the lambda can clear itself.
+    TSharedRef<FTimerHandle, ESPMode::ThreadSafe> FollowHandle = MakeShared<FTimerHandle, ESPMode::ThreadSafe>();
+
+    World->GetTimerManager().SetTimer(
+        *FollowHandle,
+        [WeakWorld, WeakPopup, FollowHandle, DistanceCm, ZOffsetCm]()
+        {
+            if (!WeakWorld.IsValid())
+            {
+                return;
+            }
+
+            UWorld* W = WeakWorld.Get();
+            if (!WeakPopup.IsValid())
+            {
+                // Popup destroyed: stop ticking
+                W->GetTimerManager().ClearTimer(*FollowHandle);
+                return;
+            }
+
+            APlayerController* PC2 = UGameplayStatics::GetPlayerController(W, 0);
+            if (!PC2)
+            {
+                return;
+            }
+
+            UpdatePopupInFrontOfPlayer(W, PC2, WeakPopup.Get(), DistanceCm, ZOffsetCm);
+        },
+        1.0f / 60.0f,
+        true);
+
+    // Make sure it starts at the right spot immediately
+    UpdatePopupInFrontOfPlayer(World, PC, Spawned, DistanceCm, ZOffsetCm);
 
     return Spawned;
 }
