@@ -3,6 +3,21 @@
 #include "UI/VRPopupLibrary.h"
 #include "UI/VRPopupWidget.h"
 
+static bool SetUserWidgetTextProperty(UUserWidget* Widget, FName PropertyName, const FText& Value)
+{
+	if (!Widget) return false;
+
+	if (FProperty* Prop = Widget->GetClass()->FindPropertyByName(PropertyName))
+	{
+		if (FTextProperty* TextProp = CastField<FTextProperty>(Prop))
+		{
+			TextProp->SetPropertyValue_InContainer(Widget, Value);
+			return true;
+		}
+	}
+	return false;
+}
+
 void UAbxrUISubsystem::ShowKeyboardUI()
 {
 	UWorld* World = GetWorld();
@@ -40,6 +55,15 @@ void UAbxrUISubsystem::ShowKeyboardUI()
 			UE_LOG(LogTemp, Warning, TEXT("ShowKeyboardUI: Widget is not UVRPopupWidget. Got: %s"), *GetNameSafe(WC->GetUserWidgetObject()));
 			return;
 		}
+
+		const FText Prompt = FText::FromString(TEXT("Enter PIN!!!"));
+		if (!SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), Prompt))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Could not set PromptText on PinPad widget (check variable name/type)."));
+		}
+
+		// If the widget is already constructed/visible, force it to re-push values:
+		PopupWidget->SynchronizeProperties();
 
 		PopupWidget->OnPopupButtonClicked.RemoveAll(WeakThis.Get()); // avoid double-binding
 		PopupWidget->OnPopupButtonClicked.AddDynamic(WeakThis.Get(), &UAbxrUISubsystem::HandlePopupClicked);
