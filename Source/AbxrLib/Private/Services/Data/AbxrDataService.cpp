@@ -1,4 +1,4 @@
-#include "DataBatcher.h"
+#include "AbxrDataService.h"
 #include "Services/Config/AbxrSettings.h"
 #include "Authentication.h"
 #include "HttpModule.h"
@@ -7,31 +7,22 @@
 #include "Interfaces/IHttpResponse.h"
 #include "HAL/PlatformTime.h"
 
-FCriticalSection DataBatcher::Mutex;
-TArray<FAbxrEventPayload> DataBatcher::EventPayloads;
-TArray<FAbxrTelemetryPayload> DataBatcher::TelemetryPayloads;
-TArray<FAbxrLogPayload> DataBatcher::LogPayloads;
-int64 DataBatcher::LastCallTime = 0;
-bool DataBatcher::bStarted = false;
-double DataBatcher::NextAt = 0.0;
-FTSTicker::FDelegateHandle DataBatcher::Ticker;
-
-bool DataBatcher::Tick(float /*DeltaTime*/)
+bool FAbxrDataService::Tick(float /*DeltaTime*/)
 {
 	const double Now = FPlatformTime::Seconds();
 	if (Now >= NextAt) Send();
 	return true;
 }
 
-void DataBatcher::Start()
+void FAbxrDataService::Start()
 {
 	if (bStarted) return;
 	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendNextBatchWaitSeconds;
-	Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick), 0.25f);
+	Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FAbxrDataService::Tick), 0.25f);
 	bStarted = true;
 }
 
-void DataBatcher::Stop()
+void FAbxrDataService::Stop()
 {
 	if (!bStarted) return;
 	bStarted = false;
@@ -44,12 +35,12 @@ void DataBatcher::Stop()
 
 static FString MakePreciseTimestamp()
 {
-	FDateTime Now = FDateTime::UtcNow();
-	int64 UnixMillis = Now.ToUnixTimestamp() * 1000 + Now.GetMillisecond();
+	const FDateTime Now = FDateTime::UtcNow();
+	const int64 UnixMillis = Now.ToUnixTimestamp() * 1000 + Now.GetMillisecond();
 	return FString::Printf(TEXT("%lld"), UnixMillis);
 }
 
-void DataBatcher::AddEvent(const FString& Name, const TMap<FString, FString>& Meta)
+void FAbxrDataService::AddEvent(const FString& Name, const TMap<FString, FString>& Meta)
 {
 	FAbxrEventPayload Payload;
 	Payload.preciseTimestamp = MakePreciseTimestamp();
@@ -65,7 +56,7 @@ void DataBatcher::AddEvent(const FString& Name, const TMap<FString, FString>& Me
 	}
 }
 
-void DataBatcher::AddTelemetry(const FString& Name, const TMap<FString, FString>& Meta)
+void FAbxrDataService::AddTelemetry(const FString& Name, const TMap<FString, FString>& Meta)
 {
 	FAbxrTelemetryPayload Payload;
 	Payload.preciseTimestamp = MakePreciseTimestamp();
@@ -81,7 +72,7 @@ void DataBatcher::AddTelemetry(const FString& Name, const TMap<FString, FString>
 	}
 }
 
-void DataBatcher::AddLog(const FString& Level, const FString& Text, const TMap<FString, FString>& Meta)
+void FAbxrDataService::AddLog(const FString& Level, const FString& Text, const TMap<FString, FString>& Meta)
 {
 	FAbxrLogPayload Payload;
 	Payload.preciseTimestamp = MakePreciseTimestamp();
@@ -98,7 +89,7 @@ void DataBatcher::AddLog(const FString& Level, const FString& Text, const TMap<F
 	}
 }
 
-void DataBatcher::Send()
+void FAbxrDataService::Send()
 {
 	const int64 UnixSeconds = FDateTime::UtcNow().ToUnixTimestamp();
 	if (UnixSeconds - LastCallTime < GetDefault<UAbxrSettings>()->MaxCallFrequencySeconds) return;
@@ -134,7 +125,7 @@ void DataBatcher::Send()
 	Authentication::SetAuthHeaders(Request, Json);
 
 	Request->OnProcessRequestComplete().BindLambda(
-		[EventsToSend, TelemetriesToSend, LogsToSend](FHttpRequestPtr, const FHttpResponsePtr& Response, bool bWasSuccessful)
+		[EventsToSend, TelemetriesToSend, LogsToSend, this](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 		{
 			if (!bWasSuccessful || !Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
 			{

@@ -1,6 +1,7 @@
 #pragma once
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Types/AbxrTypes.h"
+#include "Services/Data/AbxrDataService.h"
 #include "AbxrSubsystem.generated.h"
 
 UCLASS()
@@ -224,6 +225,8 @@ private:
 	// Private helper function to merge super metadata and module info into metadata
 	// Ensures data-specific metadata take precedence over super metadata and module info
 	TMap<FString, FString> MergeSuperMetaData(TMap<FString, FString>& Meta);
+	
+	TUniquePtr<FAbxrDataService> DataService;
 	
 	FTimerHandle AuthenticationTimerHandle;
 	FDelegateHandle PostLoadMapHandle;

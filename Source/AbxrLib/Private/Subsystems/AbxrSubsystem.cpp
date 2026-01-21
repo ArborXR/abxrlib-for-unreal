@@ -2,7 +2,6 @@
 #include "AbxrLibAPI_Internal.h"
 #include "Authentication.h"
 #include "Services/Config/AbxrSettings.h"
-#include "DataBatcher.h"
 #include "Services/Platform/XRDM/XRDMService.h"
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
@@ -16,6 +15,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	bInitialized = true;
 	Super::Initialize(Collection);
 	AbxrLib_SetActiveSubsystem(this);
+	DataService = MakeUnique<FAbxrDataService>();
 	SuperMetaData = TMap<FString, FString>();
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
 		this, 
@@ -55,12 +55,17 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		UE_LOG(LogTemp, Log, TEXT("AbxrLib: Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
 	}
 	
-	DataBatcher::Start();
+	DataService->Start();
 }
 
 void UAbxrSubsystem::Deinitialize()
 {
-	DataBatcher::Stop();
+	if (DataService)
+	{
+		DataService->Stop();
+		DataService.Reset();
+	}
+	
 	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
 	
 	AbxrLib_ClearActiveSubsystem(this);
@@ -143,14 +148,14 @@ void UAbxrSubsystem::Log(const FString& Text, const ELogLevel Level, TMap<FStrin
             break;
     }
 
-	DataBatcher::AddLog(LevelText, Text, Meta);
+	DataService->AddLog(LevelText, Text, Meta);
 }
 
 void UAbxrSubsystem::Event(const FString& Name, TMap<FString, FString> Meta)
 {
 	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
-	DataBatcher::AddEvent(Name, Meta);
+	DataService->AddEvent(Name, Meta);
 }
 
 /**
@@ -178,7 +183,7 @@ void UAbxrSubsystem::Telemetry(const FString& Name, TMap<FString, FString> Meta)
 {
 	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
-    DataBatcher::AddTelemetry(Name, Meta);
+    DataService->AddTelemetry(Name, Meta);
 }
 
 void UAbxrSubsystem::EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta)
@@ -197,7 +202,7 @@ void UAbxrSubsystem::EventAssessmentComplete(const FString& AssessmentName, cons
 	Meta.Add(TEXT("status"), StaticEnum<EEventStatus>()->GetNameStringByValue(static_cast<int64>(Status)));
 	AddDuration(AssessmentStartTimes, AssessmentName, Meta);
 	Event(AssessmentName, Meta);
-	DataBatcher::Send();
+	DataService->Send();
 }
 
 void UAbxrSubsystem::EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta)
