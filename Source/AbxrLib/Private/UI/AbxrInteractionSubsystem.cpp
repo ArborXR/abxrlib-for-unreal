@@ -5,13 +5,6 @@
 #include "GameFramework/Pawn.h"
 #include "Components/SceneComponent.h"
 #include "Components/WidgetInteractionComponent.h"
-#include "Subsystems/AbxrSubsystem.h"
-
-void UAbxrInteractionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
-{
-    Collection.InitializeDependency<UAbxrSubsystem>();
-    Super::Initialize(Collection);
-}
 
 APawn* UAbxrInteractionSubsystem::GetLocalPawn() const
 {

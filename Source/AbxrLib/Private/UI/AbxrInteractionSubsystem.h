@@ -2,38 +2,8 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "InputCoreTypes.h"
+#include "Types/AbxrTypes.h"
 #include "AbxrInteractionSubsystem.generated.h"
-
-class UWidgetInteractionComponent;
-class AAbxrLaserPointerActor;
-
-USTRUCT()
-struct FAbxrWidgetInteractionBackup
-{
-    GENERATED_BODY()
-
-    bool bValid = false;
-
-    TEnumAsByte<ECollisionChannel> TraceChannel;
-    float InteractionDistance;
-    bool bShowDebug;
-};
-
-USTRUCT()
-struct FAbxrWidgetInteractionHandle
-{
-    GENERATED_BODY()
-
-    UPROPERTY()
-    TObjectPtr<UWidgetInteractionComponent> WidgetInteraction = nullptr;
-
-    // If we found an existing one and changed settings, store backup
-    FAbxrWidgetInteractionBackup Backup;
-
-    // Laser actor we spawned (always ours; we destroy it on End)
-    UPROPERTY()
-    TObjectPtr<AAbxrLaserPointerActor> LaserActor = nullptr;
-};
 
 UCLASS(BlueprintType)
 class ABXRLIB_API UAbxrInteractionSubsystem : public UGameInstanceSubsystem
@@ -41,8 +11,6 @@ class ABXRLIB_API UAbxrInteractionSubsystem : public UGameInstanceSubsystem
     GENERATED_BODY()
 
 public:
-    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-    
     UFUNCTION()
     void BeginUIInteraction();
     
