@@ -7,6 +7,8 @@ class ABXRLIB_API UAbxrUISubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 public:
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	
 	UFUNCTION()
 	void ShowKeyboardUI(const FText& PromptText = FText::FromString(TEXT("Enter PIN")));
 

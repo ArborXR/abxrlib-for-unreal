@@ -11,13 +11,13 @@ class ABXRLIB_API UTelemetrySubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
-	public:
+public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	private:
+private:
 	void CaptureTelemetry() const;
-	void CaptureFrameRate() const;
+	void CaptureFrameRate();
 	void CapturePositionData() const;
 	FTimerHandle TelemetryTimerHandle;
 	FTimerHandle FrameRateTimerHandle;

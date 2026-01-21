@@ -2,8 +2,15 @@
 #include "Authentication.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystems/AbxrSubsystem.h"
 #include "UI/AbxrInteractionSubsystem.h"
 #include "UI/VRPopupWidget.h"
+
+void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Collection.InitializeDependency<UAbxrSubsystem>();
+    Super::Initialize(Collection);
+}
 
 static void UpdatePopupInFrontOfPlayer(const UWorld* World, const APlayerController* PC, AActor* Popup, const float DistanceCm, const float FixedWorldZ)
 {

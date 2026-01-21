@@ -1,4 +1,5 @@
 #pragma once
+#include "GameFramework/SaveGame.h"
 #include "AbxrTypes.generated.h"
 
 USTRUCT()
@@ -160,4 +161,13 @@ enum class EInteractionType : uint8
 	Matching     UMETA(DisplayName = "matching"),
 	Performance  UMETA(DisplayName = "performance"),
 	Sequencing   UMETA(DisplayName = "sequencing")
+};
+
+UCLASS()
+class USuperMetaSave : public USaveGame
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY() TMap<FString, FString> SuperMetaData;
 };

@@ -1,5 +1,6 @@
 #include "Authentication.h"
-#include "Abxr.h"
+
+#include "AbxrLibAPI.h"
 #include "Services/Config/AbxrSettings.h"
 #include "Util/AbxrUtil.h"
 #include "HttpModule.h"
@@ -248,7 +249,7 @@ void Authentication::KeyboardAuthenticate()
 	FString Prompt = TEXT("");
 	if (FailedAuthAttempts > 0) Prompt = TEXT("Authentication Failed (") + FString::FromInt(FailedAuthAttempts) + ")\n";
 	Prompt.Append(AuthMechanism.Prompt);
-	UAbxr::PresentKeyboard(Prompt, AuthMechanism.Type, AuthMechanism.Domain);
+	Abxr::PresentKeyboard(Prompt, AuthMechanism.Type, AuthMechanism.Domain);
 	FailedAuthAttempts++;
 }
 

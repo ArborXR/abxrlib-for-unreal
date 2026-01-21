@@ -1,49 +1,124 @@
-#include "Abxr.h"
-#include "UI/AbxrUISubsystem.h"
+#include "AbxrSubsystem.h"
+#include "AbxrLibAPI_Internal.h"
 #include "Authentication.h"
+#include "Services/Config/AbxrSettings.h"
 #include "DataBatcher.h"
-#include "LevelTracker.h"
 #include "Services/Platform/XRDM/XRDMService.h"
+#include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/AbxrUISubsystem.h"
 
-TMap<FString, int64> UAbxr::AssessmentStartTimes;
-TMap<FString, int64> UAbxr::ObjectiveStartTimes;
-TMap<FString, int64> UAbxr::InteractionStartTimes;
-TMap<FString, int64> UAbxr::LevelStartTimes;
-TWeakObjectPtr<UWorld> UAbxr::GWorldWeak;
-TMap<FString, FString> UAbxr::SuperMetaData = TMap<FString, FString>();
-const FString UAbxr::SuperMetaDataKey = TEXT("AbxrSuperMetaData");
-FString LevelTracker::CurrentLevel = TEXT("N/A");
+const FString UAbxrSubsystem::SuperMetaDataKey(TEXT("AbxrSuperMetaData"));
 
+void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	if (bInitialized) return;
+	bInitialized = true;
+	Super::Initialize(Collection);
+	AbxrLib_SetActiveSubsystem(this);
+	SuperMetaData = TMap<FString, FString>();
+	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
+		this, 
+		&UAbxrSubsystem::OnPostLoadMapWithWorld
+	);
+#if PLATFORM_ANDROID
+	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	{
+		XRDMService->Initialize();
+		UE_LOG(LogTemp, Log, TEXT("XRDM Service singleton retrieved and initialized"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to get XRDM Service singleton"));
+	}
+#endif
+	LoadSuperMetaData();
+	if (GetDefault<UAbxrSettings>()->EnableAutoStartAuth)
+	{
+		if (GetDefault<UAbxrSettings>()->AuthenticationStartDelay > 0)
+		{
+			GetWorld()->GetTimerManager().SetTimer(
+					AuthenticationTimerHandle,
+					this,
+					&UAbxrSubsystem::Authenticate,
+					GetDefault<UAbxrSettings>()->AuthenticationStartDelay,
+					false // don't loop
+				);
+		}
+		else
+		{
+			Authenticate();
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("AbxrLib: Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
+	}
+	
+	DataBatcher::Start();
+}
 
-void UAbxr::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
+void UAbxrSubsystem::Deinitialize()
+{
+	DataBatcher::Stop();
+	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+	
+	AbxrLib_ClearActiveSubsystem(this);
+	
+	Super::Deinitialize();
+	bInitialized = false;
+}
+
+void UAbxrSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
+{
+	if (!LoadedWorld) return;
+    
+	const FString NewLevelName = LoadedWorld->GetName();
+	if (NewLevelName != CurrentLevel)
+	{
+		CurrentLevel = NewLevelName;
+		if (GetDefault<UAbxrSettings>()->EnableSceneEvents)
+		{
+			TMap<FString, FString> Meta;
+			Meta.Add(TEXT("Scene Name"), NewLevelName);
+			Event(TEXT("Scene Changed"), Meta);
+		}
+	}
+}
+
+void UAbxrSubsystem::Authenticate()
+{
+	Authentication::Authenticate();
+}
+
+void UAbxrSubsystem::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
 {
 	Log(Text, ELogLevel::Debug, Meta);
 }
 
-void UAbxr::LogInfo(const FString& Text, const TMap<FString, FString>& Meta)
+void UAbxrSubsystem::LogInfo(const FString& Text, const TMap<FString, FString>& Meta)
 {
 	Log(Text, ELogLevel::Info, Meta);
 }
 
-void UAbxr::LogWarn(const FString& Text, const TMap<FString, FString>& Meta)
+void UAbxrSubsystem::LogWarn(const FString& Text, const TMap<FString, FString>& Meta)
 {
 	Log(Text, ELogLevel::Warn, Meta);
 }
 
-void UAbxr::LogError(const FString& Text, const TMap<FString, FString>& Meta)
+void UAbxrSubsystem::LogError(const FString& Text, const TMap<FString, FString>& Meta)
 {
 	Log(Text, ELogLevel::Error, Meta);
 }
 
-void UAbxr::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
+void UAbxrSubsystem::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
 {
 	Log(Text, ELogLevel::Critical, Meta);
 }
 
-void UAbxr::Log(const FString& Text, const ELogLevel Level, TMap<FString, FString> Meta)
+void UAbxrSubsystem::Log(const FString& Text, const ELogLevel Level, TMap<FString, FString> Meta)
 {
-	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
+	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
 	FString LevelText;
     switch (Level)
@@ -71,9 +146,9 @@ void UAbxr::Log(const FString& Text, const ELogLevel Level, TMap<FString, FStrin
 	DataBatcher::AddLog(LevelText, Text, Meta);
 }
 
-void UAbxr::Event(const FString& Name, TMap<FString, FString> Meta)
+void UAbxrSubsystem::Event(const FString& Name, TMap<FString, FString> Meta)
 {
-	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
+	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
 	DataBatcher::AddEvent(Name, Meta);
 }
@@ -85,7 +160,7 @@ void UAbxr::Event(const FString& Name, TMap<FString, FString> Meta)
 * @param Position  Adds position tracking of the object
 * @param Meta      Any additional information
 */
-void UAbxr::Event(const FString& Name, const FVector& Position, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::Event(const FString& Name, const FVector& Position, TMap<FString, FString>& Meta)
 {
     Meta.Add(TEXT("position_x"), FString::SanitizeFloat(Position.X));
     Meta.Add(TEXT("position_y"), FString::SanitizeFloat(Position.Y));
@@ -99,14 +174,14 @@ void UAbxr::Event(const FString& Name, const FVector& Position, TMap<FString, FS
 * @param Name      Name of the telemetry
 * @param Meta      Any additional information
 */
-void UAbxr::Telemetry(const FString& Name, TMap<FString, FString> Meta)
+void UAbxrSubsystem::Telemetry(const FString& Name, TMap<FString, FString> Meta)
 {
-	Meta.Add(TEXT("Scene Name"), LevelTracker::GetCurrentLevel());
+	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
     DataBatcher::AddTelemetry(Name, Meta);
 }
 
-void UAbxr::EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("type"), TEXT("assessment"));
 	Meta.Add(TEXT("verb"), TEXT("started"));
@@ -114,7 +189,7 @@ void UAbxr::EventAssessmentStart(const FString& AssessmentName, TMap<FString, FS
 	Event(AssessmentName, Meta);
 }
 
-void UAbxr::EventAssessmentComplete(const FString& AssessmentName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventAssessmentComplete(const FString& AssessmentName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("type"), TEXT("assessment"));
 	Meta.Add(TEXT("verb"), TEXT("completed"));
@@ -125,7 +200,7 @@ void UAbxr::EventAssessmentComplete(const FString& AssessmentName, const int Sco
 	DataBatcher::Send();
 }
 
-void UAbxr::EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("type"), TEXT("objective"));
 	Meta.Add(TEXT("verb"), TEXT("started"));
@@ -133,7 +208,7 @@ void UAbxr::EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FStr
 	Event(ObjectiveName, Meta);
 }
 
-void UAbxr::EventObjectiveComplete(const FString& ObjectiveName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventObjectiveComplete(const FString& ObjectiveName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("type"), TEXT("objective"));
 	Meta.Add(TEXT("verb"), TEXT("completed"));
@@ -143,7 +218,7 @@ void UAbxr::EventObjectiveComplete(const FString& ObjectiveName, const int Score
 	Event(ObjectiveName, Meta);
 }
 
-void UAbxr::EventInteractionStart(const FString& InteractionName, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventInteractionStart(const FString& InteractionName, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("type"), TEXT("interaction"));
 	Meta.Add(TEXT("verb"), TEXT("started"));
@@ -151,7 +226,7 @@ void UAbxr::EventInteractionStart(const FString& InteractionName, TMap<FString, 
 	Event(InteractionName, Meta);
 }
 
-void UAbxr::EventInteractionComplete(const FString& InteractionName, EInteractionType InteractionType, const FString& Response, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventInteractionComplete(const FString& InteractionName, EInteractionType InteractionType, const FString& Response, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("type"), TEXT("interaction"));
 	Meta.Add(TEXT("verb"), TEXT("completed"));
@@ -161,7 +236,7 @@ void UAbxr::EventInteractionComplete(const FString& InteractionName, EInteractio
 	Event(InteractionName, Meta);
 }
 
-void UAbxr::EventLevelStart(const FString& LevelName, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventLevelStart(const FString& LevelName, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("verb"), TEXT("started"));
 	Meta.Add(TEXT("id"), LevelName);
@@ -169,7 +244,7 @@ void UAbxr::EventLevelStart(const FString& LevelName, TMap<FString, FString>& Me
 	Event(TEXT("level_start"), Meta);
 }
 
-void UAbxr::EventLevelComplete(const FString& LevelName, const int Score, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventLevelComplete(const FString& LevelName, const int Score, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("verb"), TEXT("completed"));
 	Meta.Add(TEXT("id"), LevelName);
@@ -178,13 +253,13 @@ void UAbxr::EventLevelComplete(const FString& LevelName, const int Score, TMap<F
 	Event(LevelName, Meta);
 }
 
-void UAbxr::EventCritical(const FString& Label, const TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventCritical(const FString& Label, const TMap<FString, FString>& Meta)
 {
 	const FString taggedName = TEXT("CRITICAL_ABXR_") + Label;
 	Event(taggedName, Meta);
 }
 
-void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta)
 {
 	if (StartTimes.Contains(Name))
 	{
@@ -198,17 +273,15 @@ void UAbxr::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, T
 	}
 }
 
-void UAbxr::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
+void UAbxrSubsystem::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 {
-	const TWeakObjectPtr<UWorld> Snap = GWorldWeak;
-	const UWorld* World = Snap.Get();
-	if (UAbxrUISubsystem* Subsys = World->GetGameInstance()->GetSubsystem<UAbxrUISubsystem>())
+	if (UAbxrUISubsystem* Subsys = GetGameInstance()->GetSubsystem<UAbxrUISubsystem>())
 	{
 		Subsys->ShowKeyboardUI(FText::FromString(PromptText));
 	}
 }
 
-FString UAbxr::GetDeviceId()
+FString UAbxrSubsystem::GetDeviceId()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -218,7 +291,7 @@ FString UAbxr::GetDeviceId()
 	return TEXT("");
 }
 
-FString UAbxr::GetDeviceSerial()
+FString UAbxrSubsystem::GetDeviceSerial()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -228,7 +301,7 @@ FString UAbxr::GetDeviceSerial()
 	return TEXT("");
 }
 
-FString UAbxr::GetDeviceTitle()
+FString UAbxrSubsystem::GetDeviceTitle()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -238,7 +311,7 @@ FString UAbxr::GetDeviceTitle()
 	return TEXT("");
 }
 
-TArray<FString> UAbxr::GetDeviceTags()
+TArray<FString> UAbxrSubsystem::GetDeviceTags()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -248,7 +321,7 @@ TArray<FString> UAbxr::GetDeviceTags()
 	return TArray<FString>();
 }
 
-FString UAbxr::GetOrgId()
+FString UAbxrSubsystem::GetOrgId()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -258,7 +331,7 @@ FString UAbxr::GetOrgId()
 	return TEXT("");
 }
 
-FString UAbxr::GetOrgTitle()
+FString UAbxrSubsystem::GetOrgTitle()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -268,7 +341,7 @@ FString UAbxr::GetOrgTitle()
 	return TEXT("");
 }
 
-FString UAbxr::GetOrgSlug()
+FString UAbxrSubsystem::GetOrgSlug()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -278,7 +351,7 @@ FString UAbxr::GetOrgSlug()
 	return TEXT("");
 }
 
-FString UAbxr::GetMacAddressFixed()
+FString UAbxrSubsystem::GetMacAddressFixed()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -288,7 +361,7 @@ FString UAbxr::GetMacAddressFixed()
 	return TEXT("");
 }
 
-FString UAbxr::GetMacAddressRandom()
+FString UAbxrSubsystem::GetMacAddressRandom()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -298,7 +371,7 @@ FString UAbxr::GetMacAddressRandom()
 	return TEXT("");
 }
 
-bool UAbxr::GetIsAuthenticated()
+bool UAbxrSubsystem::GetIsAuthenticated()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -308,7 +381,7 @@ bool UAbxr::GetIsAuthenticated()
 	return false;
 }
 
-FString UAbxr::GetAccessToken()
+FString UAbxrSubsystem::GetAccessToken()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -318,7 +391,7 @@ FString UAbxr::GetAccessToken()
 	return TEXT("");
 }
 
-FString UAbxr::GetRefreshToken()
+FString UAbxrSubsystem::GetRefreshToken()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -328,7 +401,7 @@ FString UAbxr::GetRefreshToken()
 	return TEXT("");
 }
 
-FDateTime UAbxr::GetExpiresDateUtc()
+FDateTime UAbxrSubsystem::GetExpiresDateUtc()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -338,7 +411,7 @@ FDateTime UAbxr::GetExpiresDateUtc()
 	return FDateTime::MinValue();
 }
 
-FString UAbxr::GetFingerprint()
+FString UAbxrSubsystem::GetFingerprint()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -348,13 +421,18 @@ FString UAbxr::GetFingerprint()
 	return TEXT("");
 }
 
-void UAbxr::StartNewSession()
+void UAbxrSubsystem::StartNewSession()
 {
 	Authentication::SetSessionId(FGuid::NewGuid().ToString());
 	Authenticate();
 }
 
-void UAbxr::Register(const FString& Key, const FString& Value, const bool Overwrite)
+TMap<FString, FString> UAbxrSubsystem::GetUserData()
+{
+	return Authentication::GetAuthResponse().UserData;
+}
+
+void UAbxrSubsystem::Register(const FString& Key, const FString& Value, const bool Overwrite)
 {
 	if (IsReservedSuperMetaDataKey(Key))
 	{
@@ -375,34 +453,34 @@ void UAbxr::Register(const FString& Key, const FString& Value, const bool Overwr
 	}
 }
 
-void UAbxr::Register(const FString& Key, const FString& Value)
+void UAbxrSubsystem::Register(const FString& Key, const FString& Value)
 {
 	Register(Key, Value, true);
 }
 
-void UAbxr::RegisterOnce(const FString& Key, const FString& Value)
+void UAbxrSubsystem::RegisterOnce(const FString& Key, const FString& Value)
 {
 	Register(Key, Value, false);
 }
 
-void UAbxr::Unregister(const FString& Key)
+void UAbxrSubsystem::Unregister(const FString& Key)
 {
 	SuperMetaData.Remove(Key);
 	SaveSuperMetaData();
 }
 
-void UAbxr::Reset()
+void UAbxrSubsystem::Reset()
 {
 	SuperMetaData.Empty();
 	SaveSuperMetaData();
 }
 
-TMap<FString, FString> UAbxr::GetSuperMetaData()
+TMap<FString, FString> UAbxrSubsystem::GetSuperMetaData()
 {
 	return SuperMetaData;
 }
 
-void UAbxr::LoadSuperMetaData()
+void UAbxrSubsystem::LoadSuperMetaData()
 {
 	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(SuperMetaDataKey, 0))
 	{
@@ -413,7 +491,7 @@ void UAbxr::LoadSuperMetaData()
 	}
 }
 
-void UAbxr::SaveSuperMetaData()
+void UAbxrSubsystem::SaveSuperMetaData() const
 {
 	USuperMetaSave* SaveObject = Cast<USuperMetaSave>(UGameplayStatics::CreateSaveGameObject(USuperMetaSave::StaticClass()));
 	if (!SaveObject) return;
@@ -422,7 +500,7 @@ void UAbxr::SaveSuperMetaData()
 	UGameplayStatics::SaveGameToSlot(SaveObject, SuperMetaDataKey, 0);
 }
 
-TMap<FString, FString> UAbxr::MergeSuperMetaData(TMap<FString, FString>& Meta)
+TMap<FString, FString> UAbxrSubsystem::MergeSuperMetaData(TMap<FString, FString>& Meta)
 {
 	// Add super metadata to metadata (includes manually-set moduleName/moduleId/moduleOrder when no LMS modules)
 	// Auth-provided module metadata takes precedence, so manually-set values only appear when no LMS modules exist
@@ -438,7 +516,7 @@ TMap<FString, FString> UAbxr::MergeSuperMetaData(TMap<FString, FString>& Meta)
 	return Meta;
 }
 
-bool UAbxr::IsReservedSuperMetaDataKey(const FString& Key)
+bool UAbxrSubsystem::IsReservedSuperMetaDataKey(const FString& Key)
 {
 	return Key == TEXT("module") || Key == TEXT("moduleName") || Key == TEXT("moduleId") || Key == TEXT("moduleOrder");
 }
