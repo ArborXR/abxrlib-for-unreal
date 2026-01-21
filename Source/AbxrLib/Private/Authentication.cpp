@@ -17,7 +17,7 @@
 
 FString Authentication::SessionId;
 int Authentication::TokenExpiry;
-FAuthMechanism Authentication::AuthMechanism;
+FAbxrAuthMechanism Authentication::AuthMechanism;
 int Authentication::FailedAuthAttempts = 0;
 std::optional<bool> Authentication::NeedKeyboardAuth;
 FString Authentication::OrgId;
@@ -31,7 +31,7 @@ FString Authentication::XrdmVersion;
 FString Authentication::IpAddress;
 std::thread Authentication::ReAuthThread;
 std::atomic<bool> Authentication::bShouldStop{false};
-FAuthResponse Authentication::ResponseData;
+FAbxrAuthResponse Authentication::ResponseData;
 
 void Authentication::Authenticate()
 {
@@ -107,8 +107,8 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	{
 		HMDName = UHeadMountedDisplayFunctionLibrary::GetHMDDeviceName().ToString();
 	}
-	
-	FAuthPayload Payload;
+
+	FAbxrAuthPayload Payload;
 	Payload.AppId = AppId;
 	Payload.OrgId = OrgId;
 	Payload.AuthSecret = AuthSecret;
@@ -146,8 +146,8 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 		
 		const FString Body = Response->GetContentAsString();
 
-		FAuthResponse AuthResponse;
-		if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAuthResponse>(Body, &AuthResponse, 0, 0))
+		FAbxrAuthResponse AuthResponse;
+		if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib: Failed to parse auth response JSON: %s"), *Body);
 			OnComplete(false);
@@ -191,7 +191,7 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 	{
 		if (bOk && Resp.IsValid())
 		{
-			FConfigPayload Config;
+			FAbxrConfigPayload Config;
 			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
 			SetConfigFromPayload(Config);
 			AuthMechanism = Config.AuthMechanism;
@@ -208,7 +208,7 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 	Request->ProcessRequest();
 }
 
-void Authentication::SetConfigFromPayload(const FConfigPayload& Payload)
+void Authentication::SetConfigFromPayload(const FAbxrConfigPayload& Payload)
 {
 	UAbxrSettings* Config = GetMutableDefault<UAbxrSettings>();
     if (!Payload.RestUrl.IsEmpty()) Config->SetRestUrl(Payload.RestUrl);
@@ -300,11 +300,11 @@ TMap<FString, FString> Authentication::CreateAuthMechanismDict()
 
 void Authentication::ClearAuthenticationState()
 {
-	ResponseData = FAuthResponse();
+	ResponseData = FAbxrAuthResponse();
 	TokenExpiry = 0;
 	NeedKeyboardAuth.reset();
 	SessionId = TEXT("");
-	AuthMechanism = FAuthMechanism();
+	AuthMechanism = FAbxrAuthMechanism();
 
 	// Clear cached user data
 	//_authResponseModuleData = null;

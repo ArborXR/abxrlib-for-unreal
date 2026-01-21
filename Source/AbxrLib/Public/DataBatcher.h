@@ -1,49 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Containers/Ticker.h"
+#include "Types/AbxrTypes.h"
 #include "HAL/CriticalSection.h"
-#include "DataBatcher.generated.h"
-
-USTRUCT()
-struct FAbxrEventPayload
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FString preciseTimestamp;
-	UPROPERTY() FString name;
-	UPROPERTY() TMap<FString, FString> meta;
-};
-
-USTRUCT()
-struct FAbxrTelemetryPayload
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FString preciseTimestamp;
-	UPROPERTY() FString name;
-	UPROPERTY() TMap<FString, FString> meta;
-};
-
-USTRUCT()
-struct FAbxrLogPayload
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FString preciseTimestamp;
-	UPROPERTY() FString logLevel;
-	UPROPERTY() FString text;
-	UPROPERTY() TMap<FString, FString> meta;
-};
-
-USTRUCT()
-struct FAbxrDataPayloadWrapper
-{
-	GENERATED_BODY()
-
-	UPROPERTY() TArray<FAbxrEventPayload> event;
-	UPROPERTY() TArray<FAbxrTelemetryPayload> telemetry;
-	UPROPERTY() TArray<FAbxrLogPayload> basicLog;
-};
 
 class DataBatcher
 {

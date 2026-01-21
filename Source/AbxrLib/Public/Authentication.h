@@ -1,97 +1,9 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Interfaces/IHttpRequest.h"
+#include "Types/AbxrTypes.h"
 #include <thread>
 #include <atomic>
-#include "Authentication.generated.h"
-
-
-UENUM(BlueprintType)
-enum class EPartner : uint8
-{
-	None,
-	ArborXR
-};
-
-USTRUCT()
-struct FAuthPayload
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FString AppId;
-	UPROPERTY() FString OrgId;
-	UPROPERTY() FString AuthSecret;
-	UPROPERTY() FString DeviceId;
-	UPROPERTY() FString UserId;
-	UPROPERTY() TArray<FString> Tags;
-	UPROPERTY() FString SessionId;
-	UPROPERTY() FString Partner;
-	UPROPERTY() FString IpAddress;
-	UPROPERTY() FString DeviceModel;
-	UPROPERTY() TMap<FString, FString> Geolocation;
-	UPROPERTY() FString OsVersion;
-	UPROPERTY() FString XrdmVersion;
-	UPROPERTY() FString AppVersion;
-	UPROPERTY() FString UnrealVersion;
-	UPROPERTY() FString AbxrLibVersion;
-	UPROPERTY() TMap<FString, FString> AuthMechanism;
-};
-
-USTRUCT()
-struct FModuleData
-{
-	GENERATED_BODY()
-	
-	UPROPERTY() FString Id;
-	UPROPERTY() FString Name;
-	UPROPERTY() FString Target;
-	UPROPERTY() int Order = 0;
-};
-
-USTRUCT()
-struct FAuthResponse
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FString Token;
-	UPROPERTY() FString Secret;
-	UPROPERTY() TMap<FString, FString> UserData;
-	UPROPERTY() FString UserId;
-	UPROPERTY() FString AppId;
-	UPROPERTY() FString PackageName;
-	UPROPERTY() TArray<FModuleData> Modules;
-};
-
-USTRUCT()
-struct FAuthMechanism
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FString Type;
-	UPROPERTY() FString Prompt;
-	UPROPERTY() FString Domain;
-};
-
-USTRUCT()
-struct FConfigPayload
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FAuthMechanism AuthMechanism;
-	UPROPERTY() FString FrameRateCapturePeriod;
-	UPROPERTY() FString TelemetryCapturePeriod;
-	UPROPERTY() FString RestUrl;
-	UPROPERTY() FString SendRetriesOnFailure;
-	UPROPERTY() FString SendRetryInterval;
-	UPROPERTY() FString SendNextBatchWait;
-	UPROPERTY() FString StragglerTimeout;
-	UPROPERTY() FString DataEntriesPerSendAttempt;
-	UPROPERTY() FString StorageEntriesPerSendAttempt;
-	UPROPERTY() FString PruneSentItemsOlderThan;
-	UPROPERTY() FString MaximumCachedItems;
-	UPROPERTY() FString RetainLocalAfterSent;
-	UPROPERTY() FString PositionCapturePeriod;
-};
 
 class Authentication
 {
@@ -99,7 +11,7 @@ public:
 	static void Authenticate();
 	static void PollForReAuth();
 	static void SetSessionId(const FString& sessionId) { SessionId = sessionId; }
-	static FAuthResponse GetAuthResponse() { return ResponseData; }
+	static FAbxrAuthResponse GetAuthResponse() { return ResponseData; }
 	
 	static bool Authenticated()
 	{
@@ -121,7 +33,7 @@ private:
 	static void ClearAuthenticationState();
 	static void AuthRequest(TFunction<void(bool)> OnComplete);
 	static void GetConfiguration(TFunction<void(bool)> OnComplete);
-	static void SetConfigFromPayload(const FConfigPayload& Payload);
+	static void SetConfigFromPayload(const FAbxrConfigPayload& Payload);
 	static void GetConfigData();
 	static void GetArborData();
 
@@ -131,11 +43,11 @@ private:
 	static void ReAuthThreadFunction();
 	static void CheckReauthentication();
 
-	static FAuthResponse ResponseData;
+	static FAbxrAuthResponse ResponseData;
 	
 	static FString SessionId;
 	static int TokenExpiry;
-	static FAuthMechanism AuthMechanism;
+	static FAbxrAuthMechanism AuthMechanism;
 	static int FailedAuthAttempts;
 	static std::optional<bool> NeedKeyboardAuth;
 
