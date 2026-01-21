@@ -1,5 +1,5 @@
 #include "AbxrSettings.h"
-#include "Utils.h"
+#include "Util/AbxrUtil.h"
 
 UAbxrSettings::UAbxrSettings()
 {
@@ -27,14 +27,14 @@ UAbxrSettings::UAbxrSettings()
 bool UAbxrSettings::IsValid() const
 {
     // appID must pass format validation if set (UUID format)
-    if (!Utils::IsUuidFormat(AppId))
+    if (!AbxrUtil::IsUuidFormat(AppId))
     {
 		UE_LOG(LogTemp, Error, TEXT("AbxrLib: Invalid Application ID format. Must be a valid UUID. Cannot authenticate."));
         return false;
     }
 
     // orgID is optional but must pass format validation if set (UUID format)
-    if (!OrgId.IsEmpty() && !Utils::IsUuidFormat(OrgId))
+    if (!OrgId.IsEmpty() && !AbxrUtil::IsUuidFormat(OrgId))
     {
         UE_LOG(LogTemp, Error, TEXT("AbxrLib: Invalid Organization ID format. Must be a valid UUID. Cannot authenticate."));
         return false;
@@ -47,7 +47,7 @@ bool UAbxrSettings::IsValid() const
         return false;
     }
     
-    if (!Utils::IsValidUrl(RestUrl))
+    if (!AbxrUtil::IsValidUrl(RestUrl))
     {
     	UE_LOG(LogTemp, Error, TEXT("AbxrLib: Configuration validation failed - RestUrl '%s' is not a valid HTTP/HTTPS URL"), *RestUrl);
         return false;

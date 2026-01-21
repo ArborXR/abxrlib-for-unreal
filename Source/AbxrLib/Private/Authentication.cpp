@@ -1,7 +1,7 @@
 #include "Authentication.h"
 #include "Abxr.h"
 #include "Services/Config/AbxrSettings.h"
-#include "Utils.h"
+#include "Util/AbxrUtil.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
 #include "Services/Platform/XRDM/XRDMService.h"
@@ -130,7 +130,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/auth/token")));
+	Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/auth/token")));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
@@ -182,7 +182,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 {
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
+	Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
 	Request->SetVerb("GET");
 	Request->SetHeader("Content-Type", "application/json");
 	SetAuthHeaders(Request);
@@ -282,11 +282,11 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 	FString HashString = ResponseData.Token + ResponseData.Secret + UnixTime;
 	if (!Json.IsEmpty())
 	{
-		const uint32 CRC = Utils::ComputeCRC32(Json);
+		const uint32 CRC = AbxrUtil::ComputeCRC32(Json);
 		HashString += LexToString(CRC);
 	}
 	
-	Request->SetHeader("x-abxrlib-hash", Utils::ComputeSHA256(HashString));
+	Request->SetHeader("x-abxrlib-hash", AbxrUtil::ComputeSHA256(HashString));
 }
 
 TMap<FString, FString> Authentication::CreateAuthMechanismDict()

@@ -1,4 +1,4 @@
-#include "Utils.h"
+#include "AbxrUtil.h"
 #include <cstdint>
 #include "Misc/Base64.h"
 #include <openssl/sha.h>
@@ -70,7 +70,7 @@ static constexpr uint32 CRC32Table[256] = {
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 };
 
-FString Utils::ComputeSHA256(const FString& Input)
+FString AbxrUtil::ComputeSHA256(const FString& Input)
 {
 	// Convert FString to UTF-8
 	const FTCHARToUTF8 Converter(*Input);
@@ -83,7 +83,7 @@ FString Utils::ComputeSHA256(const FString& Input)
 	return FBase64::Encode(Hash, SHA256_DIGEST_LENGTH);
 }
 
-uint32 Utils::ComputeCRC32(const FString& Input)
+uint32 AbxrUtil::ComputeCRC32(const FString& Input)
 {
 	const FTCHARToUTF8 Utf8(*Input);
 	const uint8* Data = reinterpret_cast<const uint8*>(Utf8.Get());
@@ -100,7 +100,7 @@ uint32 Utils::ComputeCRC32(const FString& Input)
 	return ~Crc;
 }
 
-FString Utils::CombineUrl(const FString& Base, const FString& Path)
+FString AbxrUtil::CombineUrl(const FString& Base, const FString& Path)
 {
 	FString NormalizedBase = Base;
 	FString NormalizedPath = Path;
@@ -114,7 +114,7 @@ FString Utils::CombineUrl(const FString& Base, const FString& Path)
 	return NormalizedBase + TEXT("/") + NormalizedPath;
 }
 
-bool Utils::IsUuidFormat(const FString& Input)
+bool AbxrUtil::IsUuidFormat(const FString& Input)
 {
 	static const FRegexPattern UuidPattern(
 		TEXT("^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$")
@@ -124,7 +124,7 @@ bool Utils::IsUuidFormat(const FString& Input)
 	return Matcher.FindNext(); // with ^ and $ this means full-string match
 }
 
-bool Utils::IsValidUrl(const FString& InUrl)
+bool AbxrUtil::IsValidUrl(const FString& InUrl)
 {
 	FString Url = InUrl;
 	Url.TrimStartAndEndInline();

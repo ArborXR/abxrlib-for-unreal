@@ -3,7 +3,7 @@
 #include "Authentication.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
-#include "Utils.h"
+#include "Util/AbxrUtil.h"
 #include "Interfaces/IHttpResponse.h"
 #include "HAL/PlatformTime.h"
 
@@ -125,7 +125,7 @@ void DataBatcher::Send()
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(FAbxrDataPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
 
-	const FString Url = Utils::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/collect/data"));
+	const FString Url = AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/collect/data"));
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(Url);
 	Request->SetVerb(TEXT("POST"));

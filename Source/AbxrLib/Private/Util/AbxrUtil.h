@@ -1,8 +1,7 @@
 #pragma once
-
 #include "CoreMinimal.h"
 
-class Utils
+class AbxrUtil
 {
 public:
 	static FString ComputeSHA256(const FString& Input);
