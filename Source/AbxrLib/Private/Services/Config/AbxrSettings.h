@@ -1,15 +1,15 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
-#include "AbxrLibConfiguration.generated.h"
+#include "AbxrSettings.generated.h"
 
 UCLASS(config=Game, defaultconfig, BlueprintType, meta=(DisplayName="AbxrLib Configuration"))
-class ABXRLIB_API UAbxrLibConfiguration : public UDeveloperSettings
+class ABXRLIB_API UAbxrSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
 
 public:
-	UAbxrLibConfiguration();
+	UAbxrSettings();
 	
 	bool IsValid() const;
 	

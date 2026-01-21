@@ -1,6 +1,6 @@
 #include "TelemetrySubsystem.h"
 #include "Abxr.h"
-#include "AbxrLibConfiguration.h"
+#include "Services/Config/AbxrSettings.h"
 #include "Engine/Engine.h"
 #include "Misc/App.h"
 #include "Misc/EngineVersion.h"
@@ -16,13 +16,13 @@ void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
     if (const UWorld* World = GetWorld())
     {
-        if (GetDefault<UAbxrLibConfiguration>()->EnableAutomaticTelemetry)
+        if (GetDefault<UAbxrSettings>()->EnableAutomaticTelemetry)
         {
             World->GetTimerManager().SetTimer(
                 TelemetryTimerHandle,
                 this,
                 &UTelemetrySubsystem::CaptureTelemetry,
-                GetDefault<UAbxrLibConfiguration>()->TelemetryTrackingPeriodSeconds,
+                GetDefault<UAbxrSettings>()->TelemetryTrackingPeriodSeconds,
                 true // loop
             );
         }
@@ -31,17 +31,17 @@ void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
             FrameRateTimerHandle,
             this,
             &UTelemetrySubsystem::CaptureFrameRate,
-            GetDefault<UAbxrLibConfiguration>()->FrameRateTrackingPeriodSeconds,
+            GetDefault<UAbxrSettings>()->FrameRateTrackingPeriodSeconds,
             true // loop
         );
 
-        if (GetDefault<UAbxrLibConfiguration>()->HeadsetControllerTracking)
+        if (GetDefault<UAbxrSettings>()->HeadsetControllerTracking)
         {
             World->GetTimerManager().SetTimer(
                 PositionDataTimerHandle,
                 this,
                 &UTelemetrySubsystem::CapturePositionData,
-                GetDefault<UAbxrLibConfiguration>()->PositionCapturePeriodSeconds,
+                GetDefault<UAbxrSettings>()->PositionCapturePeriodSeconds,
                 true // loop
             );
         }

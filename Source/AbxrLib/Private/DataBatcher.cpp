@@ -1,5 +1,5 @@
 #include "DataBatcher.h"
-#include "AbxrLibConfiguration.h"
+#include "Services/Config/AbxrSettings.h"
 #include "Authentication.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
@@ -26,7 +26,7 @@ bool DataBatcher::Tick(float /*DeltaTime*/)
 void DataBatcher::Start()
 {
 	if (bStarted) return;
-	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
+	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendNextBatchWaitSeconds;
 	Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&Tick), 0.25f);
 	bStarted = true;
 }
@@ -59,7 +59,7 @@ void DataBatcher::AddEvent(const FString& Name, const TMap<FString, FString>& Me
 	FScopeLock Lock(&Mutex);
 	EventPayloads.Add(Payload);
 	if (EventPayloads.Num() + TelemetryPayloads.Num() + LogPayloads.Num() >=
-		GetDefault<UAbxrLibConfiguration>()->DataEntriesPerSendAttempt)
+		GetDefault<UAbxrSettings>()->DataEntriesPerSendAttempt)
 	{
 		NextAt = FPlatformTime::Seconds();
 	}
@@ -75,7 +75,7 @@ void DataBatcher::AddTelemetry(const FString& Name, const TMap<FString, FString>
 	FScopeLock Lock(&Mutex);
 	TelemetryPayloads.Add(Payload);
 	if (EventPayloads.Num() + TelemetryPayloads.Num() + LogPayloads.Num() >=
-		GetDefault<UAbxrLibConfiguration>()->DataEntriesPerSendAttempt)
+		GetDefault<UAbxrSettings>()->DataEntriesPerSendAttempt)
 	{
 		NextAt = FPlatformTime::Seconds();
 	}
@@ -92,7 +92,7 @@ void DataBatcher::AddLog(const FString& Level, const FString& Text, const TMap<F
 	FScopeLock Lock(&Mutex);
 	LogPayloads.Add(Payload);
 	if (EventPayloads.Num() + TelemetryPayloads.Num() + LogPayloads.Num() >=
-		GetDefault<UAbxrLibConfiguration>()->DataEntriesPerSendAttempt)
+		GetDefault<UAbxrSettings>()->DataEntriesPerSendAttempt)
 	{
 		NextAt = FPlatformTime::Seconds();
 	}
@@ -101,9 +101,9 @@ void DataBatcher::AddLog(const FString& Level, const FString& Text, const TMap<F
 void DataBatcher::Send()
 {
 	const int64 UnixSeconds = FDateTime::UtcNow().ToUnixTimestamp();
-	if (UnixSeconds - LastCallTime < GetDefault<UAbxrLibConfiguration>()->MaxCallFrequencySeconds) return;
+	if (UnixSeconds - LastCallTime < GetDefault<UAbxrSettings>()->MaxCallFrequencySeconds) return;
 	LastCallTime = UnixSeconds;
-	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendNextBatchWaitSeconds;
+	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendNextBatchWaitSeconds;
 	if (!Authentication::Authenticated()) return;
 
 	TArray<FAbxrEventPayload> EventsToSend;
@@ -125,7 +125,7 @@ void DataBatcher::Send()
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(FAbxrDataPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
 
-	const FString Url = Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/collect/data"));
+	const FString Url = Utils::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/collect/data"));
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(Url);
 	Request->SetVerb(TEXT("POST"));
@@ -145,7 +145,7 @@ void DataBatcher::Send()
 					TelemetryPayloads.Insert(TelemetriesToSend, 0);
 					LogPayloads.Insert(LogsToSend, 0);
 				}
-				NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrLibConfiguration>()->SendRetryIntervalSeconds;
+				NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendRetryIntervalSeconds;
 				return;
 			}
 			UE_LOG(LogTemp, Log, TEXT("AbxrLib - Data POST successful: %s"), *Response->GetContentAsString());

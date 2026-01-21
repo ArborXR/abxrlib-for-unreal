@@ -1,7 +1,7 @@
-#include "AbxrLibConfiguration.h"
+#include "AbxrSettings.h"
 #include "Utils.h"
 
-UAbxrLibConfiguration::UAbxrLibConfiguration()
+UAbxrSettings::UAbxrSettings()
 {
 	RestUrl = TEXT("https://lib-backend.xrdm.app/");
 	EnableAutomaticTelemetry = true;
@@ -24,7 +24,7 @@ UAbxrLibConfiguration::UAbxrLibConfiguration()
 	RetainLocalAfterSent = false;
 }
 
-bool UAbxrLibConfiguration::IsValid() const
+bool UAbxrSettings::IsValid() const
 {
     // appID must pass format validation if set (UUID format)
     if (!Utils::IsUuidFormat(AppId))

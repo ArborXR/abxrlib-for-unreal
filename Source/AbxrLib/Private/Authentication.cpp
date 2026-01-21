@@ -1,6 +1,6 @@
 #include "Authentication.h"
 #include "Abxr.h"
-#include "AbxrLibConfiguration.h"
+#include "Services/Config/AbxrSettings.h"
 #include "Utils.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
@@ -35,7 +35,7 @@ FAuthResponse Authentication::ResponseData;
 
 void Authentication::Authenticate()
 {
-	if (!GetDefault<UAbxrLibConfiguration>()->IsValid()) return;
+	if (!GetDefault<UAbxrSettings>()->IsValid()) return;
 	GetConfigData();
 	DeviceId = FGuid::NewGuid().ToString();
 #if PLATFORM_ANDROID
@@ -130,7 +130,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
 
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/auth/token")));
+	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/auth/token")));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
@@ -182,7 +182,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 {
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrLibConfiguration>()->RestUrl, TEXT("/v1/storage/config")));
+	Request->SetURL(Utils::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
 	Request->SetVerb("GET");
 	Request->SetHeader("Content-Type", "application/json");
 	SetAuthHeaders(Request);
@@ -210,7 +210,7 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 
 void Authentication::SetConfigFromPayload(const FConfigPayload& Payload)
 {
-	UAbxrLibConfiguration* Config = GetMutableDefault<UAbxrLibConfiguration>();
+	UAbxrSettings* Config = GetMutableDefault<UAbxrSettings>();
     if (!Payload.RestUrl.IsEmpty()) Config->SetRestUrl(Payload.RestUrl);
 	if (!Payload.SendRetriesOnFailure.IsEmpty()) Config->SetSendRetriesOnFailure(FCString::Atoi(*Payload.SendRetriesOnFailure));
 	if (!Payload.SendRetryInterval.IsEmpty()) Config->SetSendRetryIntervalSeconds(FCString::Atoi(*Payload.SendRetryInterval));
@@ -225,9 +225,9 @@ void Authentication::SetConfigFromPayload(const FConfigPayload& Payload)
 
 void Authentication::GetConfigData()
 {
-	AppId = GetDefault<UAbxrLibConfiguration>()->AppId;
-	OrgId = GetDefault<UAbxrLibConfiguration>()->OrgId;
-	AuthSecret = GetDefault<UAbxrLibConfiguration>()->AuthSecret;
+	AppId = GetDefault<UAbxrSettings>()->AppId;
+	OrgId = GetDefault<UAbxrSettings>()->OrgId;
+	AuthSecret = GetDefault<UAbxrSettings>()->AuthSecret;
 }
 
 void Authentication::GetArborData()

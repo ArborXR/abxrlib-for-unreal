@@ -1,6 +1,6 @@
 #include "AbxrGameInstanceSubsystem.h"
 #include "Abxr.h"
-#include "AbxrLibConfiguration.h"
+#include "Services/Config/AbxrSettings.h"
 #include "DataBatcher.h"
 #include "LevelTracker.h"
 #include "XRDMService.h"
@@ -27,15 +27,15 @@ void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection
 	}
 #endif
 	UAbxr::LoadSuperMetaData();
-	if (GetDefault<UAbxrLibConfiguration>()->EnableAutoStartAuth)
+	if (GetDefault<UAbxrSettings>()->EnableAutoStartAuth)
 	{
-		if (GetDefault<UAbxrLibConfiguration>()->AuthenticationStartDelay > 0)
+		if (GetDefault<UAbxrSettings>()->AuthenticationStartDelay > 0)
 		{
 			UAbxr::GetCurrentWorld()->GetTimerManager().SetTimer(
 					AuthenticationTimerHandle,
 					this,
 					&UAbxrGameInstanceSubsystem::StartAuthAfterDelay,
-					GetDefault<UAbxrLibConfiguration>()->AuthenticationStartDelay,
+					GetDefault<UAbxrSettings>()->AuthenticationStartDelay,
 					false // don't loop
 				);
 		}
@@ -69,7 +69,7 @@ void UAbxrGameInstanceSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
 	if (NewLevelName != LevelTracker::GetCurrentLevel())
 	{
 		LevelTracker::SetCurrentLevel(NewLevelName);
-		if (GetDefault<UAbxrLibConfiguration>()->EnableSceneEvents)
+		if (GetDefault<UAbxrSettings>()->EnableSceneEvents)
 		{
 			TMap<FString, FString> Meta;
 			Meta.Add(TEXT("Scene Name"), NewLevelName);
