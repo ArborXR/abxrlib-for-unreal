@@ -4,7 +4,7 @@
 #include "Utils.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
-#include "XRDMService.h"
+#include "Services/Platform/XRDM/XRDMService.h"
 #include "Interfaces/IHttpResponse.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Dom/JsonObject.h"

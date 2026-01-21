@@ -3,7 +3,7 @@
 #include "Services/Config/AbxrSettings.h"
 #include "DataBatcher.h"
 #include "LevelTracker.h"
-#include "XRDMService.h"
+#include "Services/Platform/XRDM/XRDMService.h"
 #include "Engine/Engine.h"
 
 void UAbxrGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection)

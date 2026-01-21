@@ -3,7 +3,7 @@
 #include "Authentication.h"
 #include "DataBatcher.h"
 #include "LevelTracker.h"
-#include "XRDMService.h"
+#include "Services/Platform/XRDM/XRDMService.h"
 #include "Kismet/GameplayStatics.h"
 
 TMap<FString, int64> UAbxr::AssessmentStartTimes;
