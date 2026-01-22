@@ -1,5 +1,4 @@
-#include "Authentication.h"
-
+#include "AbxrAuthService.h"
 #include "AbxrLibAPI.h"
 #include "Services/Config/AbxrSettings.h"
 #include "Util/AbxrUtil.h"
@@ -16,90 +15,112 @@
 #include "Interfaces/IPluginManager.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-FString Authentication::SessionId;
-int Authentication::TokenExpiry;
-FAbxrAuthMechanism Authentication::AuthMechanism;
-int Authentication::FailedAuthAttempts = 0;
-std::optional<bool> Authentication::NeedKeyboardAuth;
-FString Authentication::OrgId;
-FString Authentication::DeviceId;
-FString Authentication::AuthSecret;
-FString Authentication::AppId;
-FString Authentication::Partner = "none";
-FString Authentication::DeviceModel;
-TArray<FString> Authentication::DeviceTags;
-FString Authentication::XrdmVersion;
-FString Authentication::IpAddress;
-std::thread Authentication::ReAuthThread;
-std::atomic<bool> Authentication::bShouldStop{false};
-FAbxrAuthResponse Authentication::ResponseData;
-
-void Authentication::Authenticate()
+void FAbxrAuthService::Authenticate()
 {
 	if (!GetDefault<UAbxrSettings>()->IsValid()) return;
 	GetConfigData();
 	DeviceId = FGuid::NewGuid().ToString();
+	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
 #if PLATFORM_ANDROID
 	const auto Promise = UXRDMService::GetInstance()->WaitForConnection();
-	Promise->GetFuture().Next([](bool bConnected)
+	Promise->GetFuture().Next([AuthPtr](bool bConnected)
 	{
-		if (bConnected) GetArborData();
+		TSharedPtr<FAbxrAuthService> Self1 = AuthPtr.Pin();
+		if (!Self1) return;
+		if (bConnected) Self1->GetArborData();
+#else
+		TSharedPtr<FAbxrAuthService> Self1 = AuthPtr.Pin();
+		if (!Self1) return;
 #endif
-		AuthRequest([](const bool bSuccess)
+		Self1->AuthRequest([AuthPtr](const bool bSuccess) // TODO this passed in OK?
 		{
+			TSharedPtr<FAbxrAuthService> Self2 = AuthPtr.Pin();
+			if (!Self2) return;
 			if (bSuccess)
 			{
-				GetConfiguration([](const bool)
+				Self2->GetConfiguration([AuthPtr](const bool)
 				{
-					if (!AuthMechanism.Prompt.IsEmpty())
+					TSharedPtr<FAbxrAuthService> Self3 = AuthPtr.Pin();
+					if (!Self3) return;
+					if (!Self3->AuthMechanism.Prompt.IsEmpty())
 					{
-						KeyboardAuthenticate();
+						Self3->KeyboardAuthenticate();
 					}
 					else
 					{
-						NeedKeyboardAuth = false;
+						Self3->NeedKeyboardAuth = false;
 						UE_LOG(LogTemp, Log, TEXT("AbxrLib: Authentication fully completed"));
 					}
 				});
+				
+				Self2->StartReAuthPolling();
 			}
 		});
 #if PLATFORM_ANDROID
 	});
 #endif
-	PollForReAuth();
 }
 
-void Authentication::PollForReAuth()
+void FAbxrAuthService::StartReAuthPolling()
 {
-	if (ReAuthThread.joinable()) return;  // Only start if not already running
-	ReAuthThread = std::thread(&Authentication::ReAuthThreadFunction);
-}
+	if (ReauthTickHandle.IsValid()) return;
 
-void Authentication::ReAuthThreadFunction()
-{
-	while (!bShouldStop.load())
-	{
-		std::this_thread::sleep_for(std::chrono::minutes(1));
-		if (!bShouldStop.load()) CheckReauthentication();
-	}
-}
+	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
+	
+	NextReauthCheckAtSeconds = FPlatformTime::Seconds() + ReauthPollSeconds;
 
-void Authentication::CheckReauthentication()
-{
-	if (TokenExpiry - FDateTime::UtcNow().ToUnixTimestamp() <= 120)
-	{
-		// Clear authentication state to stop data transmission
-		ClearAuthenticationState();
-		
-		// Marshal back to game thread
-		AsyncTask(ENamedThreads::GameThread, []
+	ReauthTickHandle = FTSTicker::GetCoreTicker().AddTicker(
+		FTickerDelegate::CreateLambda([AuthPtr](float)
 		{
-			AuthRequest([](const bool){});
-		});
+			if (const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin()) return Self->ReAuthTick();
+			
+			return false;  // stop ticking. service is gone
+		}),
+		1.0f
+	);
+}
+
+void FAbxrAuthService::StopReAuthPolling()
+{
+	if (ReauthTickHandle.IsValid())
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(ReauthTickHandle);
+		ReauthTickHandle.Reset();
 	}
 }
 
-void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
+bool FAbxrAuthService::ReAuthTick()
+{
+	const double Now = FPlatformTime::Seconds();
+	if (Now < NextReauthCheckAtSeconds) return true;
+
+	NextReauthCheckAtSeconds = Now + ReauthPollSeconds;
+
+	if (TokenExpiry <= 0) return true;
+	
+	const int64 Remaining = TokenExpiry - FDateTime::UtcNow().ToUnixTimestamp();
+
+	if (Remaining > ReauthThresholdSeconds || bReauthInFlight) return true;
+
+	bReauthInFlight = true;
+	
+	// Clear authentication state to stop data transmission
+	ClearAuthenticationState();
+	
+	// Marshal back to game thread
+	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
+	AsyncTask(ENamedThreads::GameThread, [AuthPtr]
+	{
+		if (TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin())
+		{
+			Self->AuthRequest([](const bool){});
+		}
+	});
+
+	return true;
+}
+
+void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 {
 	if (SessionId.IsEmpty()) SessionId = FGuid::NewGuid().ToString();
 
@@ -136,8 +157,11 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
 	
-	Request->OnProcessRequestComplete().BindLambda([OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
+	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
+	Request->OnProcessRequestComplete().BindLambda([AuthPtr, OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 	{
+		TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
+		if (!Self) return;
 		if (!bWasSuccessful || !Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
 		{
 			UE_LOG(LogTemp, Error, TEXT("AbxrLib: Authentication failed : %s"), *Response->GetContentAsString());
@@ -155,10 +179,10 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 			return;
 		}
 		
-		ResponseData = AuthResponse;
+		Self->ResponseData = AuthResponse;
 
 		TArray<FString> Parts;
-		ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
+		Self->ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
 		const FString PayloadBase64 = Parts[1];
 
 		FString DecodedPayloadJson;
@@ -170,7 +194,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 		{
 			const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find("exp");
 			const FString Expiry = (*ValuePtr)->AsString();
-			TokenExpiry = FCString::Atoi(*Expiry);
+			Self->TokenExpiry = FCString::Atoi(*Expiry);
 		}
 		
 		OnComplete(true);
@@ -180,7 +204,7 @@ void Authentication::AuthRequest(TFunction<void(bool)> OnComplete)
 	Request->ProcessRequest();
 }
 
-void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
+void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 {
 	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
@@ -188,14 +212,17 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 	Request->SetHeader("Content-Type", "application/json");
 	SetAuthHeaders(Request);
 
-	Request->OnProcessRequestComplete().BindLambda([OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
+	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
+	Request->OnProcessRequestComplete().BindLambda([AuthPtr, OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
 	{
+		TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
+		if (!Self) return;
 		if (bOk && Resp.IsValid())
 		{
 			FAbxrConfigPayload Config;
 			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
-			SetConfigFromPayload(Config);
-			AuthMechanism = Config.AuthMechanism;
+			Self->SetConfigFromPayload(Config);
+			Self->AuthMechanism = Config.AuthMechanism;
 			UE_LOG(LogTemp, Log, TEXT("AbxrLib - GetConfiguration() successful"));
 			OnComplete(true);
 		}
@@ -209,7 +236,7 @@ void Authentication::GetConfiguration(TFunction<void(bool)> OnComplete)
 	Request->ProcessRequest();
 }
 
-void Authentication::SetConfigFromPayload(const FAbxrConfigPayload& Payload)
+void FAbxrAuthService::SetConfigFromPayload(const FAbxrConfigPayload& Payload)
 {
 	UAbxrSettings* Config = GetMutableDefault<UAbxrSettings>();
     if (!Payload.RestUrl.IsEmpty()) Config->SetRestUrl(Payload.RestUrl);
@@ -224,14 +251,14 @@ void Authentication::SetConfigFromPayload(const FAbxrConfigPayload& Payload)
 	if (!Payload.RetainLocalAfterSent.IsEmpty()) Config->SetRetainLocalAfterSent(Payload.RetainLocalAfterSent.ToBool());
 }
 
-void Authentication::GetConfigData()
+void FAbxrAuthService::GetConfigData()
 {
 	AppId = GetDefault<UAbxrSettings>()->AppId;
 	OrgId = GetDefault<UAbxrSettings>()->OrgId;
 	AuthSecret = GetDefault<UAbxrSettings>()->AuthSecret;
 }
 
-void Authentication::GetArborData()
+void FAbxrAuthService::GetArborData()
 {
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
@@ -243,7 +270,7 @@ void Authentication::GetArborData()
 	}
 }
 
-void Authentication::KeyboardAuthenticate()
+void FAbxrAuthService::KeyboardAuthenticate()
 {
 	NeedKeyboardAuth = true;
 	FString Prompt = TEXT("");
@@ -253,27 +280,30 @@ void Authentication::KeyboardAuthenticate()
 	FailedAuthAttempts++;
 }
 
-void Authentication::KeyboardAuthenticate(const FString& KeyboardInput)
+void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 {
 	FString OriginalPrompt = AuthMechanism.Prompt;
 	AuthMechanism.Prompt = KeyboardInput;
-	AuthRequest([OriginalPrompt](const bool bSuccess)
+	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
+	AuthRequest([AuthPtr, OriginalPrompt](const bool bSuccess)
 	{
+		TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
+		if (!Self) return;
 		if (bSuccess)
 		{
-			NeedKeyboardAuth = false;
-			FailedAuthAttempts = 0;
+			Self->NeedKeyboardAuth = false;
+			Self->FailedAuthAttempts = 0;
 		}
 		else
 		{
-			AuthMechanism.Prompt = OriginalPrompt;
-			KeyboardAuthenticate();
+			Self->AuthMechanism.Prompt = OriginalPrompt;
+			Self->KeyboardAuthenticate();
 		}
 	});
 }
 
 
-void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json)
+void FAbxrAuthService::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json)
 {
 	Request->SetHeader("Authorization", "Bearer " + ResponseData.Token);
 
@@ -290,7 +320,7 @@ void Authentication::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, con
 	Request->SetHeader("x-abxrlib-hash", AbxrUtil::ComputeSHA256(HashString));
 }
 
-TMap<FString, FString> Authentication::CreateAuthMechanismDict()
+TMap<FString, FString> FAbxrAuthService::CreateAuthMechanismDict()
 {
 	TMap<FString, FString> Dict;
 	if (!AuthMechanism.Type.IsEmpty()) Dict.Add(TEXT("type"), AuthMechanism.Type);
@@ -299,7 +329,7 @@ TMap<FString, FString> Authentication::CreateAuthMechanismDict()
 	return Dict;
 }
 
-void Authentication::ClearAuthenticationState()
+void FAbxrAuthService::ClearAuthenticationState()
 {
 	ResponseData = FAbxrAuthResponse();
 	TokenExpiry = 0;

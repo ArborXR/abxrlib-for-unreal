@@ -1,7 +1,8 @@
 #include "UI/AbxrUISubsystem.h"
-#include "Authentication.h"
+#include "Services/Auth/AbxrAuthService.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystems/AbxrSubsystem.h"
 #include "UI/AbxrInteractionSubsystem.h"
 #include "UI/VRPopupWidget.h"
 
@@ -160,24 +161,17 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& PromptText)
     PopupWidget->OnPopupButtonClicked.RemoveAll(this);
     PopupWidget->OnPopupButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandlePopupClicked);
 
-    if (const UGameInstance* GI = World->GetGameInstance())
+    if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
     {
-        if (UAbxrInteractionSubsystem* Subsystem = GI->GetSubsystem<UAbxrInteractionSubsystem>())
-        {
-            Subsystem->BeginUIInteraction();
-        }
+        Subsystem->BeginUIInteraction();
     }
 }
 
 void UAbxrUISubsystem::HideKeyboardUI()
 {
-    const UWorld* World = GetWorld();
-    if (const UGameInstance* GI = World->GetGameInstance())
+    if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
     {
-        if (UAbxrInteractionSubsystem* Subsystem = GI->GetSubsystem<UAbxrInteractionSubsystem>())
-        {
-            Subsystem->EndUIInteraction();
-        }
+        Subsystem->EndUIInteraction();
     }
     
     if (AActor* A = ActivePopupActor.Get())
@@ -190,6 +184,9 @@ void UAbxrUISubsystem::HideKeyboardUI()
 
 void UAbxrUISubsystem::HandlePopupClicked(const FText& InputText)
 {
-    Authentication::KeyboardAuthenticate(InputText.ToString());
+    if (UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
+    {
+        Subsystem->GetAuthService()->KeyboardAuthenticate(InputText.ToString());
+    }
     HideKeyboardUI();
 }

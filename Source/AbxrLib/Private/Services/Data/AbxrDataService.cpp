@@ -1,6 +1,5 @@
 #include "AbxrDataService.h"
 #include "Services/Config/AbxrSettings.h"
-#include "Authentication.h"
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
 #include "Util/AbxrUtil.h"
@@ -95,7 +94,7 @@ void FAbxrDataService::Send()
 	if (UnixSeconds - LastCallTime < GetDefault<UAbxrSettings>()->MaxCallFrequencySeconds) return;
 	LastCallTime = UnixSeconds;
 	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendNextBatchWaitSeconds;
-	if (!Authentication::Authenticated()) return;
+	if (!AuthService.Authenticated()) return;
 
 	TArray<FAbxrEventPayload> EventsToSend;
 	TArray<FAbxrTelemetryPayload> TelemetriesToSend;
@@ -122,7 +121,7 @@ void FAbxrDataService::Send()
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
-	Authentication::SetAuthHeaders(Request, Json);
+	AuthService.SetAuthHeaders(Request, Json);
 
 	Request->OnProcessRequestComplete().BindLambda(
 		[EventsToSend, TelemetriesToSend, LogsToSend, this](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)

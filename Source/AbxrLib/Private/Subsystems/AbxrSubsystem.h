@@ -2,6 +2,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Types/AbxrTypes.h"
 #include "Services/Data/AbxrDataService.h"
+#include "Services/Auth/AbxrAuthService.h"
 #include "AbxrSubsystem.generated.h"
 
 UCLASS()
@@ -213,6 +214,13 @@ public:
 	TMap<FString, FString> GetSuperMetaData();
 
 	void LoadSuperMetaData();
+	
+	FAbxrAuthService* GetAuthService() const { return AuthService.Get(); }
+	FAbxrAuthService& GetAuthServiceChecked() const
+	{
+		check(AuthService);
+		return *AuthService;
+	}
 
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
@@ -226,6 +234,7 @@ private:
 	// Ensures data-specific metadata take precedence over super metadata and module info
 	TMap<FString, FString> MergeSuperMetaData(TMap<FString, FString>& Meta);
 	
+	TSharedPtr<FAbxrAuthService> AuthService;
 	TUniquePtr<FAbxrDataService> DataService;
 	
 	FTimerHandle AuthenticationTimerHandle;

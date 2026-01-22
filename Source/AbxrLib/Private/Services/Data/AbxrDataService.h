@@ -2,12 +2,13 @@
 #include "CoreMinimal.h"
 #include "Containers/Ticker.h"
 #include "Types/AbxrTypes.h"
+#include "Services/Auth/AbxrAuthService.h"
 #include "HAL/CriticalSection.h"
 
 class FAbxrDataService
 {
 public:
-	FAbxrDataService() : LastCallTime(0), bStarted(false), NextAt(0) { }
+	explicit FAbxrDataService(class FAbxrAuthService& AuthService) : AuthService(AuthService), LastCallTime(0), bStarted(false), NextAt(0) { }
 
 	void AddEvent(const FString& Name, const TMap<FString, FString>& Meta);
 	void AddTelemetry(const FString& Name, const TMap<FString, FString>& Meta);
@@ -19,6 +20,8 @@ public:
 
 private:
 	bool Tick(float DeltaTime);
+	
+	FAbxrAuthService& AuthService;
 
 	FCriticalSection Mutex;
 	TArray<FAbxrEventPayload> EventPayloads;

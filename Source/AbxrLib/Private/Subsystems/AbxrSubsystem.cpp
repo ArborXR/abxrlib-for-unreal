@@ -1,6 +1,5 @@
 #include "AbxrSubsystem.h"
 #include "AbxrLibAPI_Internal.h"
-#include "Authentication.h"
 #include "Services/Config/AbxrSettings.h"
 #include "Services/Platform/XRDM/XRDMService.h"
 #include "Engine/Engine.h"
@@ -15,7 +14,8 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	bInitialized = true;
 	Super::Initialize(Collection);
 	AbxrLib_SetActiveSubsystem(this);
-	DataService = MakeUnique<FAbxrDataService>();
+	AuthService = MakeShared<FAbxrAuthService>();
+	DataService = MakeUnique<FAbxrDataService>(*AuthService);
 	SuperMetaData = TMap<FString, FString>();
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
 		this, 
@@ -60,6 +60,8 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UAbxrSubsystem::Deinitialize()
 {
+	AuthService.Reset();
+	AuthService->StopReAuthPolling();
 	if (DataService)
 	{
 		DataService->Stop();
@@ -93,7 +95,7 @@ void UAbxrSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
 
 void UAbxrSubsystem::Authenticate()
 {
-	Authentication::Authenticate();
+	AuthService->Authenticate();
 }
 
 void UAbxrSubsystem::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
@@ -428,13 +430,13 @@ FString UAbxrSubsystem::GetFingerprint()
 
 void UAbxrSubsystem::StartNewSession()
 {
-	Authentication::SetSessionId(FGuid::NewGuid().ToString());
+	AuthService->SetSessionId(FGuid::NewGuid().ToString());
 	Authenticate();
 }
 
 TMap<FString, FString> UAbxrSubsystem::GetUserData()
 {
-	return Authentication::GetAuthResponse().UserData;
+	return AuthService->GetAuthResponse().UserData;
 }
 
 void UAbxrSubsystem::Register(const FString& Key, const FString& Value, const bool Overwrite)
