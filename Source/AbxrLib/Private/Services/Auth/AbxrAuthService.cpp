@@ -23,24 +23,24 @@ void FAbxrAuthService::Authenticate()
 	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
 #if PLATFORM_ANDROID
 	const auto Promise = UXRDMService::GetInstance()->WaitForConnection();
-	Promise->GetFuture().Next([AuthPtr](bool bConnected)
+	Promise->GetFuture().Next([AuthPtr](const bool bConnected)
 	{
-		TSharedPtr<FAbxrAuthService> Self1 = AuthPtr.Pin();
+		const TSharedPtr<FAbxrAuthService> Self1 = AuthPtr.Pin();
 		if (!Self1) return;
 		if (bConnected) Self1->GetArborData();
 #else
-		TSharedPtr<FAbxrAuthService> Self1 = AuthPtr.Pin();
+		const TSharedPtr<FAbxrAuthService> Self1 = AuthPtr.Pin();
 		if (!Self1) return;
 #endif
 		Self1->AuthRequest([AuthPtr](const bool bSuccess) // TODO this passed in OK?
 		{
-			TSharedPtr<FAbxrAuthService> Self2 = AuthPtr.Pin();
+			const TSharedPtr<FAbxrAuthService> Self2 = AuthPtr.Pin();
 			if (!Self2) return;
 			if (bSuccess)
 			{
 				Self2->GetConfiguration([AuthPtr](const bool)
 				{
-					TSharedPtr<FAbxrAuthService> Self3 = AuthPtr.Pin();
+					const TSharedPtr<FAbxrAuthService> Self3 = AuthPtr.Pin();
 					if (!Self3) return;
 					if (!Self3->AuthMechanism.Prompt.IsEmpty())
 					{
@@ -111,7 +111,7 @@ bool FAbxrAuthService::ReAuthTick()
 	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
 	AsyncTask(ENamedThreads::GameThread, [AuthPtr]
 	{
-		if (TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin())
+		if (const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin())
 		{
 			Self->AuthRequest([](const bool){});
 		}
@@ -215,7 +215,7 @@ void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
 	Request->OnProcessRequestComplete().BindLambda([AuthPtr, OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
 	{
-		TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
+		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
 		if (!Self) return;
 		if (bOk && Resp.IsValid())
 		{
@@ -287,7 +287,7 @@ void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
 	AuthRequest([AuthPtr, OriginalPrompt](const bool bSuccess)
 	{
-		TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
+		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
 		if (!Self) return;
 		if (bSuccess)
 		{
@@ -303,7 +303,7 @@ void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 }
 
 
-void FAbxrAuthService::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json)
+void FAbxrAuthService::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json) const
 {
 	Request->SetHeader("Authorization", "Bearer " + ResponseData.Token);
 
@@ -320,7 +320,7 @@ void FAbxrAuthService::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, c
 	Request->SetHeader("x-abxrlib-hash", AbxrUtil::ComputeSHA256(HashString));
 }
 
-TMap<FString, FString> FAbxrAuthService::CreateAuthMechanismDict()
+TMap<FString, FString> FAbxrAuthService::CreateAuthMechanismDict() const
 {
 	TMap<FString, FString> Dict;
 	if (!AuthMechanism.Type.IsEmpty()) Dict.Add(TEXT("type"), AuthMechanism.Type);

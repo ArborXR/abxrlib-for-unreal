@@ -22,7 +22,7 @@ public:
 		return !ResponseData.Token.IsEmpty() && !ResponseData.Secret.IsEmpty() && Now.ToUnixTimestamp() <= TokenExpiry && NeedKeyboardAuth == false;
 	}
 	
-	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json);
+	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json) const;
 	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request)
 	{
 		SetAuthHeaders(Request, TEXT(""));
@@ -32,11 +32,11 @@ public:
 	void KeyboardAuthenticate(const FString& KeyboardInput);
 
 private:
-	TMap<FString, FString> CreateAuthMechanismDict();
+	TMap<FString, FString> CreateAuthMechanismDict() const;
 	void ClearAuthenticationState();
 	void AuthRequest(TFunction<void(bool)> OnComplete);
 	void GetConfiguration(TFunction<void(bool)> OnComplete);
-	void SetConfigFromPayload(const FAbxrConfigPayload& Payload);
+	static void SetConfigFromPayload(const FAbxrConfigPayload& Payload);
 	void GetConfigData();
 	void GetArborData();
 
