@@ -235,7 +235,7 @@ private:
 	TMap<FString, FString> MergeSuperMetaData(TMap<FString, FString>& Meta);
 	
 	TSharedPtr<FAbxrAuthService> AuthService;
-	TUniquePtr<FAbxrDataService> DataService;
+	TSharedPtr<FAbxrDataService> DataService;
 	
 	FTimerHandle AuthenticationTimerHandle;
 	FDelegateHandle PostLoadMapHandle;

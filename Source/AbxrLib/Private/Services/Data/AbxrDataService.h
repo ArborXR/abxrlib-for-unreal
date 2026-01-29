@@ -5,7 +5,7 @@
 #include "Services/Auth/AbxrAuthService.h"
 #include "HAL/CriticalSection.h"
 
-class FAbxrDataService
+class FAbxrDataService : public TSharedFromThis<FAbxrDataService>
 {
 public:
 	explicit FAbxrDataService(class FAbxrAuthService& AuthService) : AuthService(AuthService), LastCallTime(0), bStarted(false), NextAt(0) { }

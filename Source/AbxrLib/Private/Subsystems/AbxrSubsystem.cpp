@@ -15,7 +15,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	AbxrLib_SetActiveSubsystem(this);
 	AuthService = MakeShared<FAbxrAuthService>();
-	DataService = MakeUnique<FAbxrDataService>(*AuthService);
+	DataService = MakeShared<FAbxrDataService>(*AuthService);
 	SuperMetaData = TMap<FString, FString>();
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
 		this, 

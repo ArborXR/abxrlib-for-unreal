@@ -116,7 +116,7 @@ void FAbxrDataService::Send()
 	FJsonObjectConverter::UStructToJsonObjectString(FAbxrDataPayloadWrapper::StaticStruct(), &Wrapper, Json, 0, 0, 0, nullptr, false);
 
 	const FString Url = AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/collect/data"));
-	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
+	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(Url);
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
@@ -124,18 +124,20 @@ void FAbxrDataService::Send()
 	AuthService.SetAuthHeaders(Request, Json);
 
 	Request->OnProcessRequestComplete().BindLambda(
-		[EventsToSend, TelemetriesToSend, LogsToSend, this](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
+		[EventsToSend, TelemetriesToSend, LogsToSend, DataPtr = AsWeak()](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 		{
 			if (!bWasSuccessful || !Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
 			{
+				const TSharedPtr<FAbxrDataService> Self = DataPtr.Pin();
+				if (!Self) return;
 				UE_LOG(LogTemp, Error, TEXT("AbxrLib - Data POST failed: %s"), *Response->GetContentAsString());
 				{
-					FScopeLock Lock(&Mutex);
-					EventPayloads.Insert(EventsToSend, 0);
-					TelemetryPayloads.Insert(TelemetriesToSend, 0);
-					LogPayloads.Insert(LogsToSend, 0);
+					FScopeLock Lock(&Self->Mutex);
+					Self->EventPayloads.Insert(EventsToSend, 0);
+					Self->TelemetryPayloads.Insert(TelemetriesToSend, 0);
+					Self->LogPayloads.Insert(LogsToSend, 0);
 				}
-				NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendRetryIntervalSeconds;
+				Self->NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendRetryIntervalSeconds;
 				return;
 			}
 			UE_LOG(LogTemp, Log, TEXT("AbxrLib - Data POST successful: %s"), *Response->GetContentAsString());

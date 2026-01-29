@@ -32,7 +32,7 @@ void FAbxrAuthService::Authenticate()
 		const TSharedPtr<FAbxrAuthService> Self1 = AuthPtr.Pin();
 		if (!Self1) return;
 #endif
-		Self1->AuthRequest([AuthPtr](const bool bSuccess) // TODO this passed in OK?
+		Self1->AuthRequest([AuthPtr](const bool bSuccess)
 		{
 			const TSharedPtr<FAbxrAuthService> Self2 = AuthPtr.Pin();
 			if (!Self2) return;
@@ -64,13 +64,11 @@ void FAbxrAuthService::Authenticate()
 void FAbxrAuthService::StartReAuthPolling()
 {
 	if (ReauthTickHandle.IsValid()) return;
-
-	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
 	
 	NextReauthCheckAtSeconds = FPlatformTime::Seconds() + ReauthPollSeconds;
 
 	ReauthTickHandle = FTSTicker::GetCoreTicker().AddTicker(
-		FTickerDelegate::CreateLambda([AuthPtr](float)
+		FTickerDelegate::CreateLambda([AuthPtr = AsWeak()](float)
 		{
 			if (const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin()) return Self->ReAuthTick();
 			
@@ -108,8 +106,7 @@ bool FAbxrAuthService::ReAuthTick()
 	ClearAuthenticationState();
 	
 	// Marshal back to game thread
-	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
-	AsyncTask(ENamedThreads::GameThread, [AuthPtr]
+	AsyncTask(ENamedThreads::GameThread, [AuthPtr = AsWeak()]
 	{
 		if (const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin())
 		{
@@ -157,8 +154,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetContentAsString(Json);
 	
-	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
-	Request->OnProcessRequestComplete().BindLambda([AuthPtr, OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
+	Request->OnProcessRequestComplete().BindLambda([AuthPtr = AsWeak(), OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 	{
 		TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
 		if (!Self) return;
@@ -211,9 +207,8 @@ void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 	Request->SetVerb("GET");
 	Request->SetHeader("Content-Type", "application/json");
 	SetAuthHeaders(Request);
-
-	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
-	Request->OnProcessRequestComplete().BindLambda([AuthPtr, OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
+	
+	Request->OnProcessRequestComplete().BindLambda([AuthPtr = AsWeak(), OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
 	{
 		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
 		if (!Self) return;
@@ -284,8 +279,7 @@ void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 {
 	FString OriginalPrompt = AuthMechanism.Prompt;
 	AuthMechanism.Prompt = KeyboardInput;
-	TWeakPtr<FAbxrAuthService> AuthPtr = AsWeak();
-	AuthRequest([AuthPtr, OriginalPrompt](const bool bSuccess)
+	AuthRequest([AuthPtr = AsWeak(), OriginalPrompt](const bool bSuccess)
 	{
 		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
 		if (!Self) return;
