@@ -60,12 +60,21 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UAbxrSubsystem::Deinitialize()
 {
-	AuthService.Reset();
-	AuthService->StopReAuthPolling();
+	if (AuthService)
+	{
+		AuthService->StopReAuthPolling();
+		AuthService.Reset();
+	}
+	
 	if (DataService)
 	{
 		DataService->Stop();
 		DataService.Reset();
+	}
+	
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(AuthenticationTimerHandle);
 	}
 	
 	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
