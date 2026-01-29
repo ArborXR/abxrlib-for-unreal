@@ -7,7 +7,7 @@ namespace Abxr
 {
 	ABXRLIB_API inline void Authenticate()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. Authenticate() failed."));
@@ -16,7 +16,7 @@ namespace Abxr
 		Subsystem->Authenticate();
 	}
 	
-	ABXRLIB_API inline void LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void LogDebug(const FString& Text, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -26,9 +26,13 @@ namespace Abxr
 		}
 		Subsystem->LogDebug(Text, Meta);
 	}
-	ABXRLIB_API inline void LogDebug(const FString& Text) { LogDebug(Text, TMap<FString, FString>()); }
+	ABXRLIB_API inline void LogDebug(const FString& Text)
+	{
+		TMap<FString, FString> Meta;
+		LogDebug(Text, Meta);
+	}
 	
-	ABXRLIB_API inline void LogInfo(const FString& Text, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void LogInfo(const FString& Text, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -38,9 +42,13 @@ namespace Abxr
 		}
 		Subsystem->LogInfo(Text, Meta);
 	}
-	ABXRLIB_API inline void LogInfo(const FString& Text) { LogInfo(Text, TMap<FString, FString>()); }
+	ABXRLIB_API inline void LogInfo(const FString& Text)
+	{
+		TMap<FString, FString> Meta;
+		LogInfo(Text, Meta);
+	}
 	
-	ABXRLIB_API inline void LogWarn(const FString& Text, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void LogWarn(const FString& Text, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -50,9 +58,13 @@ namespace Abxr
 		}
 		Subsystem->LogWarn(Text, Meta);
 	}
-	ABXRLIB_API inline void LogWarn(const FString& Text) { LogWarn(Text, TMap<FString, FString>()); }
+	ABXRLIB_API inline void LogWarn(const FString& Text)
+	{
+		TMap<FString, FString> Meta;
+		LogWarn(Text, Meta);
+	}
 	
-	ABXRLIB_API inline void LogError(const FString& Text, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void LogError(const FString& Text, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -62,9 +74,13 @@ namespace Abxr
 		}
 		Subsystem->LogError(Text, Meta);
 	}
-	ABXRLIB_API inline void LogError(const FString& Text) { LogError(Text, TMap<FString, FString>()); }
+	ABXRLIB_API inline void LogError(const FString& Text)
+	{
+		TMap<FString, FString> Meta;
+		LogError(Text, Meta);
+	}
 	
-	ABXRLIB_API inline void LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void LogCritical(const FString& Text, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -74,9 +90,13 @@ namespace Abxr
 		}
 		Subsystem->LogCritical(Text, Meta);
 	}
-	ABXRLIB_API inline void LogCritical(const FString& Text) { LogCritical(Text, TMap<FString, FString>()); }
+	ABXRLIB_API inline void LogCritical(const FString& Text)
+	{
+		TMap<FString, FString> Meta;
+		LogCritical(Text, Meta);
+	}
 	
-	ABXRLIB_API inline void Log(const FString& Text, const ELogLevel Level, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void Log(const FString& Text, const ELogLevel Level, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -86,10 +106,18 @@ namespace Abxr
 		}
 		Subsystem->Log(Text, Level, Meta);
 	}
-	ABXRLIB_API inline void Log(const FString& Text, const ELogLevel Level) { Log(Text, Level, TMap<FString, FString>()); }
-	ABXRLIB_API inline void Log(const FString& Text) { Log(Text, ELogLevel::Info, TMap<FString, FString>()); }
+	ABXRLIB_API inline void Log(const FString& Text, const ELogLevel Level)
+	{
+		TMap<FString, FString> Meta;
+		Log(Text, Level, Meta);
+	}
+	ABXRLIB_API inline void Log(const FString& Text)
+	{
+		TMap<FString, FString> Meta;
+		Log(Text, ELogLevel::Info, Meta);
+	}
 	
-	ABXRLIB_API inline void Event(const FString& Name, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void Event(const FString& Name, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -99,7 +127,11 @@ namespace Abxr
 		}
 		Subsystem->Event(Name, Meta);
 	}
-	ABXRLIB_API inline void Event(const FString& Name) { Event(Name, TMap<FString, FString>()); }
+	ABXRLIB_API inline void Event(const FString& Name)
+	{
+		TMap<FString, FString> Meta;
+		Event(Name, Meta);
+	}
 	ABXRLIB_API inline void Event(const FString& Name, const FVector& Position, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
@@ -116,7 +148,7 @@ namespace Abxr
 		Event(Name, Position, Meta);
 	}
 	
-	ABXRLIB_API inline void Telemetry(const FString& Name, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void Telemetry(const FString& Name, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -126,7 +158,11 @@ namespace Abxr
 		}
 		Subsystem->Telemetry(Name, Meta);
 	}
-	ABXRLIB_API inline void Telemetry(const FString& Name) { Telemetry(Name, TMap<FString, FString>()); }
+	ABXRLIB_API inline void Telemetry(const FString& Name)
+	{
+		TMap<FString, FString> Meta;
+		Telemetry(Name, Meta);
+	}
 	
 	ABXRLIB_API inline void EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta)
 	{
@@ -144,7 +180,7 @@ namespace Abxr
 		EventAssessmentStart(AssessmentName, Meta);
 	}
 	
-	ABXRLIB_API inline void EventAssessmentComplete(const FString& AssessmentName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void EventAssessmentComplete(const FString& AssessmentName, const int Score, const EEventStatus Status, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -256,7 +292,7 @@ namespace Abxr
 		EventLevelComplete(LevelName, Score, Meta);
 	}
 	
-	ABXRLIB_API inline void EventCritical(const FString& Label, const TMap<FString, FString>& Meta)
+	ABXRLIB_API inline void EventCritical(const FString& Label, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
@@ -266,11 +302,15 @@ namespace Abxr
 		}
 		Subsystem->EventCritical(Label, Meta);
 	}
-	ABXRLIB_API inline void EventCritical(const FString& Label) { EventCritical(Label, TMap<FString, FString>()); }
+	ABXRLIB_API inline void EventCritical(const FString& Label)
+	{
+		TMap<FString, FString> Meta;
+		EventCritical(Label, Meta);
+	}
 	
 	ABXRLIB_API inline void PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. PresentKeyboard() failed."));
@@ -283,7 +323,7 @@ namespace Abxr
 	// Gets the UUID assigned to device by ArborXR
 	ABXRLIB_API inline FString GetDeviceId()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetDeviceId() failed."));
@@ -295,7 +335,7 @@ namespace Abxr
 	// Gets the serial number assigned to device by OEM
 	ABXRLIB_API inline FString GetDeviceSerial()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetDeviceSerial() failed."));
@@ -307,7 +347,7 @@ namespace Abxr
 	// Gets the title given to device by admin through the ArborXR Web Portal
 	ABXRLIB_API inline FString GetDeviceTitle()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetDeviceTitle() failed."));
@@ -319,7 +359,7 @@ namespace Abxr
 	// Gets the tags added to device by admin through the ArborXR Web Portal
 	ABXRLIB_API inline TArray<FString> GetDeviceTags()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetDeviceTags() failed."));
@@ -331,7 +371,7 @@ namespace Abxr
 	// Gets the UUID of the organization where the device is assigned. Organizations are created in the ArborXR Web Portal
 	ABXRLIB_API inline FString GetOrgId()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetOrgId() failed."));
@@ -343,7 +383,7 @@ namespace Abxr
 	// Gets the name assigned to organization by admin through the ArborXR Web Portal
 	ABXRLIB_API inline FString GetOrgTitle()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetOrgTitle() failed."));
@@ -355,7 +395,7 @@ namespace Abxr
 	// Gets the identifier generated by ArborXR when admin assigns title to organization
 	ABXRLIB_API inline FString GetOrgSlug()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetOrgSlug() failed."));
@@ -367,7 +407,7 @@ namespace Abxr
 	// Gets the physical MAC address assigned to device by OEM
 	ABXRLIB_API inline FString GetMacAddressFixed()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetMacAddressFixed() failed."));
@@ -379,7 +419,7 @@ namespace Abxr
 	// Gets the randomized MAC address for the current WiFi connection
 	ABXRLIB_API inline FString GetMacAddressRandom()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetMacAddressRandom() failed."));
@@ -391,7 +431,7 @@ namespace Abxr
 	// Gets whether the device is SSO authenticated
 	ABXRLIB_API inline bool GetIsAuthenticated()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetIsAuthenticated() failed."));
@@ -403,7 +443,7 @@ namespace Abxr
 	// Gets SSO access token
 	ABXRLIB_API inline FString GetAccessToken()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetAccessToken() failed."));
@@ -415,7 +455,7 @@ namespace Abxr
 	// Gets SSO refresh token
 	ABXRLIB_API inline FString GetRefreshToken()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetRefreshToken() failed."));
@@ -427,7 +467,7 @@ namespace Abxr
 	// Gets SSO token remaining lifetime
 	ABXRLIB_API inline FDateTime GetExpiresDateUtc()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetExpiresDateUtc() failed."));
@@ -439,7 +479,7 @@ namespace Abxr
 	// Gets the device fingerprint
 	ABXRLIB_API inline FString GetFingerprint()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetFingerprint() failed."));
@@ -453,7 +493,7 @@ namespace Abxr
 	// Useful for starting new training experiences or resetting user context
 	ABXRLIB_API inline void StartNewSession()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. StartNewSession() failed."));
@@ -467,7 +507,7 @@ namespace Abxr
 	// Returns an empty map if no authentication has completed yet
 	ABXRLIB_API inline TMap<FString, FString> GetUserData()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Not initialized yet. GetUserData() failed."));

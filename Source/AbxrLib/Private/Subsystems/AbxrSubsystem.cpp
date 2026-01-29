@@ -93,37 +93,7 @@ void UAbxrSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
 	}
 }
 
-void UAbxrSubsystem::Authenticate()
-{
-	AuthService->Authenticate();
-}
-
-void UAbxrSubsystem::LogDebug(const FString& Text, const TMap<FString, FString>& Meta)
-{
-	Log(Text, ELogLevel::Debug, Meta);
-}
-
-void UAbxrSubsystem::LogInfo(const FString& Text, const TMap<FString, FString>& Meta)
-{
-	Log(Text, ELogLevel::Info, Meta);
-}
-
-void UAbxrSubsystem::LogWarn(const FString& Text, const TMap<FString, FString>& Meta)
-{
-	Log(Text, ELogLevel::Warn, Meta);
-}
-
-void UAbxrSubsystem::LogError(const FString& Text, const TMap<FString, FString>& Meta)
-{
-	Log(Text, ELogLevel::Error, Meta);
-}
-
-void UAbxrSubsystem::LogCritical(const FString& Text, const TMap<FString, FString>& Meta)
-{
-	Log(Text, ELogLevel::Critical, Meta);
-}
-
-void UAbxrSubsystem::Log(const FString& Text, const ELogLevel Level, TMap<FString, FString> Meta)
+void UAbxrSubsystem::Log(const FString& Text, const ELogLevel Level, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
@@ -153,7 +123,7 @@ void UAbxrSubsystem::Log(const FString& Text, const ELogLevel Level, TMap<FStrin
 	DataService->AddLog(LevelText, Text, Meta);
 }
 
-void UAbxrSubsystem::Event(const FString& Name, TMap<FString, FString> Meta)
+void UAbxrSubsystem::Event(const FString& Name, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
@@ -181,7 +151,7 @@ void UAbxrSubsystem::Event(const FString& Name, const FVector& Position, TMap<FS
 * @param Name      Name of the telemetry
 * @param Meta      Any additional information
 */
-void UAbxrSubsystem::Telemetry(const FString& Name, TMap<FString, FString> Meta)
+void UAbxrSubsystem::Telemetry(const FString& Name, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("Scene Name"), CurrentLevel);
 	MergeSuperMetaData(Meta);
@@ -233,7 +203,7 @@ void UAbxrSubsystem::EventInteractionStart(const FString& InteractionName, TMap<
 	Event(InteractionName, Meta);
 }
 
-void UAbxrSubsystem::EventInteractionComplete(const FString& InteractionName, EInteractionType InteractionType, const FString& Response, TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response, TMap<FString, FString>& Meta)
 {
 	Meta.Add(TEXT("type"), TEXT("interaction"));
 	Meta.Add(TEXT("verb"), TEXT("completed"));
@@ -260,10 +230,10 @@ void UAbxrSubsystem::EventLevelComplete(const FString& LevelName, const int Scor
 	Event(LevelName, Meta);
 }
 
-void UAbxrSubsystem::EventCritical(const FString& Label, const TMap<FString, FString>& Meta)
+void UAbxrSubsystem::EventCritical(const FString& Label, TMap<FString, FString>& Meta)
 {
-	const FString taggedName = TEXT("CRITICAL_ABXR_") + Label;
-	Event(taggedName, Meta);
+	const FString TaggedName = TEXT("CRITICAL_ABXR_") + Label;
+	Event(TaggedName, Meta);
 }
 
 void UAbxrSubsystem::AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta)
@@ -280,7 +250,7 @@ void UAbxrSubsystem::AddDuration(TMap<FString, int64>& StartTimes, const FString
 	}
 }
 
-void UAbxrSubsystem::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
+void UAbxrSubsystem::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain) const
 {
 	if (UAbxrUISubsystem* Subsys = GetGameInstance()->GetSubsystem<UAbxrUISubsystem>())
 	{
@@ -290,7 +260,7 @@ void UAbxrSubsystem::PresentKeyboard(const FString& PromptText, const FString& K
 
 FString UAbxrSubsystem::GetDeviceId()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetDeviceId();
 	}
@@ -300,7 +270,7 @@ FString UAbxrSubsystem::GetDeviceId()
 
 FString UAbxrSubsystem::GetDeviceSerial()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetDeviceSerial();
 	}
@@ -310,7 +280,7 @@ FString UAbxrSubsystem::GetDeviceSerial()
 
 FString UAbxrSubsystem::GetDeviceTitle()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetDeviceTitle();
 	}
@@ -320,7 +290,7 @@ FString UAbxrSubsystem::GetDeviceTitle()
 
 TArray<FString> UAbxrSubsystem::GetDeviceTags()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetDeviceTags();
 	}
@@ -330,7 +300,7 @@ TArray<FString> UAbxrSubsystem::GetDeviceTags()
 
 FString UAbxrSubsystem::GetOrgId()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetOrgId();
 	}
@@ -340,7 +310,7 @@ FString UAbxrSubsystem::GetOrgId()
 
 FString UAbxrSubsystem::GetOrgTitle()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetOrgTitle();
 	}
@@ -350,7 +320,7 @@ FString UAbxrSubsystem::GetOrgTitle()
 
 FString UAbxrSubsystem::GetOrgSlug()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetOrgSlug();
 	}
@@ -360,7 +330,7 @@ FString UAbxrSubsystem::GetOrgSlug()
 
 FString UAbxrSubsystem::GetMacAddressFixed()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetMacAddressFixed();
 	}
@@ -370,7 +340,7 @@ FString UAbxrSubsystem::GetMacAddressFixed()
 
 FString UAbxrSubsystem::GetMacAddressRandom()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetMacAddressRandom();
 	}
@@ -380,7 +350,7 @@ FString UAbxrSubsystem::GetMacAddressRandom()
 
 bool UAbxrSubsystem::GetIsAuthenticated()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetIsAuthenticated();
 	}
@@ -390,7 +360,7 @@ bool UAbxrSubsystem::GetIsAuthenticated()
 
 FString UAbxrSubsystem::GetAccessToken()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetAccessToken();
 	}
@@ -400,7 +370,7 @@ FString UAbxrSubsystem::GetAccessToken()
 
 FString UAbxrSubsystem::GetRefreshToken()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetRefreshToken();
 	}
@@ -410,7 +380,7 @@ FString UAbxrSubsystem::GetRefreshToken()
 
 FDateTime UAbxrSubsystem::GetExpiresDateUtc()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetExpiresDateUtc();
 	}
@@ -420,7 +390,7 @@ FDateTime UAbxrSubsystem::GetExpiresDateUtc()
 
 FString UAbxrSubsystem::GetFingerprint()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		return XRDMService->GetFingerprint();
 	}
@@ -428,13 +398,13 @@ FString UAbxrSubsystem::GetFingerprint()
 	return TEXT("");
 }
 
-void UAbxrSubsystem::StartNewSession()
+void UAbxrSubsystem::StartNewSession() const
 {
 	AuthService->SetSessionId(FGuid::NewGuid().ToString());
 	Authenticate();
 }
 
-TMap<FString, FString> UAbxrSubsystem::GetUserData()
+TMap<FString, FString> UAbxrSubsystem::GetUserData() const
 {
 	return AuthService->GetAuthResponse().UserData;
 }
