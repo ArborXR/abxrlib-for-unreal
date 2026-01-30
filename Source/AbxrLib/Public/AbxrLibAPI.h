@@ -7,7 +7,7 @@ namespace Abxr
 {
 	ABXRLIB_API inline void Authenticate()
 	{
-		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
@@ -308,18 +308,6 @@ namespace Abxr
 		EventCritical(Label, Meta);
 	}
 	
-	ABXRLIB_API inline void PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain)
-	{
-		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
-		if (Subsystem == nullptr)
-		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. PresentKeyboard() failed."));
-			return;
-		}
-		Subsystem->PresentKeyboard(PromptText, KeyboardType, EmailDomain);
-	}
-	ABXRLIB_API inline void PresentKeyboard(const FString& PromptText, const FString& KeyboardType) { PresentKeyboard(PromptText, KeyboardType, FString("")); }
-
 	// Gets the UUID assigned to device by ArborXR
 	ABXRLIB_API inline FString GetDeviceId()
 	{
@@ -493,7 +481,7 @@ namespace Abxr
 	// Useful for starting new training experiences or resetting user context
 	ABXRLIB_API inline void StartNewSession()
 	{
-		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. StartNewSession() failed."));

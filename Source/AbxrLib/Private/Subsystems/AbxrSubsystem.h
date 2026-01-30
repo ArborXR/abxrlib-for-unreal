@@ -5,6 +5,10 @@
 #include "Services/Auth/AbxrAuthService.h"
 #include "AbxrSubsystem.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrAuthMechanism&, Request);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAuthSucceeded);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrAuthFailed, const FString&, Error);
+
 UCLASS()
 class ABXRLIB_API UAbxrSubsystem : public UGameInstanceSubsystem
 {
@@ -12,9 +16,18 @@ class ABXRLIB_API UAbxrSubsystem : public UGameInstanceSubsystem
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
+	void SubmitInput(const FString& Input) const { AuthService->KeyboardAuthenticate(Input); }
 	
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
-	void Authenticate() const { AuthService->Authenticate(); }
+	FAbxrInputRequested OnInputRequested;
+
+	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
+	FAbxrAuthSucceeded OnAuthSucceeded;
+
+	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
+	FAbxrAuthFailed OnAuthFailed;
+
+	UFUNCTION(BlueprintCallable, Category = "Abxr|Auth")
+	void Authenticate() const;
 	
 	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void LogDebug(const FString& Text, TMap<FString, FString>& Meta) { Log(Text, ELogLevel::Debug, Meta); }
@@ -162,11 +175,7 @@ public:
 		TMap<FString, FString> Meta;
 		EventCritical(Label, Meta);
 	}
-
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
-	void PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain) const;
-	void PresentKeyboard(const FString& PromptText, const FString& KeyboardType) const { PresentKeyboard(PromptText, KeyboardType, FString("")); }
-
+	
 	// Gets the UUID assigned to device by ArborXR
 	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	static FString GetDeviceId();
@@ -227,7 +236,7 @@ public:
 	// Generates a new session ID and performs fresh authentication
 	// Useful for starting new training experiences or resetting user context
 	UFUNCTION(BlueprintCallable, Category = "Abxr")
-	void StartNewSession() const;
+	void StartNewSession();
 
 	// Get the learner/user data from the most recent authentication completion
 	// This is the userData object from the authentication response, containing user preferences and information
@@ -264,6 +273,7 @@ public:
 
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
+	FAbxrAuthCallbacks CreateAuthCallbacks();
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 	void Register(const FString& Key, const FString& Value, bool Overwrite);

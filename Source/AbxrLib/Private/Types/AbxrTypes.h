@@ -113,6 +113,13 @@ struct FAbxrConfigPayload
 	UPROPERTY() FString PositionCapturePeriod;
 };
 
+struct FAbxrAuthCallbacks
+{
+	TFunction<void(const FAbxrAuthMechanism&)> OnInputRequested;
+	TFunction<void()> OnSucceeded;
+	TFunction<void(const FString&)> OnFailed;
+};
+
 USTRUCT()
 struct FAbxrEventPayload
 {

@@ -4,8 +4,9 @@
 #include "Services/Platform/XRDM/XRDMService.h"
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
-#include "Types/AbxrLog.h"
 #include "UI/AbxrUISubsystem.h"
+#include "Async/Async.h"
+#include "Types/AbxrLog.h"
 
 const FString UAbxrSubsystem::SuperMetaDataKey(TEXT("AbxrSuperMetaData"));
 
@@ -15,7 +16,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	bInitialized = true;
 	Super::Initialize(Collection);
 	AbxrLib_SetActiveSubsystem(this);
-	AuthService = MakeShared<FAbxrAuthService>();
+	AuthService = MakeShared<FAbxrAuthService>(CreateAuthCallbacks());
 	DataService = MakeShared<FAbxrDataService>(*AuthService);
 	SuperMetaData = TMap<FString, FString>();
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
@@ -84,6 +85,46 @@ void UAbxrSubsystem::Deinitialize()
 	
 	Super::Deinitialize();
 	bInitialized = false;
+}
+
+FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
+{
+	FAbxrAuthCallbacks Callbacks;
+	Callbacks.OnInputRequested = [WeakThis = TWeakObjectPtr(this)](const FAbxrAuthMechanism& Request)
+	{
+		AsyncTask(ENamedThreads::GameThread, [WeakThis, Request]
+		{
+			if (!WeakThis.IsValid()) return;
+			const UAbxrSubsystem* Self = WeakThis.Get();
+			Self->OnInputRequested.Broadcast(Request);
+		});
+	};
+	Callbacks.OnSucceeded = [WeakThis = TWeakObjectPtr(this)]
+	{
+		AsyncTask(ENamedThreads::GameThread, [WeakThis]
+		{
+			if (!WeakThis.IsValid()) return;
+			const UAbxrSubsystem* Self = WeakThis.Get();
+			Self->OnAuthSucceeded.Broadcast();
+		});
+	};
+	Callbacks.OnFailed = [WeakThis = TWeakObjectPtr(this)](const FString& Error)
+	{
+		AsyncTask(ENamedThreads::GameThread, [WeakThis, Error]
+		{
+			if (!WeakThis.IsValid()) return;
+			const UAbxrSubsystem* Self = WeakThis.Get();
+			Self->OnAuthFailed.Broadcast(Error);
+		});
+	};
+	
+	return Callbacks;
+}
+
+void UAbxrSubsystem::Authenticate() const
+{
+	if (!AuthService) return;
+	AuthService->Authenticate();
 }
 
 void UAbxrSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
@@ -260,14 +301,6 @@ void UAbxrSubsystem::AddDuration(TMap<FString, int64>& StartTimes, const FString
 	}
 }
 
-void UAbxrSubsystem::PresentKeyboard(const FString& PromptText, const FString& KeyboardType, const FString& EmailDomain) const
-{
-	if (UAbxrUISubsystem* Subsys = GetGameInstance()->GetSubsystem<UAbxrUISubsystem>())
-	{
-		Subsys->ShowKeyboardUI(FText::FromString(PromptText));
-	}
-}
-
 FString UAbxrSubsystem::GetDeviceId()
 {
 	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
@@ -408,7 +441,7 @@ FString UAbxrSubsystem::GetFingerprint()
 	return TEXT("");
 }
 
-void UAbxrSubsystem::StartNewSession() const
+void UAbxrSubsystem::StartNewSession()
 {
 	AuthService->SetSessionId(FGuid::NewGuid().ToString());
 	Authenticate();

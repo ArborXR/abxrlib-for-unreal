@@ -6,28 +6,16 @@
 class FAbxrAuthService : public TSharedFromThis<FAbxrAuthService>
 {
 public:
-	FAbxrAuthService() : TokenExpiry(0), FailedAuthAttempts(0), Partner(TEXT("none")) {}
+	explicit FAbxrAuthService(const FAbxrAuthCallbacks& callbacks);
+	~FAbxrAuthService();
 	
 	void Authenticate();
-	void StartReAuthPolling();
-	void StopReAuthPolling();
-	void SetSessionId(const FString& sessionId) { SessionId = sessionId; }
+	bool Authenticated() const { return bAuthenticated; }
 	FAbxrAuthResponse GetAuthResponse() { return ResponseData; }
-	
-	bool Authenticated() const
-	{
-		const FDateTime Now = FDateTime::UtcNow();
-		return !ResponseData.Token.IsEmpty() && !ResponseData.Secret.IsEmpty() && Now.ToUnixTimestamp() <= TokenExpiry && NeedKeyboardAuth == false;
-	}
-	
+	void SetSessionId(const FString& sessionId) { Payload.SessionId = sessionId; }
 	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, const FString& Json) const;
-	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request)
-	{
-		SetAuthHeaders(Request, TEXT(""));
-	}
-
-	void KeyboardAuthenticate();
 	void KeyboardAuthenticate(const FString& KeyboardInput);
+	void StopReAuthPolling();
 
 private:
 	TMap<FString, FString> CreateAuthMechanismDict() const;
@@ -35,33 +23,31 @@ private:
 	void AuthRequest(TFunction<void(bool)> OnComplete);
 	void GetConfiguration(TFunction<void(bool)> OnComplete);
 	static void SetConfigFromPayload(const FAbxrConfigPayload& Payload);
+	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request) const { SetAuthHeaders(Request, TEXT("")); }
 	void GetConfigData();
 	void GetArborData();
-    
+	void AuthSucceeded();
+	void KeyboardAuthenticate();
+	
 	bool ReAuthTick();
+	void StartReAuthPolling();
+	
+	FAbxrAuthCallbacks Callbacks;
+	FThreadSafeBool bStopping{false};
+	FThreadSafeBool bAttemptActive{false};
+	FHttpRequestPtr ActiveRequest;
 
+	bool bAuthenticated;
 	FAbxrAuthResponse ResponseData;
 	
-	FString SessionId;
+	FAbxrAuthPayload Payload;
 	int TokenExpiry;
 	FAbxrAuthMechanism AuthMechanism;
 	int FailedAuthAttempts;
-	std::optional<bool> NeedKeyboardAuth;
-
-	FString OrgId;
-	FString DeviceId;
-	FString AuthSecret;
-	FString AppId;
-	FString Partner;
-	FString DeviceModel;
-	TArray<FString> DeviceTags;
-	FString XrdmVersion;
-	FString IpAddress;
 	
-	FTSTicker::FDelegateHandle ReauthTickHandle;
-	bool bReauthInFlight = false;
-	double NextReauthCheckAtSeconds = 0.0;
+	FTSTicker::FDelegateHandle ReAuthTickHandle;
+	double NextReAuthCheckAtSeconds = 0.0;
 
-	static constexpr double ReauthPollSeconds = 30.0;
-	static constexpr int32 ReauthThresholdSeconds = 120;
+	static constexpr double ReAuthPollSeconds = 30.0;
+	static constexpr int32 ReAuthThresholdSeconds = 120;
 };

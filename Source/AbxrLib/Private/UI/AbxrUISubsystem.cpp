@@ -1,11 +1,29 @@
 #include "UI/AbxrUISubsystem.h"
-#include "Services/Auth/AbxrAuthService.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Subsystems/AbxrSubsystem.h"
 #include "Types/AbxrLog.h"
 #include "UI/AbxrInteractionSubsystem.h"
 #include "UI/VRPopupWidget.h"
+
+void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	if (UAbxrSubsystem* Abxr = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
+	{
+		Abxr->OnInputRequested.AddDynamic(this, &UAbxrUISubsystem::HandleInputRequested);
+	}
+}
+
+void UAbxrUISubsystem::Deinitialize()
+{
+	if (UAbxrSubsystem* Abxr = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
+	{
+		Abxr->OnInputRequested.RemoveAll(this);
+	}
+	HideKeyboardUI();
+	Super::Deinitialize();
+}
 
 static void UpdatePopupInFrontOfPlayer(const UWorld* World, const APlayerController* PC, AActor* Popup, const float DistanceCm, const float FixedWorldZ)
 {
@@ -33,7 +51,7 @@ static void UpdatePopupInFrontOfPlayer(const UWorld* World, const APlayerControl
 AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World)
 {
     TSoftClassPtr<AActor> PopupActorPtr(FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C")));
-    UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();  // TODO maybe do this when app loads
+    UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();
     if (!PopupActorClass)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("Failed to load class"));
@@ -126,7 +144,7 @@ static bool SetUserWidgetTextProperty(UUserWidget* Widget, const FName PropertyN
     return false;
 }
 
-void UAbxrUISubsystem::ShowKeyboardUI(const FText& PromptText)
+void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt)
 {
     UWorld* World = GetWorld();
 
@@ -155,7 +173,7 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& PromptText)
     ActivePopupActor = Spawned;
     ActivePopupWidget = PopupWidget;
     
-    SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), PromptText);
+    SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), Prompt);
     PopupWidget->SynchronizeProperties();
 
     // Bind click delegate once
@@ -187,7 +205,12 @@ void UAbxrUISubsystem::HandlePopupClicked(const FText& InputText)
 {
     if (UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
     {
-        Subsystem->GetAuthService()->KeyboardAuthenticate(InputText.ToString());
+        Subsystem->SubmitInput(InputText.ToString());
     }
     HideKeyboardUI();
+}
+
+void UAbxrUISubsystem::HandleInputRequested(const FAbxrAuthMechanism& Request)
+{
+	ShowKeyboardUI(FText::FromString(Request.Prompt));
 }
