@@ -6,6 +6,7 @@
 #include "Misc/EngineVersion.h"
 #include "GenericPlatform/GenericPlatformMemory.h"
 #include "TimerManager.h"
+#include "Types/AbxrLog.h"
 #if PLATFORM_ANDROID
 #include "Android/AndroidPlatformMisc.h"
 #endif
@@ -49,7 +50,7 @@ void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("AbxrLib: Unable to initialize TelemetrySubsystem"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Unable to initialize TelemetrySubsystem"));
     }
 }
 

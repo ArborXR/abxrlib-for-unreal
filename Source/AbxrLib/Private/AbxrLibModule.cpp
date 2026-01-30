@@ -1,17 +1,18 @@
 #include "Modules/ModuleManager.h"
 #include "CoreMinimal.h"
 #include "AbxrLibAPI_Internal.h"
+#include "Types/AbxrLog.h"
 
 class FAbxrLibModule : public IModuleInterface
 {
 public:
     virtual void StartupModule() override
     {
-        UE_LOG(LogTemp, Log, TEXT("AbxrLib: StartupModule"));
+        UE_LOG(LogAbxrLib, Log, TEXT("StartupModule"));
     }
     virtual void ShutdownModule() override
     {
-        UE_LOG(LogTemp, Log, TEXT("AbxrLib: ShutdownModule"));
+        UE_LOG(LogAbxrLib, Log, TEXT("ShutdownModule"));
     }
 };
 

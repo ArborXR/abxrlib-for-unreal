@@ -5,6 +5,7 @@
 #include "Util/AbxrUtil.h"
 #include "Interfaces/IHttpResponse.h"
 #include "HAL/PlatformTime.h"
+#include "Types/AbxrLog.h"
 
 bool FAbxrDataService::Tick(float /*DeltaTime*/)
 {
@@ -130,7 +131,7 @@ void FAbxrDataService::Send()
 			{
 				const TSharedPtr<FAbxrDataService> Self = DataPtr.Pin();
 				if (!Self) return;
-				UE_LOG(LogTemp, Error, TEXT("AbxrLib - Data POST failed: %s"), *Response->GetContentAsString());
+				UE_LOG(LogAbxrLib, Error, TEXT("Data POST failed: %s"), *Response->GetContentAsString());
 				{
 					FScopeLock Lock(&Self->Mutex);
 					Self->EventPayloads.Insert(EventsToSend, 0);
@@ -140,7 +141,7 @@ void FAbxrDataService::Send()
 				Self->NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendRetryIntervalSeconds;
 				return;
 			}
-			UE_LOG(LogTemp, Log, TEXT("AbxrLib - Data POST successful: %s"), *Response->GetContentAsString());
+			UE_LOG(LogAbxrLib, Log, TEXT("Data POST successful: %s"), *Response->GetContentAsString());
 		});
 	Request->ProcessRequest();
 }

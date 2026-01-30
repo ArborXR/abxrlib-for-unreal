@@ -3,6 +3,7 @@
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Subsystems/AbxrSubsystem.h"
+#include "Types/AbxrLog.h"
 #include "UI/AbxrInteractionSubsystem.h"
 #include "UI/VRPopupWidget.h"
 
@@ -32,17 +33,17 @@ static void UpdatePopupInFrontOfPlayer(const UWorld* World, const APlayerControl
 AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World)
 {
     TSoftClassPtr<AActor> PopupActorPtr(FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C")));
-    UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();
+    UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();  // TODO maybe do this when app loads
     if (!PopupActorClass)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Failed to load class"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to load class"));
         return nullptr;
     }
 
     APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
     if (!PC)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AbxrLib: No PlayerController"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("No PlayerController"));
         return nullptr;
     }
 
@@ -70,7 +71,7 @@ AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World)
     AActor* Spawned = World->SpawnActor<AActor>(PopupActorClass, SpawnLocation, SpawnRotation, Params);
     if (!Spawned)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Failed to spawn popup actor"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to spawn popup actor"));
         return nullptr;
     }
 	
@@ -133,21 +134,21 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& PromptText)
     AActor* Spawned = SpawnPopupInFrontOfPlayer(World);
     if (!Spawned)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Popup spawn failed"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Popup spawn failed"));
         return;
     }
 
     const UWidgetComponent* WC = Spawned->FindComponentByClass<UWidgetComponent>();
     if (!WC)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Spawned popup has no WidgetComponent"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Spawned popup has no WidgetComponent"));
         return;
     }
 
     UVRPopupWidget* PopupWidget = Cast<UVRPopupWidget>(WC->GetUserWidgetObject());
     if (!PopupWidget)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AbxrLib: Widget is not UVRPopupWidget"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Widget is not UVRPopupWidget"));
         return;
     }
     

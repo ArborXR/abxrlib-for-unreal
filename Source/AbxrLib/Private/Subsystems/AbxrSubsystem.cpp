@@ -4,6 +4,7 @@
 #include "Services/Platform/XRDM/XRDMService.h"
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
+#include "Types/AbxrLog.h"
 #include "UI/AbxrUISubsystem.h"
 
 const FString UAbxrSubsystem::SuperMetaDataKey(TEXT("AbxrSuperMetaData"));
@@ -25,11 +26,11 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
 	{
 		XRDMService->Initialize();
-		UE_LOG(LogTemp, Log, TEXT("XRDM Service singleton retrieved and initialized"));
+		UE_LOG(LogAbxrLib, Log, TEXT("XRDM Service singleton retrieved and initialized"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to get XRDM Service singleton"));
+		UE_LOG(LogAbxrLib, Error, TEXT("Failed to get XRDM Service singleton"));
 	}
 #endif
 	LoadSuperMetaData();
@@ -52,7 +53,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("AbxrLib: Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
+		UE_LOG(LogAbxrLib, Log, TEXT("Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
 	}
 	
 	DataService->Start();
@@ -422,9 +423,9 @@ void UAbxrSubsystem::Register(const FString& Key, const FString& Value, const bo
 {
 	if (IsReservedSuperMetaDataKey(Key))
 	{
-		const FString ErrorMessage = TEXT("AbxrLib: Cannot register super metadata with reserved key '") + Key +
+		const FString ErrorMessage = TEXT("Cannot register super metadata with reserved key '") + Key +
 			TEXT("'. Reserved keys are: module, moduleName, moduleId, moduleOrder");
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *ErrorMessage);
+		UE_LOG(LogAbxrLib, Warning, TEXT("%s"), *ErrorMessage);
 		TMap<FString, FString> Meta;
 		Meta.Add(TEXT("attempted_key"), Key);
 		Meta.Add(TEXT("attempted_value"), Value);

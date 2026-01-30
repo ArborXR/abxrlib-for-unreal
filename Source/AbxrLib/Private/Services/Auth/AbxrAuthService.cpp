@@ -14,6 +14,7 @@
 #include "HAL/PlatformMisc.h"
 #include "Interfaces/IPluginManager.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "Types/AbxrLog.h"
 
 void FAbxrAuthService::Authenticate()
 {
@@ -49,7 +50,7 @@ void FAbxrAuthService::Authenticate()
 					else
 					{
 						Self3->NeedKeyboardAuth = false;
-						UE_LOG(LogTemp, Log, TEXT("AbxrLib: Authentication fully completed"));
+						UE_LOG(LogAbxrLib, Log, TEXT("Authentication fully completed"));
 					}
 				});
 				
@@ -160,7 +161,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 		if (!Self) return;
 		if (!bWasSuccessful || !Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
 		{
-			UE_LOG(LogTemp, Error, TEXT("AbxrLib: Authentication failed : %s"), *Response->GetContentAsString());
+			UE_LOG(LogAbxrLib, Error, TEXT("Authentication failed : %s"), *Response->GetContentAsString());
 			OnComplete(false);
 			return;
 		}
@@ -170,7 +171,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 		FAbxrAuthResponse AuthResponse;
 		if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
 		{
-			UE_LOG(LogTemp, Error, TEXT("AbxrLib: Failed to parse auth response JSON: %s"), *Body);
+			UE_LOG(LogAbxrLib, Error, TEXT("Failed to parse auth response JSON: %s"), *Body);
 			OnComplete(false);
 			return;
 		}
@@ -194,7 +195,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 		}
 		
 		OnComplete(true);
-		UE_LOG(LogTemp, Log, TEXT("AbxrLib: Authenticated successfully"));
+		UE_LOG(LogAbxrLib, Log, TEXT("Authenticated successfully"));
 	});
 	
 	Request->ProcessRequest();
@@ -218,12 +219,12 @@ void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
 			Self->SetConfigFromPayload(Config);
 			Self->AuthMechanism = Config.AuthMechanism;
-			UE_LOG(LogTemp, Log, TEXT("AbxrLib - GetConfiguration() successful"));
+			UE_LOG(LogAbxrLib, Log, TEXT("GetConfiguration() successful"));
 			OnComplete(true);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("AbxrLib - GetConfiguration failed: %s"), *Resp->GetContentAsString());
+			UE_LOG(LogAbxrLib, Error, TEXT("GetConfiguration failed: %s"), *Resp->GetContentAsString());
 			OnComplete(false);
 		}
 	});
@@ -342,5 +343,5 @@ void FAbxrAuthService::ClearAuthenticationState()
 	// Reset auth handoff tracking
 	//_sessionUsedAuthHandoff = false;
 
-	UE_LOG(LogTemp, Log, TEXT("AbxrLib: Authentication state cleared - data transmission stopped"));
+	UE_LOG(LogAbxrLib, Log, TEXT("Authentication state cleared - data transmission stopped"));
 }

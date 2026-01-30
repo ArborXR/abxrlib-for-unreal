@@ -2,6 +2,7 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 #include "Async/AsyncWork.h"
+#include "Types/AbxrLog.h"
 
 UXRDMService* UXRDMService::Instance = nullptr;
 
@@ -87,7 +88,7 @@ TSharedPtr<TPromise<bool>> UXRDMService::WaitForConnection()
     
     if (!bIsInitialized)
     {
-        UE_LOG(LogTemp, Warning, TEXT("XRDMService not initialized, connection will fail"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("XRDMService not initialized, connection will fail"));
         Promise->SetValue(false);
         return Promise;
     }
@@ -116,7 +117,7 @@ bool UXRDMService::OnConnectionTimeout(float DeltaTime)
 {
     if (!bConnectionAttemptComplete)
     {
-        UE_LOG(LogTemp, Warning, TEXT("XRDM connection attempt timed out after 1 second"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("XRDM connection attempt timed out after 1 second"));
         CompleteConnectionAttempt(false);
     }
     
@@ -349,14 +350,14 @@ void UXRDMService::RegisterNativeMethods()
     JNIEnv* Env = FAndroidApplication::GetJavaEnv();
     if (!Env)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to get JNI environment for native method registration"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to get JNI environment for native method registration"));
         return;
     }
     
     jclass CallbackClass = FAndroidApplication::FindJavaClass("com.xrdm.xrdmbridge.NativeConnectionCallback");
     if (!CallbackClass)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to find NativeConnectionCallback class for native method registration"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to find NativeConnectionCallback class for native method registration"));
         return;
     }
 
@@ -369,11 +370,11 @@ void UXRDMService::RegisterNativeMethods()
     int Result = Env->RegisterNatives(CallbackClass, NativeMethods, 2);
     if (Result < 0)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to register native methods"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to register native methods"));
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("Successfully registered XRDM native methods (onConnected & onDisconnected)"));
+        UE_LOG(LogAbxrLib, Log, TEXT("Successfully registered XRDM native methods (onConnected & onDisconnected)"));
     }
 }
 
@@ -391,7 +392,7 @@ void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject 
             if (Instance && Instance->bIsInitialized)
             {
                 Instance->CompleteConnectionAttempt(true);
-                UE_LOG(LogTemp, Log, TEXT("XRDM SDK connected via native callback"));
+                UE_LOG(LogAbxrLib, Log, TEXT("XRDM SDK connected via native callback"));
             }
         });
     }
@@ -417,7 +418,7 @@ void UXRDMService::InitializeSDK()
     JNIEnv* Env = FAndroidApplication::GetJavaEnv();
     if (!Env)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to get JNI environment"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to get JNI environment"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -425,7 +426,7 @@ void UXRDMService::InitializeSDK()
     SdkClass = FAndroidApplication::FindJavaClass("app.xrdm.sdk.external.Sdk");
     if (!SdkClass)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to find any SDK class"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to find any SDK class"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -433,7 +434,7 @@ void UXRDMService::InitializeSDK()
     jmethodID Constructor = Env->GetMethodID(SdkClass, "<init>", "()V");
     if (!Constructor)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to find SDK constructor"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to find SDK constructor"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -441,13 +442,13 @@ void UXRDMService::InitializeSDK()
     SdkInstance = Env->NewObject(SdkClass, Constructor);
     if (!SdkInstance)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create SDK instance"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to create SDK instance"));
         CompleteConnectionAttempt(false);
         return;
     }
 
     SdkInstance = Env->NewGlobalRef(SdkInstance);
-    UE_LOG(LogTemp, Log, TEXT("SDK instance created successfully"));
+    UE_LOG(LogAbxrLib, Log, TEXT("SDK instance created successfully"));
     
     ConnectToService();
 }
@@ -457,7 +458,7 @@ void UXRDMService::ConnectToService()
     JNIEnv* Env = FAndroidApplication::GetJavaEnv();
     if (!Env || !SdkInstance)
     {
-        UE_LOG(LogTemp, Error, TEXT("JNI environment or SDK instance not available"));
+        UE_LOG(LogAbxrLib, Error, TEXT("JNI environment or SDK instance not available"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -465,7 +466,7 @@ void UXRDMService::ConnectToService()
     jobject CurrentActivity = FAndroidApplication::GetGameActivityThis();
     if (!CurrentActivity)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to get current activity"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to get current activity"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -473,7 +474,7 @@ void UXRDMService::ConnectToService()
     jclass CallbackClass = FAndroidApplication::FindJavaClass("com.xrdm.xrdmbridge.NativeConnectionCallback");
     if (!CallbackClass)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to find NativeConnectionCallback class"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to find NativeConnectionCallback class"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -481,7 +482,7 @@ void UXRDMService::ConnectToService()
     jmethodID CallbackConstructor = Env->GetMethodID(CallbackClass, "<init>", "()V");
     if (!CallbackConstructor)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to find NativeConnectionCallback constructor"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to find NativeConnectionCallback constructor"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -489,7 +490,7 @@ void UXRDMService::ConnectToService()
     jobject CallbackInstance = Env->NewObject(CallbackClass, CallbackConstructor);
     if (!CallbackInstance)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create NativeConnectionCallback instance"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to create NativeConnectionCallback instance"));
         CompleteConnectionAttempt(false);
         return;
     }
@@ -501,7 +502,7 @@ void UXRDMService::ConnectToService()
     jmethodID ConnectMethod = Env->GetMethodID(SdkClass, "connect", "(Landroid/content/Context;Lapp/xrdm/sdk/external/IConnectionCallback;)V");
     if (ConnectMethod)
     {
-        UE_LOG(LogTemp, Log, TEXT("Found connect method with Context + IConnectionCallback signature"));
+        UE_LOG(LogAbxrLib, Log, TEXT("Found connect method with Context + IConnectionCallback signature"));
         Env->CallVoidMethod(SdkInstance, ConnectMethod, CurrentActivity, ConnectionCallback);
         return;
     }
@@ -510,7 +511,7 @@ void UXRDMService::ConnectToService()
     ConnectMethod = Env->GetMethodID(SdkClass, "connect", "(Landroid/app/Activity;Lapp/xrdm/sdk/external/IConnectionCallback;)V");
     if (ConnectMethod)
     {
-        UE_LOG(LogTemp, Log, TEXT("Found connect method with Activity + IConnectionCallback signature"));
+        UE_LOG(LogAbxrLib, Log, TEXT("Found connect method with Activity + IConnectionCallback signature"));
         Env->CallVoidMethod(SdkInstance, ConnectMethod, CurrentActivity, ConnectionCallback);
         return;
     }
@@ -519,7 +520,7 @@ void UXRDMService::ConnectToService()
     Env->DeleteGlobalRef(ConnectionCallback);
     ConnectionCallback = nullptr;
     
-    UE_LOG(LogTemp, Error, TEXT("Failed to find connect method with IConnectionCallback"));
+    UE_LOG(LogAbxrLib, Error, TEXT("Failed to find connect method with IConnectionCallback"));
     CompleteConnectionAttempt(false);
 }
 
@@ -554,35 +555,35 @@ jobject UXRDMService::CallJNIResultMethod(const char* MethodName) const
 {
     if (!bIsConnected || !ServiceWrapper)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Cannot call %s - service not connected"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Cannot call %s - service not connected"), UTF8_TO_TCHAR(MethodName));
         return nullptr;
     }
 
     JNIEnv* Env = FAndroidApplication::GetJavaEnv();
     if (!Env)
     {
-        UE_LOG(LogTemp, Error, TEXT("No JNI environment for %s"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Error, TEXT("No JNI environment for %s"), UTF8_TO_TCHAR(MethodName));
         return nullptr;
     }
 
     // Clear any pending exceptions first
     if (Env->ExceptionCheck())
     {
-        UE_LOG(LogTemp, Warning, TEXT("Clearing pending exception before calling %s"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Clearing pending exception before calling %s"), UTF8_TO_TCHAR(MethodName));
         Env->ExceptionClear();
     }
 
     jclass ServiceWrapperClass = Env->GetObjectClass(ServiceWrapper);
     if (!ServiceWrapperClass)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to get service wrapper class for %s"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to get service wrapper class for %s"), UTF8_TO_TCHAR(MethodName));
         return nullptr;
     }
     
     jmethodID Method = Env->GetMethodID(ServiceWrapperClass, MethodName, "()Lapp/xrdm/sdk/external/Result;");
     if (!Method)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to find method %s with Result signature"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Error, TEXT("Failed to find method %s with Result signature"), UTF8_TO_TCHAR(MethodName));
         return nullptr;
     }
     
@@ -590,7 +591,7 @@ jobject UXRDMService::CallJNIResultMethod(const char* MethodName) const
     
     if (Env->ExceptionCheck())
     {
-        UE_LOG(LogTemp, Error, TEXT("Exception occurred calling %s"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Error, TEXT("Exception occurred calling %s"), UTF8_TO_TCHAR(MethodName));
         Env->ExceptionDescribe();
         Env->ExceptionClear();
         return nullptr;
@@ -598,14 +599,14 @@ jobject UXRDMService::CallJNIResultMethod(const char* MethodName) const
     
     if (!ResultObject)
     {
-        UE_LOG(LogTemp, Error, TEXT("Method %s returned null Result object"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Error, TEXT("Method %s returned null Result object"), UTF8_TO_TCHAR(MethodName));
         return nullptr;
     }
     
     jclass ResultClass = FAndroidApplication::FindJavaClass("app.xrdm.sdk.external.Result");
     if (!ResultClass)
     {
-        UE_LOG(LogTemp, Error, TEXT("Could not find Result class"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Could not find Result class"));
         Env->DeleteLocalRef(ResultObject);
         return nullptr;
     }
@@ -613,7 +614,7 @@ jobject UXRDMService::CallJNIResultMethod(const char* MethodName) const
     jmethodID IsOkMethod = Env->GetMethodID(ResultClass, "isOk", "()Z");
     if (!IsOkMethod)
     {
-        UE_LOG(LogTemp, Error, TEXT("Could not find isOk method on Result class"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Could not find isOk method on Result class"));
         Env->DeleteLocalRef(ResultObject);
         return nullptr;
     }
@@ -625,7 +626,7 @@ jobject UXRDMService::CallJNIResultMethod(const char* MethodName) const
         jmethodID GetValueMethod = Env->GetMethodID(ResultClass, "getValue", "()Ljava/lang/Object;");
         if (!GetValueMethod)
         {
-            UE_LOG(LogTemp, Error, TEXT("Could not find getValue method on Result class"));
+            UE_LOG(LogAbxrLib, Error, TEXT("Could not find getValue method on Result class"));
             Env->DeleteLocalRef(ResultObject);
             return nullptr;
         }
@@ -644,7 +645,7 @@ jobject UXRDMService::CallJNIResultMethod(const char* MethodName) const
             if (ErrorString)
             {
                 const char* ErrorChars = Env->GetStringUTFChars(ErrorString, nullptr);
-                UE_LOG(LogTemp, Error, TEXT("SDK Error calling %s: %s"), UTF8_TO_TCHAR(MethodName), UTF8_TO_TCHAR(ErrorChars));
+                UE_LOG(LogAbxrLib, Error, TEXT("SDK Error calling %s: %s"), UTF8_TO_TCHAR(MethodName), UTF8_TO_TCHAR(ErrorChars));
                 Env->ReleaseStringUTFChars(ErrorString, ErrorChars);
                 Env->DeleteLocalRef(ErrorString);
             }
@@ -670,7 +671,7 @@ FString UXRDMService::CallJNIResultString(const char* MethodName) const
         return ReturnValue;
     }
     
-    UE_LOG(LogTemp, Warning, TEXT("getValue() returned non-string for %s"), UTF8_TO_TCHAR(MethodName));
+    UE_LOG(LogAbxrLib, Warning, TEXT("getValue() returned non-string for %s"), UTF8_TO_TCHAR(MethodName));
     Env->DeleteLocalRef(ValueObject);
     return FString();
 }
@@ -693,7 +694,7 @@ bool UXRDMService::CallJNIBoolMethod(const char* MethodName) const
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("ValueObject is not a String for method %s"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Warning, TEXT("ValueObject is not a String for method %s"), UTF8_TO_TCHAR(MethodName));
     }
     
     Env->DeleteLocalRef(ValueObject);
@@ -720,18 +721,18 @@ FDateTime UXRDMService::CallJNIDateTimeMethod(const char* MethodName) const
         {
             if (!FDateTime::ParseIso8601(*DateString, ReturnValue))
             {
-                UE_LOG(LogTemp, Warning, TEXT("Failed to parse ISO8601 datetime string for %s: %s"), UTF8_TO_TCHAR(MethodName), *DateString);
+                UE_LOG(LogAbxrLib, Warning, TEXT("Failed to parse ISO8601 datetime string for %s: %s"), UTF8_TO_TCHAR(MethodName), *DateString);
                 ReturnValue = FDateTime();
             }
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("Empty datetime string returned for %s"), UTF8_TO_TCHAR(MethodName));
+            UE_LOG(LogAbxrLib, Warning, TEXT("Empty datetime string returned for %s"), UTF8_TO_TCHAR(MethodName));
         }
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("ValueObject is not a string for method %s"), UTF8_TO_TCHAR(MethodName));
+        UE_LOG(LogAbxrLib, Warning, TEXT("ValueObject is not a string for method %s"), UTF8_TO_TCHAR(MethodName));
     }
     
     Env->DeleteLocalRef(ValueObject);
@@ -764,7 +765,7 @@ TArray<FString> UXRDMService::CallJNIStringArrayMethod(const char* MethodName) c
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("Null string element at index %d in %s"), i, UTF8_TO_TCHAR(MethodName));
+            UE_LOG(LogAbxrLib, Warning, TEXT("Null string element at index %d in %s"), i, UTF8_TO_TCHAR(MethodName));
         }
     }
     Env->DeleteLocalRef(ObjectArrayClass);
