@@ -2,13 +2,11 @@
 #include "CoreMinimal.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Types/AbxrTypes.h"
-#include <thread>
-#include <atomic>
 
 class FAbxrAuthService : public TSharedFromThis<FAbxrAuthService>
 {
 public:
-	FAbxrAuthService() : bShouldStop(false), TokenExpiry(0), FailedAuthAttempts(0), Partner(TEXT("none")) {}
+	FAbxrAuthService() : TokenExpiry(0), FailedAuthAttempts(0), Partner(TEXT("none")) {}
 	
 	void Authenticate();
 	void StartReAuthPolling();
@@ -39,12 +37,8 @@ private:
 	static void SetConfigFromPayload(const FAbxrConfigPayload& Payload);
 	void GetConfigData();
 	void GetArborData();
-
-	std::thread ReAuthThread;
-	std::atomic<bool> bShouldStop;
     
 	bool ReAuthTick();
-	void CheckReauthentication();
 
 	FAbxrAuthResponse ResponseData;
 	
