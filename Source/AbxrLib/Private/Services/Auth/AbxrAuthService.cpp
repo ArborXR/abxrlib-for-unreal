@@ -56,6 +56,7 @@ void FAbxrAuthService::Authenticate()
 	ClearAuthenticationState();
 	if (!GetDefault<UAbxrSettings>()->IsValid())
 	{
+		bAttemptActive = false;
 		Callbacks.OnFailed(TEXT("Abxr settings are invalid"));
 		return;
 	}
