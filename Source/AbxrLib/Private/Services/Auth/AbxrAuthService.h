@@ -18,6 +18,10 @@ public:
 	void StopReAuthPolling();
 
 private:
+	static bool ShouldRetry(bool bOk, const FHttpResponsePtr& Response);
+	void ScheduleRetry(TFunction<void()> Fn);
+	void CancelRetryTimer();
+
 	TMap<FString, FString> CreateAuthMechanismDict() const;
 	void ClearAuthenticationState();
 	void AuthRequest(TFunction<void(bool)> OnComplete);
@@ -47,6 +51,10 @@ private:
 	
 	FTSTicker::FDelegateHandle ReAuthTickHandle;
 	double NextReAuthCheckAtSeconds = 0.0;
+	
+	FTSTicker::FDelegateHandle RetryTickHandle;
+	static constexpr int RetryMaxAttempts = 3;
+	static constexpr int RetryDelaySeconds = 1;
 
 	static constexpr double ReAuthPollSeconds = 30.0;
 	static constexpr int32 ReAuthThresholdSeconds = 120;

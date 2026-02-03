@@ -17,6 +17,45 @@
 #include "Async/Async.h"
 #include "Types/AbxrLog.h"
 
+bool FAbxrAuthService::ShouldRetry(const bool bOk, const FHttpResponsePtr& Response)
+{
+	// Transport failure or no response: retry
+	if (!bOk || !Response.IsValid()) return true;
+
+	const int32 Code = Response->GetResponseCode();
+	if (Code == 408 || Code == 429) return true;
+	if (Code >= 500 && Code <= 599) return true;
+
+	// 4xx (except 408/429) are treated as non-retryable (bad creds / bad request)
+	return false;
+}
+
+void FAbxrAuthService::CancelRetryTimer()
+{
+	if (RetryTickHandle.IsValid())
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(RetryTickHandle);
+		RetryTickHandle.Reset();
+	}
+}
+
+void FAbxrAuthService::ScheduleRetry(TFunction<void()> Fn)
+{
+	CancelRetryTimer();
+	if (bStopping || !bAttemptActive) return;
+
+	RetryTickHandle = FTSTicker::GetCoreTicker().AddTicker(
+		FTickerDelegate::CreateLambda([AuthPtr = AsWeak(), Fn = MoveTemp(Fn)](float) mutable
+		{
+			const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
+			if (!Self || Self->bStopping || !Self->bAttemptActive) return false;
+			Fn();
+			return false; // one-shot
+		}),
+		static_cast<float>(RetryDelaySeconds)
+	);
+}
+
 FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) : bAuthenticated(false), TokenExpiry(0), FailedAuthAttempts(0)
 {
 	Callbacks = callbacks;
@@ -43,6 +82,7 @@ FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) : bAuthe
 FAbxrAuthService::~FAbxrAuthService()
 {
 	bStopping = true;
+	CancelRetryTimer();
 	StopReAuthPolling();
 	if (ActiveRequest.IsValid()) ActiveRequest->CancelRequest();
 	bAttemptActive = false;
@@ -169,101 +209,163 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 {
 	if (bStopping || !bAttemptActive) { OnComplete(false); return; }
 	if (Payload.SessionId.IsEmpty()) Payload.SessionId = FGuid::NewGuid().ToString();
-	
+
 	Payload.AuthMechanism = CreateAuthMechanismDict();
 
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
-
-	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	ActiveRequest = Request;
-	Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/auth/token")));
-	Request->SetVerb(TEXT("POST"));
-	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
-	Request->SetContentAsString(Json);
 	
-	Request->OnProcessRequestComplete().BindLambda([AuthPtr = AsWeak(), OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bOk)
+	const TSharedPtr<int32> Attempt = MakeShared<int32>(1);
+	TFunction<void()> DoAttempt;
+	DoAttempt = [this, AuthPtr = AsWeak(), OnComplete, Json, Attempt, &DoAttempt]
 	{
-		TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
-		if (!Self) return;
-		Self->ActiveRequest.Reset();
-		if (Self->bStopping || !Self->bAttemptActive) return;
-		if (!bOk || !Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
-		{
-			const FString RespStr = Response.IsValid() ? Response->GetContentAsString() : TEXT("<no response>");
-			UE_LOG(LogAbxrLib, Error, TEXT("Authentication failed : %s"), *RespStr);
-			OnComplete(false);
-			return;
-		}
-		
-		const FString Body = Response->GetContentAsString();
+		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
+		if (!Self || Self->bStopping || !Self->bAttemptActive) return;
 
-		FAbxrAuthResponse AuthResponse;
-		if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
-		{
-			UE_LOG(LogAbxrLib, Error, TEXT("Failed to parse auth response JSON: %s"), *Body);
-			OnComplete(false);
-			return;
-		}
-		
-		Self->ResponseData = AuthResponse;
+		const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
+		Self->ActiveRequest = Request;
+		Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/auth/token")));
+		Request->SetVerb(TEXT("POST"));
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+		Request->SetContentAsString(Json);
 
-		TArray<FString> Parts;
-		Self->ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
-		const FString PayloadBase64 = Parts[1];
+		Request->OnProcessRequestComplete().BindLambda(
+			[AuthPtr, OnComplete, Json, Attempt, DoAttempt](FHttpRequestPtr, const FHttpResponsePtr& Response, const bool bOk) mutable
+			{
+				const TSharedPtr<FAbxrAuthService> Self2 = AuthPtr.Pin();
+				if (!Self2) return;
 
-		FString DecodedPayloadJson;
-		FBase64::Decode(PayloadBase64, DecodedPayloadJson);
+				Self2->ActiveRequest.Reset();
+				if (Self2->bStopping || !Self2->bAttemptActive) return;
 
-		TSharedPtr<FJsonObject> PayloadJson;
-		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
-		if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
-		{
-			const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find("exp");
-			const FString Expiry = (*ValuePtr)->AsString();
-			Self->TokenExpiry = FCString::Atoi(*Expiry);
-		}
-		
-		OnComplete(true);
-	});
-	
-	Request->ProcessRequest();
+				const int32 Code = Response.IsValid() ? Response->GetResponseCode() : 0;
+
+				// Success
+				if (bOk && Response.IsValid() && EHttpResponseCodes::IsOk(Code))
+				{
+					const FString Body = Response->GetContentAsString();
+
+					FAbxrAuthResponse AuthResponse;
+					if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
+					{
+						UE_LOG(LogAbxrLib, Error, TEXT("Failed to parse auth response JSON: %s"), *Body);
+						OnComplete(false);
+						return;
+					}
+
+					Self2->ResponseData = AuthResponse;
+
+					// Decode JWT exp safely (base64url + number or string)
+					TArray<FString> Parts;
+					Self2->ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
+					if (Parts.Num() >= 2)
+					{
+						FString PayloadB64Url = Parts[1];
+						PayloadB64Url.ReplaceInline(TEXT("-"), TEXT("+"));
+						PayloadB64Url.ReplaceInline(TEXT("_"), TEXT("/"));
+						while (PayloadB64Url.Len() % 4 != 0) PayloadB64Url.AppendChar('=');
+
+						FString DecodedPayloadJson;
+						if (FBase64::Decode(PayloadB64Url, DecodedPayloadJson))
+						{
+							TSharedPtr<FJsonObject> PayloadJson;
+							const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
+							if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
+							{
+								const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find(TEXT("exp"));
+								if (ValuePtr && ValuePtr->IsValid())
+								{
+									int64 Exp = FCString::Atoi64(*(*ValuePtr)->AsString());
+									Self2->TokenExpiry = static_cast<int32>(Exp);
+								}
+							}
+						}
+					}
+
+					OnComplete(true);
+					return;
+				}
+
+				// Failure
+				const FString RespStr = Response.IsValid() ? Response->GetContentAsString() : TEXT("<no response>");
+				UE_LOG(LogAbxrLib, Warning, TEXT("AuthRequest attempt failed: %s"), *RespStr);
+				
+				if (ShouldRetry(bOk, Response) && *Attempt < RetryMaxAttempts)
+				{
+					(*Attempt)++;
+					UE_LOG(LogAbxrLib, Log, TEXT("AuthRequest retrying in %ds (attempt %d/%d)"), RetryDelaySeconds, *Attempt, RetryMaxAttempts);
+					Self2->ScheduleRetry([DoAttempt]() mutable { DoAttempt(); });
+					return;
+				}
+				
+				if (*Attempt >= RetryMaxAttempts) UE_LOG(LogAbxrLib, Error, TEXT("AuthRequest failed (no more retries)"));
+				OnComplete(false);
+			});
+
+		Request->ProcessRequest();
+	};
+
+	DoAttempt();
 }
 
 void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 {
 	if (bStopping || !bAttemptActive) { OnComplete(false); return; }
-	const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	ActiveRequest = Request;
-	Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
-	Request->SetVerb("GET");
-	Request->SetHeader("Content-Type", "application/json");
-	SetAuthHeaders(Request);
 	
-	Request->OnProcessRequestComplete().BindLambda([AuthPtr = AsWeak(), OnComplete](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk)
+	const TSharedPtr<int32> Attempt = MakeShared<int32>(1);
+	TFunction<void()> DoAttempt;
+	DoAttempt = [this, AuthPtr = AsWeak(), OnComplete, Attempt, &DoAttempt]
 	{
 		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
-		if (!Self) return;
-		Self->ActiveRequest.Reset();
-		if (Self->bStopping || !Self->bAttemptActive) return;
-		if (bOk && Resp.IsValid())
-		{
-			FAbxrConfigPayload Config;
-			FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
-			Self->SetConfigFromPayload(Config);
-			Self->AuthMechanism = Config.AuthMechanism;
-			UE_LOG(LogAbxrLib, Log, TEXT("GetConfiguration() successful"));
-			OnComplete(true);
-		}
-		else
-		{
-			const FString RespStr = Resp.IsValid() ? Resp->GetContentAsString() : TEXT("<no response>");
-			UE_LOG(LogAbxrLib, Error, TEXT("GetConfiguration failed: %s"), *RespStr);
-			OnComplete(false);
-		}
-	});
+		if (!Self || Self->bStopping || !Self->bAttemptActive) return;
 
-	Request->ProcessRequest();
+		const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
+		Self->ActiveRequest = Request;
+		Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
+		Request->SetVerb(TEXT("GET"));
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+		Self->SetAuthHeaders(Request);
+
+		Request->OnProcessRequestComplete().BindLambda(
+			[AuthPtr, OnComplete, Attempt, DoAttempt](FHttpRequestPtr, const FHttpResponsePtr& Resp, const bool bOk) mutable
+			{
+				const TSharedPtr<FAbxrAuthService> Self2 = AuthPtr.Pin();
+				if (!Self2) return;
+
+				Self2->ActiveRequest.Reset();
+				if (Self2->bStopping || !Self2->bAttemptActive) return;
+
+				const int32 Code = Resp.IsValid() ? Resp->GetResponseCode() : 0;
+				if (bOk && Resp.IsValid() && EHttpResponseCodes::IsOk(Code))
+				{
+					FAbxrConfigPayload Config;
+					FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
+					Self2->SetConfigFromPayload(Config);
+					Self2->AuthMechanism = Config.AuthMechanism;
+					UE_LOG(LogAbxrLib, Log, TEXT("GetConfiguration() successful"));
+					OnComplete(true);
+					return;
+				}
+
+				const FString RespStr = Resp.IsValid() ? Resp->GetContentAsString() : TEXT("<no response>");
+				UE_LOG(LogAbxrLib, Warning, TEXT("GetConfiguration attempt failed: %s"), *RespStr);
+				
+				if (ShouldRetry(bOk, Resp) && *Attempt < RetryMaxAttempts)
+				{
+					(*Attempt)++;
+					UE_LOG(LogAbxrLib, Log, TEXT("GetConfiguration retrying in %ds (attempt %d/%d)"), RetryDelaySeconds, *Attempt, RetryMaxAttempts);
+					Self2->ScheduleRetry([DoAttempt]() mutable { DoAttempt(); });
+					return;
+				}
+
+				UE_LOG(LogAbxrLib, Error, TEXT("GetConfiguration failed (no more retries)"));
+				OnComplete(false);
+			});
+
+		Request->ProcessRequest();
+	};
+
+	DoAttempt();
 }
 
 void FAbxrAuthService::SetConfigFromPayload(const FAbxrConfigPayload& Payload)
