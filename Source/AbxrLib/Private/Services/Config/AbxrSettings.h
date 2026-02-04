@@ -56,6 +56,14 @@ public:
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Authentication Control", meta=(DisplayName="Authentication Start Delay (seconds)"))
 	int AuthenticationStartDelay;
 	void SetAuthenticationStartDelay(const bool NewAuthenticationStartDelay) {this->AuthenticationStartDelay = NewAuthenticationStartDelay;}
+	
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Authentication Control", meta=(DisplayName="Enable Auto Start Modules"))
+	bool EnableAutoStartModules;
+	void SetEnableAutoStartModules(const bool NewEnableAutoStartModules) {this->EnableAutoStartModules = NewEnableAutoStartModules;}
+	
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Authentication Control", meta=(DisplayName="Enable Auto Advance Modules"))
+	bool EnableAutoAdvanceModules;
+	void SetEnableAutoAdvanceModules(const bool NewEnableAutoAdvanceModules) {this->EnableAutoAdvanceModules = NewEnableAutoAdvanceModules;}
 
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Telemetry Tracking Period (seconds)"))
 	double TelemetryTrackingPeriodSeconds;

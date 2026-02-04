@@ -8,6 +8,8 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrAuthMechanism&, Request);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAuthSucceeded);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrAuthFailed, const FString&, Error);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrModuleTarget, const FString&, ModuleTarget);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAllModulesCompleted);
 
 UCLASS()
 class ABXRLIB_API UAbxrSubsystem : public UGameInstanceSubsystem
@@ -25,6 +27,22 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
 	FAbxrAuthFailed OnAuthFailed;
+
+	// Fired when a new module target becomes active (LMS-driven sequencing).
+	UPROPERTY(BlueprintAssignable, Category = "Abxr|Modules")
+	FAbxrModuleTarget OnModuleTarget;
+
+	// Fired when module sequencing has completed (i.e., module index >= module count).
+	UPROPERTY(BlueprintAssignable, Category = "Abxr|Modules")
+	FAbxrAllModulesCompleted OnAllModulesCompleted;
+
+	// Returns the full module list from the auth response (sorted by Order).
+	UFUNCTION(BlueprintCallable, Category = "Abxr|Modules")
+	TArray<FAbxrModuleData> GetModuleList() const { return AuthService->GetAuthResponse().Modules; }
+
+	// Manually jumps to a specific module index and broadcasts its target (if in range)
+	UFUNCTION(BlueprintCallable, Category = "Abxr|Modules")
+	bool StartModuleAtIndex(const int ModuleIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr|Auth")
 	void Authenticate() const;
@@ -274,6 +292,7 @@ public:
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
 	FAbxrAuthCallbacks CreateAuthCallbacks();
+	void HandleAuthSucceeded() const;
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 	void Register(const FString& Key, const FString& Value, bool Overwrite);
@@ -283,6 +302,26 @@ private:
 	// Private helper function to merge super metadata and module info into metadata
 	// Ensures data-specific metadata take precedence over super metadata and module info
 	TMap<FString, FString> MergeSuperMetaData(TMap<FString, FString>& Meta);
+	
+	/// <summary>
+	/// Set module metadata when no modules are provided in authentication.
+	/// This method allows developers to track module information even when the LMS doesn't provide a module list.
+	/// Only works when NOT using auth-provided module targets - returns safely if auth modules exist.
+	/// Sets moduleName, moduleId, and moduleOrder in super metadata for automatic inclusion in all events.
+	/// </summary>
+	/// <param name="Module">The target name of the module</param>
+	/// <param name="ModuleName">Optional user friendly name of the module</param>
+	void SetModule(const FString& Module, const FString& ModuleName);
+	void SetModule(const FString& Module) { return SetModule(Module, FString()); }
+	
+	// Formats a module name to be more human-readable by adding spaces between words.
+	// Converts camelCase and PascalCase to space-separated format.
+	// Example: "ModuleName" -> "Module Name", "myModule" -> "My Module"
+	static FString FormatModuleNameForDisplay(const FString& ModuleName);
+	
+	void AdvanceToNextModule();
+	
+	int CurrentModuleIndex = 0;
 	
 	TSharedPtr<FAbxrAuthService> AuthService;
 	TSharedPtr<FAbxrDataService> DataService;

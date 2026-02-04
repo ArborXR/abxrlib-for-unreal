@@ -254,6 +254,13 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 					}
 
 					Self2->ResponseData = AuthResponse;
+					if (Self2->ResponseData.Modules.Num() > 1)
+					{
+						Algo::Sort(Self2->ResponseData.Modules, [](const FAbxrModuleData& A, const FAbxrModuleData& B)
+						{
+							return A.Order < B.Order;
+						});
+					}
 
 					// Decode JWT exp safely (base64url + number or string)
 					TArray<FString> Parts;

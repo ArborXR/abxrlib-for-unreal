@@ -57,7 +57,7 @@ struct FAbxrAuthPayload
 	UPROPERTY() TMap<FString, FString> AuthMechanism;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FAbxrModuleData
 {
 	GENERATED_BODY()
@@ -208,4 +208,19 @@ class USuperMetaSave : public USaveGame
 
 public:
 	UPROPERTY() TMap<FString, FString> SuperMetaData;
+};
+
+// Persisted, per-user progress through LMS-provided modules.
+// Mirrors Unity StorageScope.user key "AbxrModuleIndex".
+UCLASS()
+class UAbxrModuleProgressSave : public USaveGame
+{
+	GENERATED_BODY()
+
+public:
+	// Index into the auth-provided module list (sorted by Order).
+	UPROPERTY() int32 ModuleIndex = 0;
+
+	// Optional (debug / validation).
+	UPROPERTY() FString UserId;
 };

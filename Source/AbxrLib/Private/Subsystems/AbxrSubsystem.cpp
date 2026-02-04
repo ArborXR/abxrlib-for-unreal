@@ -7,6 +7,7 @@
 #include "UI/AbxrUISubsystem.h"
 #include "Async/Async.h"
 #include "Types/AbxrLog.h"
+#include "Algo/Sort.h"
 
 const FString UAbxrSubsystem::SuperMetaDataKey(TEXT("AbxrSuperMetaData"));
 
@@ -104,8 +105,8 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis]
 		{
 			if (!WeakThis.IsValid()) return;
-			const UAbxrSubsystem* Self = WeakThis.Get();
-			Self->OnAuthSucceeded.Broadcast();
+			UAbxrSubsystem* Self = WeakThis.Get();
+			Self->HandleAuthSucceeded();
 		});
 	};
 	Callbacks.OnFailed = [WeakThis = TWeakObjectPtr(this)](const FString& Error)
@@ -125,6 +126,154 @@ void UAbxrSubsystem::Authenticate() const
 {
 	if (!AuthService) return;
 	AuthService->Authenticate();
+}
+
+void UAbxrSubsystem::HandleAuthSucceeded() const
+{
+	OnAuthSucceeded.Broadcast();
+	
+	if (AuthService->GetAuthResponse().Modules.IsEmpty()) return;
+	
+	if (OnModuleTarget.IsBound())
+	{
+		if (GetDefault<UAbxrSettings>()->EnableAutoStartModules &&
+			CurrentModuleIndex < AuthService->GetAuthResponse().Modules.Num())
+		{
+			OnModuleTarget.Broadcast(AuthService->GetAuthResponse().Modules[CurrentModuleIndex].Target);
+		}
+	}
+	else
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("Need to subscribe to OnModuleTarget before running modules"));
+	}
+}
+
+bool UAbxrSubsystem::StartModuleAtIndex(const int ModuleIndex)
+{
+	if (!AuthService || AuthService->GetAuthResponse().Modules.IsEmpty())
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("No modules available"));
+		return false;
+	}
+	
+	if (ModuleIndex >= AuthService->GetAuthResponse().Modules.Num() || ModuleIndex < 0)
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("Invalid module index - %d"), ModuleIndex);
+		return false;
+	}
+	
+	if (!OnModuleTarget.IsBound())
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("Need to subscribe to OnModuleTarget before running modules"));
+		return false;
+	}
+	
+	CurrentModuleIndex = ModuleIndex;
+	OnModuleTarget.Broadcast(AuthService->GetAuthResponse().Modules[CurrentModuleIndex].Target);
+	return true;
+}
+
+void UAbxrSubsystem::AdvanceToNextModule()
+{
+	CurrentModuleIndex++;
+	if (CurrentModuleIndex < AuthService->GetAuthResponse().Modules.Num())
+	{
+		UE_LOG(LogAbxrLib, Log, TEXT("Module '%s' complete. Advancing to next module - '%s'"),
+			*AuthService->GetAuthResponse().Modules[CurrentModuleIndex-1].Name,
+			*AuthService->GetAuthResponse().Modules[CurrentModuleIndex].Name);
+		OnModuleTarget.Broadcast(AuthService->GetAuthResponse().Modules[CurrentModuleIndex].Target);
+	}
+	else
+	{
+		UE_LOG(LogAbxrLib, Log, TEXT("All modules complete"));
+		OnAllModulesCompleted.Broadcast();
+	}
+}
+
+void UAbxrSubsystem::SetModule(const FString& Module, const FString& ModuleName)
+{
+	// Check if we're using auth-provided module targets
+	if (!AuthService->GetAuthResponse().Modules.IsEmpty())
+	{
+		// Auth-provided modules exist - don't allow manual setting to prevent breaking module sequence
+		return;
+	}
+		
+	if (Module.IsEmpty()) return;
+		
+	// Directly set module metadata in super metadata, bypassing Register() check
+	SuperMetaData.Add("module", Module);
+			
+	if (!ModuleName.IsEmpty())
+	{
+		SuperMetaData.Add("moduleName", ModuleName);
+	}
+	else
+	{
+		SuperMetaData.Add("moduleName", FormatModuleNameForDisplay(ModuleName));
+	}
+				
+	// When using SetModule, we should not use moduleOrder - unset it if it was set elsewhere
+	SuperMetaData.Remove("moduleOrder");
+		
+	SaveSuperMetaData();
+}
+
+FString UAbxrSubsystem::FormatModuleNameForDisplay(const FString& ModuleName)
+{
+	if (ModuleName.IsEmpty()) return ModuleName;
+
+	// Replace underscores with spaces
+	FString S = ModuleName;
+	S.ReplaceInline(TEXT("_"), TEXT(" "));
+
+	// Insert spaces on case transitions (camelCase / PascalCase)
+	// Also handles "XMLParser" -> "XML Parser" by splitting when:
+	//   - prev is lower and current is upper   (e.g., yM)
+	//   - prev is upper, current is upper, next is lower (e.g., LP a in "XMLParser")
+	FString Out;
+	Out.Reserve(S.Len() * 2);
+
+	for (int i = 0; i < S.Len(); ++i)
+	{
+		const TCHAR C = S[i];
+
+		if (i > 0)
+		{
+			const TCHAR Prev = S[i - 1];
+
+			const bool bPrevIsLower = FChar::IsLower(Prev);
+			const bool bPrevIsUpper = FChar::IsUpper(Prev);
+			const bool bCurIsUpper  = FChar::IsUpper(C);
+
+			const bool bHasNext = i + 1 < S.Len();
+			const TCHAR Next = bHasNext ? S[i + 1] : 0;
+			const bool bNextIsLower = bHasNext ? FChar::IsLower(Next) : false;
+
+			const bool bPrevIsSpace = Prev == TEXT(' ');
+			if (!bPrevIsSpace && ((bPrevIsLower && bCurIsUpper) || (bPrevIsUpper && bCurIsUpper && bNextIsLower)))
+			{
+				Out.AppendChar(TEXT(' '));
+			}
+		}
+
+		Out.AppendChar(C);
+	}
+
+	// Trim and Title-Case each word
+	Out = Out.TrimStartAndEnd();
+
+	TArray<FString> Words;
+	Out.ParseIntoArray(Words, TEXT(" "), true);
+
+	for (FString& W : Words)
+	{
+		if (W.IsEmpty()) continue;
+		W = W.ToLower();
+		W[0] = FChar::ToUpper(W[0]);
+	}
+
+	return FString::Join(Words, TEXT(" "));
 }
 
 void UAbxrSubsystem::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
@@ -211,6 +360,9 @@ void UAbxrSubsystem::Telemetry(const FString& Name, TMap<FString, FString>& Meta
 
 void UAbxrSubsystem::EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta)
 {
+	// Set module metadata using the assessment name (only if no auth-provided modules exist)
+	SetModule(AssessmentName);
+	
 	Meta.Add(TEXT("type"), TEXT("assessment"));
 	Meta.Add(TEXT("verb"), TEXT("started"));
 	AssessmentStartTimes.Add(AssessmentName, FDateTime::UtcNow().ToUnixTimestamp());
@@ -226,6 +378,10 @@ void UAbxrSubsystem::EventAssessmentComplete(const FString& AssessmentName, cons
 	AddDuration(AssessmentStartTimes, AssessmentName, Meta);
 	Event(AssessmentName, Meta);
 	DataService->Send();
+	if (!AuthService->GetAuthResponse().Modules.IsEmpty() && GetDefault<UAbxrSettings>()->EnableAutoAdvanceModules)
+	{
+		AdvanceToNextModule();
+	}
 }
 
 void UAbxrSubsystem::EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta)
@@ -522,6 +678,17 @@ void UAbxrSubsystem::SaveSuperMetaData() const
 
 TMap<FString, FString> UAbxrSubsystem::MergeSuperMetaData(TMap<FString, FString>& Meta)
 {
+	// If LMS modules exist, inject current module metadata unless the event already specifies it.
+	// (Data-specific metadata takes precedence.)
+	if (!AuthService->GetAuthResponse().Modules.IsEmpty())
+	{
+		const auto [Id, Name, Target, Order] = AuthService->GetAuthResponse().Modules[CurrentModuleIndex];
+		if (!Meta.Contains(TEXT("module"))) Meta.Add(TEXT("module"), Target);
+		if (!Meta.Contains(TEXT("moduleName"))) Meta.Add(TEXT("moduleName"), Name);
+		if (!Meta.Contains(TEXT("moduleId"))) Meta.Add(TEXT("moduleId"), Id);
+		if (!Meta.Contains(TEXT("moduleOrder"))) Meta.Add(TEXT("moduleOrder"), FString::FromInt(Order));
+	}
+
 	// Add super metadata to metadata (includes manually-set moduleName/moduleId/moduleOrder when no LMS modules)
 	// Auth-provided module metadata takes precedence, so manually-set values only appear when no LMS modules exist
 	for (const TPair<FString, FString>& SuperMetaDataKeyValue : SuperMetaData)

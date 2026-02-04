@@ -16,6 +16,28 @@ namespace Abxr
 		Subsystem->Authenticate();
 	}
 	
+	ABXRLIB_API inline TArray<FAbxrModuleData> GetModuleList()
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
+			return TArray<FAbxrModuleData>();
+		}
+		return Subsystem->GetModuleList();
+	}
+	
+	ABXRLIB_API inline bool StartModuleAtIndex(const int ModuleIndex)
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
+			return false;
+		}
+		return Subsystem->StartModuleAtIndex(ModuleIndex);
+	}
+	
 	ABXRLIB_API inline void LogDebug(const FString& Text, TMap<FString, FString>& Meta)
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();

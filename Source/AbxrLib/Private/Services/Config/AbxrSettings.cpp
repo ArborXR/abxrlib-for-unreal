@@ -12,6 +12,8 @@ UAbxrSettings::UAbxrSettings()
 	EnableSceneEvents = true;
 	EnableAutoStartAuth = true;
 	AuthenticationStartDelay = 0;
+	EnableAutoStartModules = true;
+	EnableAutoAdvanceModules = true;
 	FrameRateTrackingPeriodSeconds = 0.5f;
 	TelemetryTrackingPeriodSeconds = 10;
 	SendRetriesOnFailure = 3;
