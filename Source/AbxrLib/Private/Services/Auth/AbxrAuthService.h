@@ -25,6 +25,7 @@ private:
 	TMap<FString, FString> CreateAuthMechanismDict() const;
 	void ClearAuthenticationState();
 	void AuthRequest(TFunction<void(bool)> OnComplete);
+	bool ParseAuthResponse(const FString& Body, const bool Handoff);
 	void GetConfiguration(TFunction<void(bool)> OnComplete);
 	static void SetConfigFromPayload(const FAbxrConfigPayload& Payload);
 	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request) const { SetAuthHeaders(Request, TEXT("")); }
@@ -32,6 +33,11 @@ private:
 	void GetArborData();
 	void AuthSucceeded();
 	void KeyboardAuthenticate();
+	
+	bool CheckAuthHandoff();
+	static FString GetCommandLineArg(const FString& Key);
+	FString GetAndroidIntentParam(const FString& Key) const;
+	bool SessionUsedAuthHandoff;
 	
 	bool ReAuthTick();
 	void StartReAuthPolling();

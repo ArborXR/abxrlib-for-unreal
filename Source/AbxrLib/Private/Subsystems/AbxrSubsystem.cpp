@@ -105,7 +105,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis]
 		{
 			if (!WeakThis.IsValid()) return;
-			UAbxrSubsystem* Self = WeakThis.Get();
+			const UAbxrSubsystem* Self = WeakThis.Get();
 			Self->HandleAuthCompleted(true);
 		});
 	};

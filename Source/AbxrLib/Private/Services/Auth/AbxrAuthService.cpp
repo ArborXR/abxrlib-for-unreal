@@ -16,6 +16,10 @@
 #include "Runtime/Launch/Resources/Version.h"
 #include "Async/Async.h"
 #include "Types/AbxrLog.h"
+#if PLATFORM_ANDROID
+#include "Android/AndroidApplication.h"
+#include "Android/AndroidJNI.h"
+#endif
 
 bool FAbxrAuthService::ShouldRetry(const bool bOk, const FHttpResponsePtr& Response)
 {
@@ -56,7 +60,9 @@ void FAbxrAuthService::ScheduleRetry(TFunction<void()> Fn)
 	);
 }
 
-FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) : bAuthenticated(false), TokenExpiry(0), FailedAuthAttempts(0)
+FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) : SessionUsedAuthHandoff(false),
+                                                                          bAuthenticated(false), TokenExpiry(0),
+                                                                          FailedAuthAttempts(0)
 {
 	Callbacks = callbacks;
 	FString HMDName = TEXT("None");
@@ -64,11 +70,11 @@ FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) : bAuthe
 	{
 		HMDName = UHeadMountedDisplayFunctionLibrary::GetHMDDeviceName().ToString();
 	}
-	
+
 	Payload = FAbxrAuthPayload();
 	Payload.Partner = TEXT("none");
-	Payload.DeviceId = FGuid::NewGuid().ToString();  // MDM will override if available
-	Payload.Tags = { };
+	Payload.DeviceId = FGuid::NewGuid().ToString(); // MDM will override if available
+	Payload.Tags = {};
 	Payload.IpAddress = TEXT("");
 	Payload.DeviceModel = HMDName;
 	Payload.Geolocation = TMap<FString, FString>();
@@ -102,6 +108,7 @@ void FAbxrAuthService::Authenticate()
 	}
 
 	GetConfigData();
+	if (CheckAuthHandoff()) return;
 	
 	auto KickAuthChain = [AuthPtr = AsWeak()](bool bConnected)
 	{
@@ -239,54 +246,16 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 				if (Self2->bStopping || !Self2->bAttemptActive) return;
 
 				const int32 Code = Response.IsValid() ? Response->GetResponseCode() : 0;
+				
+				const FString Body = Response->GetContentAsString();
 
 				// Success
 				if (bOk && Response.IsValid() && EHttpResponseCodes::IsOk(Code))
 				{
-					const FString Body = Response->GetContentAsString();
-
-					FAbxrAuthResponse AuthResponse;
-					if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
+					if (!Self2->ParseAuthResponse(Body, false))
 					{
-						UE_LOG(LogAbxrLib, Error, TEXT("Failed to parse auth response JSON: %s"), *Body);
 						OnComplete(false);
 						return;
-					}
-
-					Self2->ResponseData = AuthResponse;
-					if (Self2->ResponseData.Modules.Num() > 1)
-					{
-						Algo::Sort(Self2->ResponseData.Modules, [](const FAbxrModuleData& A, const FAbxrModuleData& B)
-						{
-							return A.Order < B.Order;
-						});
-					}
-
-					// Decode JWT exp safely (base64url + number or string)
-					TArray<FString> Parts;
-					Self2->ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
-					if (Parts.Num() >= 2)
-					{
-						FString PayloadB64Url = Parts[1];
-						PayloadB64Url.ReplaceInline(TEXT("-"), TEXT("+"));
-						PayloadB64Url.ReplaceInline(TEXT("_"), TEXT("/"));
-						while (PayloadB64Url.Len() % 4 != 0) PayloadB64Url.AppendChar('=');
-
-						FString DecodedPayloadJson;
-						if (FBase64::Decode(PayloadB64Url, DecodedPayloadJson))
-						{
-							TSharedPtr<FJsonObject> PayloadJson;
-							const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
-							if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
-							{
-								const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find(TEXT("exp"));
-								if (ValuePtr && ValuePtr->IsValid())
-								{
-									int64 Exp = FCString::Atoi64(*(*ValuePtr)->AsString());
-									Self2->TokenExpiry = static_cast<int32>(Exp);
-								}
-							}
-						}
 					}
 
 					OnComplete(true);
@@ -294,7 +263,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 				}
 
 				// Failure
-				const FString RespStr = Response.IsValid() ? Response->GetContentAsString() : TEXT("<no response>");
+				const FString RespStr = Response.IsValid() ? Body : TEXT("<no response>");
 				UE_LOG(LogAbxrLib, Warning, TEXT("AuthRequest attempt failed: %s"), *RespStr);
 				
 				if (ShouldRetry(bOk, Response) && *Attempt < RetryMaxAttempts)
@@ -313,6 +282,68 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 	};
 
 	DoAttempt();
+}
+
+bool FAbxrAuthService::ParseAuthResponse(const FString& Body, const bool Handoff)
+{
+	FAbxrAuthResponse AuthResponse;
+	if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("Failed to parse auth response JSON: %s"), *Body);
+		return false;
+	}
+
+	ResponseData = AuthResponse;
+	if (ResponseData.Modules.Num() > 1)
+	{
+		Algo::Sort(ResponseData.Modules, [](const FAbxrModuleData& A, const FAbxrModuleData& B)
+		{
+			return A.Order < B.Order;
+		});
+	}
+	
+	if (Handoff)
+	{
+		TokenExpiry = FDateTime::UtcNow().ToUnixTimestamp() + FTimespan::FromHours(24).GetSeconds();
+	}
+	else
+	{
+		TArray<FString> Parts;
+		ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
+		if (Parts.Num() >= 2)
+		{
+			FString PayloadB64Url = Parts[1];
+			PayloadB64Url.ReplaceInline(TEXT("-"), TEXT("+"));
+			PayloadB64Url.ReplaceInline(TEXT("_"), TEXT("/"));
+			while (PayloadB64Url.Len() % 4 != 0) PayloadB64Url.AppendChar('=');
+
+			FString DecodedPayloadJson;
+			if (FBase64::Decode(PayloadB64Url, DecodedPayloadJson))
+			{
+				TSharedPtr<FJsonObject> PayloadJson;
+				const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
+				if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
+				{
+					const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find(TEXT("exp"));
+					if (ValuePtr && ValuePtr->IsValid())
+					{
+						const TSharedPtr<FJsonValue> V = *ValuePtr;
+						const int64 Exp = FCString::Atoi64(*V->AsString());
+						TokenExpiry = static_cast<int32>(Exp);
+					}
+				}
+			}
+		}
+	}
+	
+	if (Handoff)
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("Authentication handoff successful. Modules: %d"), ResponseData.Modules.Num());
+		Callbacks.OnSucceeded();
+		SessionUsedAuthHandoff = true;
+	}
+
+	return true;
 }
 
 void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
@@ -408,6 +439,122 @@ void FAbxrAuthService::GetArborData()
 		Payload.AuthSecret = XRDMService->GetFingerprint();
 	}
 }
+
+bool FAbxrAuthService::CheckAuthHandoff()
+{
+	FString HandoffJson = GetAndroidIntentParam(TEXT("auth_handoff"));
+
+	// Fall back to command line args
+	if (HandoffJson.IsEmpty())
+	{
+		HandoffJson = GetCommandLineArg(TEXT("auth_handoff"));
+	}
+	
+	if (HandoffJson.IsEmpty()) return false;
+
+	UE_LOG(LogAbxrLib, Log, TEXT("Processing authentication handoff from external launcher"));
+	return ParseAuthResponse(HandoffJson, true);
+}
+
+FString FAbxrAuthService::GetCommandLineArg(const FString& Key)
+{
+	FString Value;
+    
+	// Unreal's built-in: handles -key=value format
+	if (FParse::Value(FCommandLine::Get(), *(Key + TEXT("=")), Value)) return Value;
+
+	// Also check for --key=value
+	if (FParse::Value(FCommandLine::Get(), *(FString(TEXT("--")) + Key + TEXT("=")), Value)) return Value;
+
+	return FString();
+}
+
+FString FAbxrAuthService::GetAndroidIntentParam(const FString& Key) const
+{
+	FString Result;
+#if PLATFORM_ANDROID
+	JNIEnv* Env = FAndroidApplication::GetJavaEnv();
+	if (!Env) return Result;
+
+	jobject Activity = FAndroidApplication::GetGameActivityThis();
+	if (!Activity) return Result;
+
+	jclass ActivityClass = Env->GetObjectClass(Activity);
+	jmethodID GetIntentMethod = Env->GetMethodID(ActivityClass, "getIntent", "()Landroid/content/Intent;");
+	jobject IntentObj = Env->CallObjectMethod(Activity, GetIntentMethod);
+	if (!IntentObj) return Result;
+
+	jclass IntentClass = Env->GetObjectClass(IntentObj);
+	jmethodID GetStringExtraMethod = Env->GetMethodID(IntentClass, "getStringExtra",
+													  "(Ljava/lang/String;)Ljava/lang/String;");
+	jstring JKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
+	jstring JVal = (jstring)Env->CallObjectMethod(IntentObj, GetStringExtraMethod, JKey);
+
+	Env->DeleteLocalRef(JKey);
+
+	if (!JVal) return Result;
+
+	const char* UtfChars = Env->GetStringUTFChars(JVal, nullptr);
+	Result = UTF8_TO_TCHAR(UtfChars);
+	Env->ReleaseStringUTFChars(JVal, UtfChars);
+	Env->DeleteLocalRef(JVal);
+#endif
+	return Result;
+}
+
+/*FString FAbxrAuthService::GetAndroidIntentParam(const FString& Key)
+{
+#if PLATFORM_ANDROID
+	FString Result;
+    
+	if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
+	{
+		// Get the activity
+		jobject Activity = FAndroidApplication::GetGameActivity();
+		if (!Activity) return Result;
+
+		// Call getIntent()
+		jclass ActivityClass = Env->GetObjectClass(Activity);
+		jmethodID GetIntentMethod = Env->GetMethodID(ActivityClass, "getIntent", "()Landroid/content/Intent;");
+		jobject Intent = Env->CallObjectMethod(Activity, GetIntentMethod);
+
+		if (Intent)
+		{
+			jclass IntentClass = Env->GetObjectClass(Intent);
+            
+			// Check hasExtra
+			jmethodID HasExtraMethod = Env->GetMethodID(IntentClass, "hasExtra", "(Ljava/lang/String;)Z");
+			jstring JKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
+			bool bHasExtra = Env->CallBooleanMethod(Intent, HasExtraMethod, JKey);
+
+			if (bHasExtra)
+			{
+				// Get the string extra
+				jmethodID GetStringExtraMethod = Env->GetMethodID(
+					IntentClass, "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
+				jstring JValue = (jstring)Env->CallObjectMethod(Intent, GetStringExtraMethod, JKey);
+
+				if (JValue)
+				{
+					const char* ValueChars = Env->GetStringUTFChars(JValue, nullptr);
+					Result = FString(UTF8_TO_TCHAR(ValueChars));
+					Env->ReleaseStringUTFChars(JValue, ValueChars);
+					Env->DeleteLocalRef(JValue);
+				}
+			}
+
+			Env->DeleteLocalRef(JKey);
+			Env->DeleteLocalRef(IntentClass);
+			Env->DeleteLocalRef(Intent);
+		}
+		Env->DeleteLocalRef(ActivityClass);
+	}
+    
+	return Result;
+#else
+	return FString();
+#endif
+}*/
 
 void FAbxrAuthService::AuthSucceeded()
 {
