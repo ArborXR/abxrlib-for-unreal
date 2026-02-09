@@ -16,6 +16,18 @@ namespace Abxr
 		Subsystem->Authenticate();
 	}
 	
+	ABXRLIB_API inline FAbxrAuthCompleted& OnAuthCompleted()
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnAuthCompleted() binding will be ignored."));
+			static FAbxrAuthCompleted Dummy;
+			return Dummy;
+		}
+		return Subsystem->OnAuthCompleted;
+	}
+	
 	ABXRLIB_API inline TArray<FAbxrModuleData> GetModuleList()
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
