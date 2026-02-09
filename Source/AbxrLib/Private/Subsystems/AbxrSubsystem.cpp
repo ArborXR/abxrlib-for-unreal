@@ -106,7 +106,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		{
 			if (!WeakThis.IsValid()) return;
 			UAbxrSubsystem* Self = WeakThis.Get();
-			Self->HandleAuthSucceeded();
+			Self->HandleAuthCompleted(true);
 		});
 	};
 	Callbacks.OnFailed = [WeakThis = TWeakObjectPtr(this)](const FString& Error)
@@ -115,7 +115,8 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		{
 			if (!WeakThis.IsValid()) return;
 			const UAbxrSubsystem* Self = WeakThis.Get();
-			Self->OnAuthFailed.Broadcast(Error);
+			UE_LOG(LogAbxrLib, Warning, TEXT("Auth failed: %s"), *Error);
+			Self->HandleAuthCompleted(false);
 		});
 	};
 	
@@ -128,9 +129,10 @@ void UAbxrSubsystem::Authenticate() const
 	AuthService->Authenticate();
 }
 
-void UAbxrSubsystem::HandleAuthSucceeded() const
+void UAbxrSubsystem::HandleAuthCompleted(const bool bSuccess) const
 {
-	OnAuthSucceeded.Broadcast();
+	OnAuthCompleted.Broadcast(bSuccess);
+	if (!bSuccess) return;
 	
 	if (AuthService->GetAuthResponse().Modules.IsEmpty()) return;
 	

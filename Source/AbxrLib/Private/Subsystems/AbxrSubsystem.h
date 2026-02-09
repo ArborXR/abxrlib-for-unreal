@@ -6,8 +6,7 @@
 #include "AbxrSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrAuthMechanism&, Request);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAuthSucceeded);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrAuthFailed, const FString&, Error);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrAuthCompleted, bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrModuleTarget, const FString&, ModuleTarget);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAllModulesCompleted);
 
@@ -21,12 +20,8 @@ public:
 	void SubmitInput(const FString& Input) const { AuthService->KeyboardAuthenticate(Input); }
 	
 	FAbxrInputRequested OnInputRequested;
-
 	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
-	FAbxrAuthSucceeded OnAuthSucceeded;
-
-	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
-	FAbxrAuthFailed OnAuthFailed;
+	FAbxrAuthCompleted OnAuthCompleted;
 
 	// Fired when a new module target becomes active (LMS-driven sequencing).
 	UPROPERTY(BlueprintAssignable, Category = "Abxr|Modules")
@@ -292,7 +287,7 @@ public:
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
 	FAbxrAuthCallbacks CreateAuthCallbacks();
-	void HandleAuthSucceeded() const;
+	void HandleAuthCompleted(const bool bSuccess) const;
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 	void Register(const FString& Key, const FString& Value, bool Overwrite);
