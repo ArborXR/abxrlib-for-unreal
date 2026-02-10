@@ -7,7 +7,7 @@ namespace Abxr
 {
 	ABXRLIB_API inline void Authenticate()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
@@ -56,7 +56,7 @@ namespace Abxr
 	
 	ABXRLIB_API inline TArray<FAbxrModuleData> GetModuleList()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
