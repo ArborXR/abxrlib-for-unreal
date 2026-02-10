@@ -1,3 +1,4 @@
+
 # ABXRLib SDK for Unreal
 
 The name "ABXR" stands for "Analytics Backbone for XR"—a flexible, open-source foundation for capturing and transmitting spatial, interaction, and performance data in XR. When combined with **ArborXR Insights**, ABXR transforms from a lightweight instrumentation layer into a full-scale enterprise analytics solution—unlocking powerful dashboards, LMS/BI integrations, and AI-enhanced insights.
@@ -56,16 +57,8 @@ Developers can implement their own backend services by following the ABXR protoc
 
 ### Unreal Plugin Installation
 
-1. Make sure your project can build C++
-- If your project is Blueprint-only:
-  1. Add C++ Class → pick anything (e.g., Actor) → Create Class
-  2. Let Unreal generate the Visual Studio / Rider / Xcode project and compile once
-- Now your project is a C++ project, which is required for C++ plugins
-2. Close the Unreal Editor
-3. In your project folder (where MyGame.uproject is), create a /Plugins directory if it doesn't already exist
-4. Into this folder, clone or download the plugin from the GitHub repository - https://github.com/ArborXR/abxrlib-for-unity
-5. Right-click your .uproject file → Generate Visual Studio project files (or equivalent)
-6. Open the generated .sln file in your IDE of choice and build
+1. Clone the repo or download it into the /Plugins directory in the root of your app (create it if it doesn't exist)
+2. Open your app in Unreal and select 'Yes' when asked to build the AbxrLib plugin
 
 ---
 
@@ -86,9 +79,17 @@ To use the ABXRLib SDK with ArborXR Insights:
 
 > **⚠️ Security Note:** For production builds distributed to third parties, avoid compiling `Org ID` and `Auth Secret` directly into your Unreal project. These credentials should only be compiled into builds when creating custom applications for specific individual clients. For general distribution, use ArborXR-managed devices or implement runtime credential provisioning.
 
-1. Open `Edit > Project Settings > Plugins > ABXR Configuration` in the Unreal Editor.
+1. Open `Project Settings > Plugins > AbxrLib Configuration` in the Unreal Editor.
 2. **For Development/Testing:** Paste in the App ID, Org ID, and Auth Secret. All 3 are required if you are testing from Unreal itself.
 3. **For Production Builds:** Only include the App ID. Leave Org ID and Auth Secret empty for third-party distribution.
+4. Open `Project Settings > Packaging > Advanced > Additional Asset Directories to Alway Cook`
+5. Add '/AbxrLib/UI'
+6. Open your VRPawn from the Content Drawer
+7. Add Press/Release UI Select to your Grab or Click trigger (this will be used for interacting with our UI)
+8. Search for 'Get AbxrInteractionSubsystem' and add it to the graph space
+9. Create a node off of this and search for 'Press UISelect' and add it
+10. Wire this in after your selected trigger
+11. Repeat for 'Release' 
 
 #### Alternative for Managed Headsets:
 If you're using an ArborXR-managed device, only the App ID is required. The Org ID and Auth Secret auto-fill. 
@@ -107,17 +108,17 @@ For information on implementing your own backend service or using other compatib
 
 ```cpp
 // When training starts
-UAbxr::EventAssessmentStart(TEXT("safety_training"));
+Abxr.EventAssessmentStart(TEXT("safety_training"));
 
 // When training completes
-UAbxr::EventAssessmentComplete(TEXT("safety_training"), 92, EEventStatus::Pass);
+Abxr.EventAssessmentComplete(TEXT("safety_training"), 92, EEventStatus.Pass);
 // or
-UAbxr::EventAssessmentComplete(TEXT("safety_training"), 25, EEventStatus::Fail);
+Abxr::EventAssessmentComplete(TEXT("safety_training"), 25, EEventStatus.Fail);
 ```
 
 **Assessment Complete Parameters:**
 - `Score` (second parameter) takes a 0-100 value
-- The `EEventStatus` enum has `Pass`, `Fail`, `Complete`, `Incomplete`, `Browsed`, `NotAttempted` options
+- The `EEventStatus` enum has `Pass`, `Fail`, `Complete`, `Incomplete`, `Browsed` options
 
 ### Tracking Objectives (Recommended)
 
@@ -125,10 +126,10 @@ For more detailed tracking, you can also track specific objectives within your t
 
 ```cpp
 // To mark a specific objective start
-UAbxr::EventObjectiveStart(TEXT("open_valve"));
+Abxr::EventObjectiveStart(TEXT("open_valve"));
 
 // When the objective is complete
-UAbxr::EventObjectiveComplete(TEXT("open_valve"), 100, EEventStatus::Complete);
+Abxr::EventObjectiveComplete(TEXT("open_valve"), 100, EEventStatus.Complete);
 ```
 
 ---
@@ -144,7 +145,7 @@ The full documentation includes:
 - Complete event tracking API (Events, Analytics Event Wrappers, Timed Events)
 - Advanced features (Module Targets, Authentication, Session Management)
 - Storage, Telemetry, Logging, and AI Integration
-- Mixpanel compatibility guide
+- Mixpanel and Cognitive3D compatibility guides
 - Troubleshooting and best practices
 - Platform-specific examples and code samples
 
