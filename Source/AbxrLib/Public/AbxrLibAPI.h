@@ -28,6 +28,32 @@ namespace Abxr
 		return Subsystem->OnAuthCompleted;
 	}
 	
+	// Fired when a new module target becomes active (LMS-driven sequencing)
+	ABXRLIB_API inline FAbxrModuleTarget& OnModuleTarget()
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnModuleTarget() binding will be ignored."));
+			static FAbxrModuleTarget Dummy;
+			return Dummy;
+		}
+		return Subsystem->OnModuleTarget;
+	}
+
+	// Fired when module sequencing has completed
+	ABXRLIB_API inline FAbxrAllModulesCompleted& OnAllModulesCompleted()
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnAllModulesCompleted() binding will be ignored."));
+			static FAbxrAllModulesCompleted Dummy;
+			return Dummy;
+		}
+		return Subsystem->OnAllModulesCompleted;
+	}
+	
 	ABXRLIB_API inline TArray<FAbxrModuleData> GetModuleList()
 	{
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
