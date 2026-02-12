@@ -15,5 +15,8 @@
       "LoadingPhase": "Default",
       "PlatformAllowList": [ "Win64", "Android" ]
     }
+  ],
+  "Plugins": [
+    { "Name": "XRBase", "Enabled": true }
   ]
 }
