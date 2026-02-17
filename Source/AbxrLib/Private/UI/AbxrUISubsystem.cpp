@@ -48,9 +48,18 @@ static void UpdatePopupInFrontOfPlayer(const UWorld* World, const APlayerControl
     Popup->SetActorLocationAndRotation(TargetLoc, TargetRot, false, nullptr, ETeleportType::TeleportPhysics);
 }
 
-AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World)
+AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World, const FString& Type)
 {
-    TSoftClassPtr<AActor> PopupActorPtr(FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C")));
+    TSoftClassPtr<AActor> PopupActorPtr;
+    if (Type == TEXT("assessmentPin"))
+    {
+        PopupActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C"));
+    }
+    else
+    {
+        PopupActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_KeyboardActor.BP_KeyboardActor_C"));
+    }
+    
     UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();
     if (!PopupActorClass)
     {
@@ -144,12 +153,12 @@ static bool SetUserWidgetTextProperty(UUserWidget* Widget, const FName PropertyN
     return false;
 }
 
-void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt)
+void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
 {
     UWorld* World = GetWorld();
 
     // Spawn once (no timer needed unless you truly require a delay)
-    AActor* Spawned = SpawnPopupInFrontOfPlayer(World);
+    AActor* Spawned = SpawnPopupInFrontOfPlayer(World, Type);
     if (!Spawned)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("Popup spawn failed"));
@@ -212,5 +221,5 @@ void UAbxrUISubsystem::HandlePopupClicked(const FText& InputText)
 
 void UAbxrUISubsystem::HandleInputRequested(const FAbxrAuthMechanism& Request)
 {
-	ShowKeyboardUI(FText::FromString(Request.Prompt));
+	ShowKeyboardUI(FText::FromString(Request.Prompt), Request.Type);
 }

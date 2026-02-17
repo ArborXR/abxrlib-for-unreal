@@ -12,13 +12,13 @@ public:
 	virtual void Deinitialize() override;
 	
 	UFUNCTION()
-	void ShowKeyboardUI(const FText& Prompt);
+	void ShowKeyboardUI(const FText& Prompt, const FString& Type);
 
 	UFUNCTION()
 	void HideKeyboardUI();
 
 	UFUNCTION()
-	static AActor* SpawnPopupInFrontOfPlayer(UWorld* World);
+	static AActor* SpawnPopupInFrontOfPlayer(UWorld* World, const FString& Type);
 
 private:
 	TWeakObjectPtr<AActor> ActivePopupActor;
