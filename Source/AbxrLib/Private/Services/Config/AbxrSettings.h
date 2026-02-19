@@ -1,6 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
+#include "UI/AbxrWidget.h"
+#include "UObject/SoftObjectPtr.h"
 #include "AbxrSettings.generated.h"
 
 UCLASS(config=Game, defaultconfig, BlueprintType, meta=(DisplayName="AbxrLib Configuration"))
@@ -64,6 +66,23 @@ public:
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Authentication Control", meta=(DisplayName="Enable Auto Advance Modules"))
 	bool EnableAutoAdvanceModules;
 	void SetEnableAutoAdvanceModules(const bool NewEnableAutoAdvanceModules) {this->EnableAutoAdvanceModules = NewEnableAutoAdvanceModules;}
+	
+	// Supply your own UMG Widget Blueprint to replace the built-in keyboard.
+	// Your widget MUST inherit from UAbxrWidget and call NotifyClicked() when the user submits input.
+	// The plugin's existing keyboard Actor is reused — only the widget displayed inside it is swapped out.
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Custom UI",
+		meta=(DisplayName="Custom Keyboard Widget Class",
+			  MetaClass="AbxrWidget",
+			  ToolTip="Override the default keyboard widget. Must inherit from UAbxrWidget and call SubmitInput()."))
+	TSoftClassPtr<UAbxrWidget> CustomKeyboardWidgetClass;
+
+	// Supply your own UMG Widget Blueprint to replace the built-in PIN pad.
+	// The same UAbxrWidget inheritance requirement applies.
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Custom UI",
+		meta=(DisplayName="Custom PIN Pad Widget Class",
+			  MetaClass="AbxrWidget",
+			  ToolTip="Override the default PIN pad widget. Must inherit from UAbxrWidget and call SubmitInput()."))
+	TSoftClassPtr<UAbxrWidget> CustomPinPadWidgetClass;
 
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category="Network Configuration", meta=(DisplayName="Telemetry Tracking Period (seconds)"))
 	double TelemetryTrackingPeriodSeconds;

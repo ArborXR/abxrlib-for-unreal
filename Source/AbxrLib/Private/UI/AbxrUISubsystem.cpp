@@ -4,7 +4,8 @@
 #include "Subsystems/AbxrSubsystem.h"
 #include "Types/AbxrLog.h"
 #include "UI/AbxrInteractionSubsystem.h"
-#include "UI/VRPopupWidget.h"
+#include "UI/AbxrWidget.h"
+#include "Services/Config/AbxrSettings.h"
 
 void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -25,7 +26,7 @@ void UAbxrUISubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
-static void UpdatePopupInFrontOfPlayer(const UWorld* World, const APlayerController* PC, AActor* Popup, const float DistanceCm, const float FixedWorldZ)
+static void UpdateInFrontOfPlayer(const UWorld* World, const APlayerController* PC, AActor* Popup, const float DistanceCm, const float FixedWorldZ)
 {
     if (!World || !PC || !Popup) return;
 
@@ -48,19 +49,19 @@ static void UpdatePopupInFrontOfPlayer(const UWorld* World, const APlayerControl
     Popup->SetActorLocationAndRotation(TargetLoc, TargetRot, false, nullptr, ETeleportType::TeleportPhysics);
 }
 
-AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World, const FString& Type)
+AActor* UAbxrUISubsystem::SpawnInFrontOfPlayer(UWorld* World, const FString& Type)
 {
-    TSoftClassPtr<AActor> PopupActorPtr;
+    TSoftClassPtr<AActor> ActorPtr;
     if (Type == TEXT("assessmentPin"))
     {
-        PopupActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C"));
+        ActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C"));
     }
     else
     {
-        PopupActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_KeyboardActor.BP_KeyboardActor_C"));
+        ActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_KeyboardActor.BP_KeyboardActor_C"));
     }
     
-    UClass* PopupActorClass = PopupActorPtr.LoadSynchronous();
+    UClass* PopupActorClass = ActorPtr.LoadSynchronous();
     if (!PopupActorClass)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("Failed to load class"));
@@ -92,8 +93,7 @@ AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World, const FString
     SpawnRotation.Roll = 0.f;
 
     FActorSpawnParameters Params;
-    Params.SpawnCollisionHandlingOverride =
-        ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
     AActor* Spawned = World->SpawnActor<AActor>(PopupActorClass, SpawnLocation, SpawnRotation, Params);
     if (!Spawned)
@@ -128,13 +128,13 @@ AActor* UAbxrUISubsystem::SpawnPopupInFrontOfPlayer(UWorld* World, const FString
             const APlayerController* PC2 = UGameplayStatics::GetPlayerController(W, 0);
             if (!PC2) return;
 
-            UpdatePopupInFrontOfPlayer(W, PC2, WeakPopup.Get(), DistanceCm, FixedWorldZ);
+            UpdateInFrontOfPlayer(W, PC2, WeakPopup.Get(), DistanceCm, FixedWorldZ);
         },
         1.0f / 60.0f,
         true);
 
     // Make sure it starts at the right spot
-    UpdatePopupInFrontOfPlayer(World, PC, Spawned, DistanceCm, FixedWorldZ);
+    UpdateInFrontOfPlayer(World, PC, Spawned, DistanceCm, FixedWorldZ);
 
     return Spawned;
 }
@@ -157,37 +157,64 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
 {
     UWorld* World = GetWorld();
 
-    // Spawn once (no timer needed unless you truly require a delay)
-    AActor* Spawned = SpawnPopupInFrontOfPlayer(World, Type);
+    AActor* Spawned = SpawnInFrontOfPlayer(World, Type);
     if (!Spawned)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("Popup spawn failed"));
         return;
     }
 
-    const UWidgetComponent* WC = Spawned->FindComponentByClass<UWidgetComponent>();
+    UWidgetComponent* WC = Spawned->FindComponentByClass<UWidgetComponent>();
     if (!WC)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("Spawned popup has no WidgetComponent"));
         return;
     }
 
-    UVRPopupWidget* PopupWidget = Cast<UVRPopupWidget>(WC->GetUserWidgetObject());
+    // If the user has configured a custom widget class in Project Settings, swap it in
+    const bool bIsPinPad = Type == TEXT("assessmentPin");
+    const UAbxrSettings* Settings = GetDefault<UAbxrSettings>();
+    if (Settings)
+    {
+        const TSoftClassPtr<UUserWidget>& CustomWidgetClassPtr = bIsPinPad
+            ? Settings->CustomPinPadWidgetClass
+            : Settings->CustomKeyboardWidgetClass;
+        if (!CustomWidgetClassPtr.IsNull())
+        {
+            if (UClass* CustomWidgetClass = CustomWidgetClassPtr.LoadSynchronous())
+            {
+                // Verify it actually inherits from UVRPopupWidget before swapping
+                if (CustomWidgetClass->IsChildOf(UAbxrWidget::StaticClass()))
+                {
+                    WC->SetWidgetClass(CustomWidgetClass);
+                    UE_LOG(LogAbxrLib, Log, TEXT("Using custom %s widget class: %s"),
+                        bIsPinPad ? TEXT("PIN pad") : TEXT("keyboard"),
+                        *CustomWidgetClass->GetName());
+                }
+            }
+            else
+            {
+                UE_LOG(LogAbxrLib, Warning, TEXT("Failed to load custom widget class — using default"));
+            }
+        }
+    }
+
+    UAbxrWidget* PopupWidget = Cast<UAbxrWidget>(WC->GetUserWidgetObject());
     if (!PopupWidget)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("Widget is not UVRPopupWidget"));
         return;
     }
-    
+
     ActivePopupActor = Spawned;
     ActivePopupWidget = PopupWidget;
-    
+
     SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), Prompt);
     PopupWidget->SynchronizeProperties();
 
     // Bind click delegate once
-    PopupWidget->OnPopupButtonClicked.RemoveAll(this);
-    PopupWidget->OnPopupButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandlePopupClicked);
+    PopupWidget->OnSubmitButtonClicked.RemoveAll(this);
+    PopupWidget->OnSubmitButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandlePopupClicked);
 
     if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
     {
@@ -212,7 +239,7 @@ void UAbxrUISubsystem::HideKeyboardUI()
 
 void UAbxrUISubsystem::HandlePopupClicked(const FText& InputText)
 {
-    if (UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
+    if (const UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
     {
         Subsystem->SubmitInput(InputText.ToString());
     }

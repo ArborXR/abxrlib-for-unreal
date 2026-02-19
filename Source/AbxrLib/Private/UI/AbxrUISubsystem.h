@@ -18,11 +18,11 @@ public:
 	void HideKeyboardUI();
 
 	UFUNCTION()
-	static AActor* SpawnPopupInFrontOfPlayer(UWorld* World, const FString& Type);
+	static AActor* SpawnInFrontOfPlayer(UWorld* World, const FString& Type);
 
 private:
 	TWeakObjectPtr<AActor> ActivePopupActor;
-	TWeakObjectPtr<class UVRPopupWidget> ActivePopupWidget;
+	TWeakObjectPtr<class UAbxrWidget> ActivePopupWidget;
 	
 	UFUNCTION()
 	void HandlePopupClicked(const FText& InputText);
