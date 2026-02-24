@@ -168,8 +168,8 @@ FString UXRDMService::GetDeviceId()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getDeviceId");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getDeviceId");
 #else
     return FString();
 #endif
@@ -180,8 +180,8 @@ FString UXRDMService::GetDeviceSerial()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getDeviceSerial");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getDeviceSerial");
 #else
     return FString();
 #endif
@@ -192,8 +192,8 @@ FString UXRDMService::GetDeviceTitle()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getDeviceTitle");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getDeviceTitle");
 #else
     return FString();
 #endif
@@ -204,8 +204,8 @@ TArray<FString> UXRDMService::GetDeviceTags()
     if (!IsConnected()) return TArray<FString>();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIStringArrayMethod("getDeviceTags");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIStringArrayMethod("getDeviceTags");
 #else
     return TArray<FString>();
 #endif
@@ -216,8 +216,8 @@ FString UXRDMService::GetOrgId()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getOrgId");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getOrgId");
 #else
     return FString();
 #endif
@@ -228,8 +228,8 @@ FString UXRDMService::GetOrgTitle()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getOrgTitle");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getOrgTitle");
 #else
     return FString();
 #endif
@@ -240,8 +240,8 @@ FString UXRDMService::GetOrgSlug()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getOrgSlug");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getOrgSlug");
 #else
     return FString();
 #endif
@@ -252,8 +252,8 @@ FString UXRDMService::GetMacAddressFixed()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getMacAddressFixed");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getMacAddressFixed");
 #else
     return FString();
 #endif
@@ -264,8 +264,8 @@ FString UXRDMService::GetMacAddressRandom()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getMacAddressRandom");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getMacAddressRandom");
 #else
     return FString();
 #endif
@@ -276,8 +276,8 @@ bool UXRDMService::GetIsAuthenticated()
     if (!IsConnected()) return false;
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIBoolMethod("getIsAuthenticated");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIBoolMethod("getIsAuthenticated");
 #else
     return false;
 #endif
@@ -288,8 +288,8 @@ FString UXRDMService::GetAccessToken()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getAccessToken");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getAccessToken");
 #else
     return FString();
 #endif
@@ -300,8 +300,8 @@ FString UXRDMService::GetRefreshToken()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getRefreshToken");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getRefreshToken");
 #else
     return FString();
 #endif
@@ -312,8 +312,8 @@ FDateTime UXRDMService::GetExpiresDateUtc()
     if (!IsConnected()) return FDateTime();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIDateTimeMethod("getExpiresDateUtc");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIDateTimeMethod("getExpiresDateUtc");
 #else
     return FDateTime();
 #endif
@@ -324,8 +324,8 @@ bool UXRDMService::GetIsInitialized()
     if (!IsConnected()) return false;
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIBoolMethod("getIsInitialized");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIBoolMethod("getIsInitialized");
 #else
     return false;
 #endif
@@ -336,8 +336,8 @@ FString UXRDMService::GetFingerprint()
     if (!IsConnected()) return FString();
     
 #if PLATFORM_ANDROID
-    UXRDMService* Instance = GetInstance();
-    return Instance->CallJNIResultString("getFingerprint");
+    UXRDMService* LocalInstance = GetInstance();
+    return LocalInstance->CallJNIResultString("getFingerprint");
 #else
     return FString();
 #endif
@@ -380,18 +380,18 @@ void UXRDMService::RegisterNativeMethods()
 
 void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject Service)
 {
-    UXRDMService* Instance = UXRDMService::GetInstance();
-    if (Instance && Service)
+    UXRDMService* LocalInstance = UXRDMService::GetInstance();
+    if (LocalInstance && Service)
     {
-        Instance->ServiceWrapper = Env->NewGlobalRef(Service);
-        Instance->bIsConnected = true;
+        LocalInstance->ServiceWrapper = Env->NewGlobalRef(Service);
+        LocalInstance->bIsConnected = true;
         
         // Notify on the game thread
-        AsyncTask(ENamedThreads::GameThread, [Instance]()
+        AsyncTask(ENamedThreads::GameThread, [LocalInstance]()
         {
-            if (Instance && Instance->bIsInitialized)
+            if (LocalInstance && LocalInstance->bIsInitialized)
             {
-                Instance->CompleteConnectionAttempt(true);
+                LocalInstance->CompleteConnectionAttempt(true);
                 UE_LOG(LogAbxrLib, Log, TEXT("XRDM SDK connected via native callback"));
             }
         });
@@ -400,16 +400,16 @@ void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject 
 
 void JNICALL UXRDMService::NativeOnDisconnected(JNIEnv* Env, jclass Clazz, jboolean WasClean)
 {
-    UXRDMService* Instance = UXRDMService::GetInstance();
-    if (Instance)
+    UXRDMService* LocalInstance = UXRDMService::GetInstance();
+    if (LocalInstance)
     {
         // Clear the service reference
-        if (Instance->ServiceWrapper)
+        if (LocalInstance->ServiceWrapper)
         {
-            Env->DeleteGlobalRef(Instance->ServiceWrapper);
-            Instance->ServiceWrapper = nullptr;
+            Env->DeleteGlobalRef(LocalInstance->ServiceWrapper);
+            LocalInstance->ServiceWrapper = nullptr;
         }
-        Instance->bIsConnected = false;
+        LocalInstance->bIsConnected = false;
     }
 }
 

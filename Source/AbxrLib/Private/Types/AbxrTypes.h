@@ -90,6 +90,11 @@ struct FAbxrAuthMechanism
 	UPROPERTY() FString Type;
 	UPROPERTY() FString Prompt;
 	UPROPERTY() FString Domain;
+	
+	FAbxrAuthMechanism() : Type(TEXT("")), Prompt(TEXT("")), Domain(TEXT("")) { }
+	
+	FAbxrAuthMechanism(const FString& InType, const FString& InPrompt, const FString& InDomain)
+		: Type(InType), Prompt(InPrompt), Domain(InDomain) { }
 };
 
 USTRUCT()
