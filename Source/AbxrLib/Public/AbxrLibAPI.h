@@ -5,143 +5,143 @@
 
 namespace Abxr
 {
-	ABXRLIB_API inline void Authenticate();
+	ABXRLIB_API void Authenticate();
 	
-	ABXRLIB_API inline FAbxrAuthCompleted& OnAuthCompleted();
+	ABXRLIB_API FAbxrAuthCompleted& OnAuthCompleted();
 	
 	// Fired when a new module target becomes active (LMS-driven sequencing)
-	ABXRLIB_API inline FAbxrModuleTarget& OnModuleTarget();
+	ABXRLIB_API FAbxrModuleTarget& OnModuleTarget();
 
 	// Fired when module sequencing has completed
-	ABXRLIB_API inline FAbxrAllModulesCompleted& OnAllModulesCompleted();
+	ABXRLIB_API FAbxrAllModulesCompleted& OnAllModulesCompleted();
 	
-	ABXRLIB_API inline TArray<FAbxrModuleData> GetModuleList();
+	ABXRLIB_API TArray<FAbxrModuleData> GetModuleList();
 	
-	ABXRLIB_API inline bool StartModuleAtIndex(const int ModuleIndex);
+	ABXRLIB_API bool StartModuleAtIndex(const int ModuleIndex);
 	
-	ABXRLIB_API inline void LogDebug(const FString& Text, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void LogDebug(const FString& Text);
+	ABXRLIB_API void LogDebug(const FString& Text, TMap<FString, FString>& Meta);
+	ABXRLIB_API void LogDebug(const FString& Text);
 	
-	ABXRLIB_API inline void LogInfo(const FString& Text, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void LogInfo(const FString& Text);
+	ABXRLIB_API void LogInfo(const FString& Text, TMap<FString, FString>& Meta);
+	ABXRLIB_API void LogInfo(const FString& Text);
 	
-	ABXRLIB_API inline void LogWarn(const FString& Text, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void LogWarn(const FString& Text);
+	ABXRLIB_API void LogWarn(const FString& Text, TMap<FString, FString>& Meta);
+	ABXRLIB_API void LogWarn(const FString& Text);
 	
-	ABXRLIB_API inline void LogError(const FString& Text, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void LogError(const FString& Text);
+	ABXRLIB_API void LogError(const FString& Text, TMap<FString, FString>& Meta);
+	ABXRLIB_API void LogError(const FString& Text);
 	
-	ABXRLIB_API inline void LogCritical(const FString& Text, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void LogCritical(const FString& Text);
+	ABXRLIB_API void LogCritical(const FString& Text, TMap<FString, FString>& Meta);
+	ABXRLIB_API void LogCritical(const FString& Text);
 	
-	ABXRLIB_API inline void Log(const FString& Text, const ELogLevel Level, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void Log(const FString& Text, const ELogLevel Level);
-	ABXRLIB_API inline void Log(const FString& Text);
+	ABXRLIB_API void Log(const FString& Text, const ELogLevel Level, TMap<FString, FString>& Meta);
+	ABXRLIB_API void Log(const FString& Text, const ELogLevel Level);
+	ABXRLIB_API void Log(const FString& Text);
 	
-	ABXRLIB_API inline void Event(const FString& Name, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void Event(const FString& Name);
-	ABXRLIB_API inline void Event(const FString& Name, const FVector& Position, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void Event(const FString& Name, const FVector& Position);
+	ABXRLIB_API void Event(const FString& Name, TMap<FString, FString>& Meta);
+	ABXRLIB_API void Event(const FString& Name);
+	ABXRLIB_API void Event(const FString& Name, const FVector& Position, TMap<FString, FString>& Meta);
+	ABXRLIB_API void Event(const FString& Name, const FVector& Position);
 	
-	ABXRLIB_API inline void Telemetry(const FString& Name, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void Telemetry(const FString& Name);
+	ABXRLIB_API void Telemetry(const FString& Name, TMap<FString, FString>& Meta);
+	ABXRLIB_API void Telemetry(const FString& Name);
 	
-	ABXRLIB_API inline void EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventAssessmentStart(const FString& AssessmentName);
+	ABXRLIB_API void EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventAssessmentStart(const FString& AssessmentName);
 	
-	ABXRLIB_API inline void EventAssessmentComplete(const FString& AssessmentName, const int Score, const EEventStatus Status, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventAssessmentComplete(const FString& AssessmentName, const int Score, const EEventStatus Status);
+	ABXRLIB_API void EventAssessmentComplete(const FString& AssessmentName, const int Score, const EEventStatus Status, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventAssessmentComplete(const FString& AssessmentName, const int Score, const EEventStatus Status);
 	
-	ABXRLIB_API inline void EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventObjectiveStart(const FString& ObjectiveName);
+	ABXRLIB_API void EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventObjectiveStart(const FString& ObjectiveName);
 	
-	ABXRLIB_API inline void EventObjectiveComplete(const FString& ObjectiveName, const int Score, const EEventStatus Status, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventObjectiveComplete(const FString& ObjectiveName, const int Score, const EEventStatus Status);
+	ABXRLIB_API void EventObjectiveComplete(const FString& ObjectiveName, const int Score, const EEventStatus Status, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventObjectiveComplete(const FString& ObjectiveName, const int Score, const EEventStatus Status);
 	
-	ABXRLIB_API inline void EventInteractionStart(const FString& InteractionName, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventInteractionStart(const FString& InteractionName);
+	ABXRLIB_API void EventInteractionStart(const FString& InteractionName, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventInteractionStart(const FString& InteractionName);
 	
-	ABXRLIB_API inline void EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response);
+	ABXRLIB_API void EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response);
 	
-	ABXRLIB_API inline void EventLevelStart(const FString& LevelName, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventLevelStart(const FString& LevelName);
+	ABXRLIB_API void EventLevelStart(const FString& LevelName, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventLevelStart(const FString& LevelName);
 	
-	ABXRLIB_API inline void EventLevelComplete(const FString& LevelName, const int Score, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventLevelComplete(const FString& LevelName, const int Score);
+	ABXRLIB_API void EventLevelComplete(const FString& LevelName, const int Score, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventLevelComplete(const FString& LevelName, const int Score);
 	
-	ABXRLIB_API inline void EventCritical(const FString& Label, TMap<FString, FString>& Meta);
-	ABXRLIB_API inline void EventCritical(const FString& Label);
+	ABXRLIB_API void EventCritical(const FString& Label, TMap<FString, FString>& Meta);
+	ABXRLIB_API void EventCritical(const FString& Label);
 	
 	// Gets the UUID assigned to device by ArborXR
-	ABXRLIB_API inline FString GetDeviceId();
+	ABXRLIB_API FString GetDeviceId();
 
 	// Gets the serial number assigned to device by OEM
-	ABXRLIB_API inline FString GetDeviceSerial();
+	ABXRLIB_API FString GetDeviceSerial();
 
 	// Gets the title given to device by admin through the ArborXR Web Portal
-	ABXRLIB_API inline FString GetDeviceTitle();
+	ABXRLIB_API FString GetDeviceTitle();
 
 	// Gets the tags added to device by admin through the ArborXR Web Portal
-	ABXRLIB_API inline TArray<FString> GetDeviceTags();
+	ABXRLIB_API TArray<FString> GetDeviceTags();
 
 	// Gets the UUID of the organization where the device is assigned. Organizations are created in the ArborXR Web Portal
-	ABXRLIB_API inline FString GetOrgId();
+	ABXRLIB_API FString GetOrgId();
 
 	// Gets the name assigned to organization by admin through the ArborXR Web Portal
-	ABXRLIB_API inline FString GetOrgTitle();
+	ABXRLIB_API FString GetOrgTitle();
 
 	// Gets the identifier generated by ArborXR when admin assigns title to organization
-	ABXRLIB_API inline FString GetOrgSlug();
+	ABXRLIB_API FString GetOrgSlug();
 
 	// Gets the physical MAC address assigned to device by OEM
-	ABXRLIB_API inline FString GetMacAddressFixed();
+	ABXRLIB_API FString GetMacAddressFixed();
 
 	// Gets the randomized MAC address for the current WiFi connection
-	ABXRLIB_API inline FString GetMacAddressRandom();
+	ABXRLIB_API FString GetMacAddressRandom();
 
 	// Gets whether the device is SSO authenticated
-	ABXRLIB_API inline bool GetIsAuthenticated();
+	ABXRLIB_API bool GetIsAuthenticated();
 
 	// Gets SSO access token
-	ABXRLIB_API inline FString GetAccessToken();
+	ABXRLIB_API FString GetAccessToken();
 
 	// Gets SSO refresh token
-	ABXRLIB_API inline FString GetRefreshToken();
+	ABXRLIB_API FString GetRefreshToken();
 
 	// Gets SSO token remaining lifetime
-	ABXRLIB_API inline FDateTime GetExpiresDateUtc();
+	ABXRLIB_API FDateTime GetExpiresDateUtc();
 
 	// Gets the device fingerprint
-	ABXRLIB_API inline FString GetFingerprint();
+	ABXRLIB_API FString GetFingerprint();
 	
 	// Start a new session with a fresh session identifier
 	// Generates a new session ID and performs fresh authentication
 	// Useful for starting new training experiences or resetting user context
-	ABXRLIB_API inline void StartNewSession();
+	ABXRLIB_API void StartNewSession();
 
 	// Get the learner/user data from the most recent authentication completion
 	// This is the userData object from the authentication response, containing user preferences and information
 	// Returns an empty map if no authentication has completed yet
-	ABXRLIB_API inline TMap<FString, FString> GetUserData();
+	ABXRLIB_API TMap<FString, FString> GetUserData();
 
 	// Register a super metadata that will be automatically included in all events
 	// super metadata persist across app sessions and are stored locally
-	ABXRLIB_API inline void Register(const FString& Key, const FString& Value);
+	ABXRLIB_API void Register(const FString& Key, const FString& Value);
 
 	// Register a super metadata only if it doesn't already exist
 	// Will not overwrite existing super metadata with the same key
-	ABXRLIB_API inline void RegisterOnce(const FString& Key, const FString& Value);
+	ABXRLIB_API void RegisterOnce(const FString& Key, const FString& Value);
 	
 	// Remove a super metadata entry
-	ABXRLIB_API inline void Unregister(const FString& Key);
+	ABXRLIB_API void Unregister(const FString& Key);
 
 	// Clear all super metadata
 	// Clears all super metadata from persistent storage
-	ABXRLIB_API inline void Reset();
+	ABXRLIB_API void Reset();
 
 	// Get a copy of all current super metadata
-	ABXRLIB_API inline TMap<FString, FString> GetSuperMetaData();
+	ABXRLIB_API TMap<FString, FString> GetSuperMetaData();
 
-	ABXRLIB_API inline void LoadSuperMetaData();
+	ABXRLIB_API void LoadSuperMetaData();
 }

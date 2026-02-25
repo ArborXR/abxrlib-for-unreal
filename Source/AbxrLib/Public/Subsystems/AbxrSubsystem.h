@@ -4,7 +4,7 @@
 #include "Types/AbxrTypes.h"
 #include "Services/Data/AbxrDataService.h"
 #include "Services/Auth/AbxrAuthService.h"
-#include "Types/AbxrDelegates.h"
+#include "../Public/Types/AbxrDelegates.h"
 #include "AbxrSubsystem.generated.h"
 
 UCLASS()
