@@ -1,14 +1,11 @@
 #pragma once
+#include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Types/AbxrTypes.h"
 #include "Services/Data/AbxrDataService.h"
 #include "Services/Auth/AbxrAuthService.h"
+#include "Types/AbxrDelegates.h"
 #include "AbxrSubsystem.generated.h"
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrAuthMechanism&, Request);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrAuthCompleted, const bool, bSuccess);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrModuleTarget, const FString&, ModuleTarget);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAllModulesCompleted);
 
 UCLASS()
 class ABXRLIB_API UAbxrSubsystem : public UGameInstanceSubsystem
