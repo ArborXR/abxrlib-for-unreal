@@ -1,11 +1,10 @@
 #include "UI/AbxrUISubsystem.h"
+#include "AbxrDisplayActor.h"
 #include "Components/WidgetComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Subsystems/AbxrSubsystem.h"
 #include "Types/AbxrLog.h"
 #include "UI/AbxrInteractionSubsystem.h"
 #include "UI/AbxrWidget.h"
-#include "Services/Config/AbxrSettings.h"
 
 void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -26,117 +25,30 @@ void UAbxrUISubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
-static void UpdateInFrontOfPlayer(const UWorld* World, const APlayerController* PC, AActor* Popup, const float DistanceCm, const float FixedWorldZ)
+AActor* UAbxrUISubsystem::SpawnActor(const FString& Type) const
 {
-    if (!World || !PC || !Popup) return;
+    UWorld* World = GetWorld();
+    if (!World) return nullptr;
 
-    FVector ViewLocation;
-    FRotator ViewRotation;
-    PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
+    const APlayerController* PC = World->GetFirstPlayerController();
+    if (!PC) return nullptr;
 
-    // Use yaw-only so pitch doesn't move it up/down or change perceived distance
-    const FRotator YawRot(0.f, ViewRotation.Yaw, 0.f);
-    const FVector Forward = YawRot.Vector();
+    FVector CamLoc;
+    FRotator CamRot;
+    PC->GetPlayerViewPoint(CamLoc, CamRot);
 
-    FVector TargetLoc = ViewLocation + Forward * DistanceCm;
+    const FTransform SpawnTransform(FRotator(0, CamRot.Yaw + 180.f, 0), CamLoc + CamRot.Vector() * 140.0f);
+    AAbxrDisplayActor* Popup = World->SpawnActorDeferred<AAbxrDisplayActor>(
+        AAbxrDisplayActor::StaticClass(), SpawnTransform, nullptr, nullptr,
+        ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
-    // Lock height (no head bob)
-    TargetLoc.Z = FixedWorldZ;
-
-    // Face the player (yaw-only)
-    const FRotator TargetRot(0.f, ViewRotation.Yaw, 0.f);
-
-    Popup->SetActorLocationAndRotation(TargetLoc, TargetRot, false, nullptr, ETeleportType::TeleportPhysics);
-}
-
-AActor* UAbxrUISubsystem::SpawnInFrontOfPlayer(UWorld* World, const FString& Type)
-{
-    TSoftClassPtr<AActor> ActorPtr;
-    if (Type == TEXT("assessmentPin"))
+    if (Popup)
     {
-        ActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_PinPadActor.BP_PinPadActor_C"));
-    }
-    else
-    {
-        ActorPtr = FSoftObjectPath(TEXT("/AbxrLib/UI/BP_KeyboardActor.BP_KeyboardActor_C"));
-    }
-    
-    UClass* PopupActorClass = ActorPtr.LoadSynchronous();
-    if (!PopupActorClass)
-    {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to load class"));
-        return nullptr;
+        Popup->PopupType = Type;
+        Popup->FinishSpawning(SpawnTransform);
     }
 
-    APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
-    if (!PC)
-    {
-        UE_LOG(LogAbxrLib, Warning, TEXT("No PlayerController"));
-        return nullptr;
-    }
-
-    // Get player's current view (works even if pawn is a Blueprint-only VR pawn)
-    FVector ViewLocation;
-    FRotator ViewRotation;
-    PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
-
-    FVector Forward = ViewRotation.Vector();
-    constexpr float DistanceCm = 80.f;  // ~0.8m in front of HMD
-    constexpr float ZOffsetCm  = -5.f;  // slightly below eye line
-
-    FVector SpawnLocation = ViewLocation + Forward * DistanceCm;
-    SpawnLocation.Z += ZOffsetCm;
-
-    // Make it face the player
-    FRotator SpawnRotation = ViewRotation;
-    SpawnRotation.Pitch = 0.f;
-    SpawnRotation.Roll = 0.f;
-
-    FActorSpawnParameters Params;
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-    AActor* Spawned = World->SpawnActor<AActor>(PopupActorClass, SpawnLocation, SpawnRotation, Params);
-    if (!Spawned)
-    {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to spawn popup actor"));
-        return nullptr;
-    }
-	
-    // Use weak pointers so we don't keep dead objects alive
-    TWeakObjectPtr WeakWorld(World);
-    TWeakObjectPtr WeakPopup(Spawned);
-
-    // Store the timer handle in a shared ref so the lambda can clear itself
-    TSharedRef<FTimerHandle> FollowHandle = MakeShared<FTimerHandle, ESPMode::ThreadSafe>();
-
-    const float FixedWorldZ = SpawnLocation.Z;
-
-    World->GetTimerManager().SetTimer(
-        *FollowHandle,
-        [WeakWorld, WeakPopup, FollowHandle, DistanceCm, FixedWorldZ]
-        {
-            if (!WeakWorld.IsValid()) return;
-
-            const UWorld* W = dynamic_cast<UWorld*>(WeakWorld.Get());
-            if (!WeakPopup.IsValid())
-            {
-                // Popup destroyed: stop ticking
-                W->GetTimerManager().ClearTimer(*FollowHandle);
-                return;
-            }
-
-            const APlayerController* PC2 = UGameplayStatics::GetPlayerController(W, 0);
-            if (!PC2) return;
-
-            UpdateInFrontOfPlayer(W, PC2, dynamic_cast<AActor*>(WeakPopup.Get()), DistanceCm, FixedWorldZ);
-        },
-        1.0f / 60.0f,
-        true);
-
-    // Make sure it starts at the right spot
-    UpdateInFrontOfPlayer(World, PC, Spawned, DistanceCm, FixedWorldZ);
-
-    return Spawned;
+    return Popup;
 }
 
 static bool SetUserWidgetTextProperty(UUserWidget* Widget, const FName PropertyName, const FText& Value)
@@ -155,9 +67,7 @@ static bool SetUserWidgetTextProperty(UUserWidget* Widget, const FName PropertyN
 
 void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
 {
-    UWorld* World = GetWorld();
-
-    AActor* Spawned = SpawnInFrontOfPlayer(World, Type);
+    AActor* Spawned = SpawnActor(Type);
     if (!Spawned)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("Popup spawn failed"));
@@ -171,38 +81,10 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
         return;
     }
 
-    // If the user has configured a custom widget class in Project Settings, swap it in
-    const bool bIsPinPad = Type == TEXT("assessmentPin");
-    const UAbxrSettings* Settings = GetDefault<UAbxrSettings>();
-    if (Settings)
-    {
-        const TSoftClassPtr<UUserWidget>& CustomWidgetClassPtr = bIsPinPad
-            ? Settings->CustomPinPadWidgetClass
-            : Settings->CustomKeyboardWidgetClass;
-        if (!CustomWidgetClassPtr.IsNull())
-        {
-            if (UClass* CustomWidgetClass = CustomWidgetClassPtr.LoadSynchronous())
-            {
-                // Verify it actually inherits from UVRPopupWidget before swapping
-                if (CustomWidgetClass->IsChildOf(UAbxrWidget::StaticClass()))
-                {
-                    WC->SetWidgetClass(CustomWidgetClass);
-                    UE_LOG(LogAbxrLib, Log, TEXT("Using custom %s widget class: %s"),
-                        bIsPinPad ? TEXT("PIN pad") : TEXT("keyboard"),
-                        *CustomWidgetClass->GetName());
-                }
-            }
-            else
-            {
-                UE_LOG(LogAbxrLib, Warning, TEXT("Failed to load custom widget class — using default"));
-            }
-        }
-    }
-
     UAbxrWidget* PopupWidget = Cast<UAbxrWidget>(WC->GetUserWidgetObject());
     if (!PopupWidget)
     {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Widget is not UVRPopupWidget"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("Widget is not UAbxrWidget"));
         return;
     }
 

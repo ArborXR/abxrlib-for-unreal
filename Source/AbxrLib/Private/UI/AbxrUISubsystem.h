@@ -17,9 +17,6 @@ public:
 	UFUNCTION()
 	void HideKeyboardUI();
 
-	UFUNCTION()
-	static AActor* SpawnInFrontOfPlayer(UWorld* World, const FString& Type);
-
 private:
 	TWeakObjectPtr<AActor> ActivePopupActor;
 	TWeakObjectPtr<class UAbxrWidget> ActivePopupWidget;
@@ -29,4 +26,6 @@ private:
 
 	UFUNCTION()
 	void HandleInputRequested(const FAbxrAuthMechanism& Request);
+	
+	AActor* SpawnActor(const FString& Type) const;
 };
