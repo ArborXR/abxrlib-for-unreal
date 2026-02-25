@@ -117,7 +117,7 @@ AActor* UAbxrUISubsystem::SpawnInFrontOfPlayer(UWorld* World, const FString& Typ
         {
             if (!WeakWorld.IsValid()) return;
 
-            const UWorld* W = WeakWorld.Get();
+            const UWorld* W = dynamic_cast<UWorld*>(WeakWorld.Get());
             if (!WeakPopup.IsValid())
             {
                 // Popup destroyed: stop ticking
@@ -128,7 +128,7 @@ AActor* UAbxrUISubsystem::SpawnInFrontOfPlayer(UWorld* World, const FString& Typ
             const APlayerController* PC2 = UGameplayStatics::GetPlayerController(W, 0);
             if (!PC2) return;
 
-            UpdateInFrontOfPlayer(W, PC2, WeakPopup.Get(), DistanceCm, FixedWorldZ);
+            UpdateInFrontOfPlayer(W, PC2, dynamic_cast<AActor*>(WeakPopup.Get()), DistanceCm, FixedWorldZ);
         },
         1.0f / 60.0f,
         true);
