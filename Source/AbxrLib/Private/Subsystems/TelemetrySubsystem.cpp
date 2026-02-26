@@ -1,5 +1,6 @@
 #include "TelemetrySubsystem.h"
 #include "AbxrLibAPI.h"
+#include "AbxrSubsystem.h"
 #include "Services/Config/AbxrSettings.h"
 #include "Engine/Engine.h"
 #include "Misc/App.h"
