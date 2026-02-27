@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/EngineTypes.h"
 #include "GameFramework/SaveGame.h"
 #include "Types/AbxrPublicTypes.h"
 #include "AbxrTypes.generated.h"

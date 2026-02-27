@@ -1,5 +1,6 @@
 #include "AbxrSubsystem.h"
 #include "AbxrLibAPI_Internal.h"
+#include "TimerManager.h"
 #include "Services/Config/AbxrSettings.h"
 #include "Services/Platform/XRDM/XRDMService.h"
 #include "Engine/Engine.h"
@@ -7,7 +8,6 @@
 #include "UI/AbxrUISubsystem.h"
 #include "Async/Async.h"
 #include "Types/AbxrLog.h"
-#include "Algo/Sort.h"
 
 const FString UAbxrSubsystem::SuperMetaDataKey(TEXT("AbxrSuperMetaData"));
 

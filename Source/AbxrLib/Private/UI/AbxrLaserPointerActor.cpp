@@ -2,7 +2,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/WidgetInteractionComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInterface.h"
 
 AAbxrLaserPointerActor::AAbxrLaserPointerActor()
 {

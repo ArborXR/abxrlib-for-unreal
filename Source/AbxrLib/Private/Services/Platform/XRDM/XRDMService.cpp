@@ -3,6 +3,7 @@
 #include "Engine/Engine.h"
 #include "Async/AsyncWork.h"
 #include "Types/AbxrLog.h"
+#include "UObject/Package.h"
 
 UXRDMService* UXRDMService::Instance = nullptr;
 

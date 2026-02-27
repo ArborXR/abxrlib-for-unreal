@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "Async/Future.h"
 #include "Containers/Ticker.h"
 #if PLATFORM_ANDROID
 #include "Android/AndroidJNI.h"

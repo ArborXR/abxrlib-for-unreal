@@ -1,5 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "Containers/Ticker.h"
+#include "HAL/ThreadSafeBool.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Types/AbxrTypes.h"
 

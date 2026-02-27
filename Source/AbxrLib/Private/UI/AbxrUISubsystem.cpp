@@ -1,6 +1,7 @@
 #include "UI/AbxrUISubsystem.h"
 #include "AbxrDisplayActor.h"
 #include "Components/WidgetComponent.h"
+#include "Engine/GameInstance.h"
 #include "Subsystems/AbxrSubsystem.h"
 #include "Types/AbxrLog.h"
 #include "UI/AbxrInteractionSubsystem.h"

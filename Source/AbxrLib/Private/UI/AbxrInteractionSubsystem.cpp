@@ -1,4 +1,5 @@
 #include "UI/AbxrInteractionSubsystem.h"
+#include "AbxrDisplayActor.h"
 #include "UI/AbxrLaserPointerActor.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/PlayerController.h"

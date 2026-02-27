@@ -4,9 +4,9 @@
 #include "Services/Config/AbxrSettings.h"
 #include "Engine/Engine.h"
 #include "Misc/App.h"
-#include "Misc/EngineVersion.h"
 #include "GenericPlatform/GenericPlatformMemory.h"
 #include "TimerManager.h"
+#include "GameFramework/Pawn.h"
 #include "Types/AbxrLog.h"
 #if PLATFORM_ANDROID
 #include "Android/AndroidPlatformMisc.h"

@@ -8,13 +8,13 @@
 #include "Interfaces/IHttpResponse.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Dom/JsonObject.h"
-#include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
 #include "Misc/Base64.h"
 #include "HAL/PlatformMisc.h"
 #include "Interfaces/IPluginManager.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Async/Async.h"
+#include "Misc/CommandLine.h"
 #include "Types/AbxrLog.h"
 #if PLATFORM_ANDROID
 #include "Android/AndroidApplication.h"
@@ -501,60 +501,6 @@ FString FAbxrAuthService::GetAndroidIntentParam(const FString& Key) const
 #endif
 	return Result;
 }
-
-/*FString FAbxrAuthService::GetAndroidIntentParam(const FString& Key)
-{
-#if PLATFORM_ANDROID
-	FString Result;
-    
-	if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
-	{
-		// Get the activity
-		jobject Activity = FAndroidApplication::GetGameActivity();
-		if (!Activity) return Result;
-
-		// Call getIntent()
-		jclass ActivityClass = Env->GetObjectClass(Activity);
-		jmethodID GetIntentMethod = Env->GetMethodID(ActivityClass, "getIntent", "()Landroid/content/Intent;");
-		jobject Intent = Env->CallObjectMethod(Activity, GetIntentMethod);
-
-		if (Intent)
-		{
-			jclass IntentClass = Env->GetObjectClass(Intent);
-            
-			// Check hasExtra
-			jmethodID HasExtraMethod = Env->GetMethodID(IntentClass, "hasExtra", "(Ljava/lang/String;)Z");
-			jstring JKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
-			bool bHasExtra = Env->CallBooleanMethod(Intent, HasExtraMethod, JKey);
-
-			if (bHasExtra)
-			{
-				// Get the string extra
-				jmethodID GetStringExtraMethod = Env->GetMethodID(
-					IntentClass, "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
-				jstring JValue = (jstring)Env->CallObjectMethod(Intent, GetStringExtraMethod, JKey);
-
-				if (JValue)
-				{
-					const char* ValueChars = Env->GetStringUTFChars(JValue, nullptr);
-					Result = FString(UTF8_TO_TCHAR(ValueChars));
-					Env->ReleaseStringUTFChars(JValue, ValueChars);
-					Env->DeleteLocalRef(JValue);
-				}
-			}
-
-			Env->DeleteLocalRef(JKey);
-			Env->DeleteLocalRef(IntentClass);
-			Env->DeleteLocalRef(Intent);
-		}
-		Env->DeleteLocalRef(ActivityClass);
-	}
-    
-	return Result;
-#else
-	return FString();
-#endif
-}*/
 
 void FAbxrAuthService::AuthSucceeded()
 {
