@@ -12,7 +12,10 @@ void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	if (UAbxrSubsystem* Abxr = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
 	{
-		Abxr->OnInputRequested.AddDynamic(this, &UAbxrUISubsystem::HandleInputRequested);
+	    Abxr->OnInputRequested = [this](const FAbxrAuthMechanism& Request)
+	    {
+	        HandleInputRequested(Request);
+	    };
 	}
 }
 
@@ -20,7 +23,7 @@ void UAbxrUISubsystem::Deinitialize()
 {
 	if (UAbxrSubsystem* Abxr = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
 	{
-		Abxr->OnInputRequested.RemoveAll(this);
+	    Abxr->OnInputRequested = nullptr;
 	}
 	HideKeyboardUI();
 	Super::Deinitialize();

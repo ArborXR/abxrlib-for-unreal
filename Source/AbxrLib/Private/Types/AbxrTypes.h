@@ -74,6 +74,21 @@ struct FAbxrAuthResponse
 };
 
 USTRUCT()
+struct FAbxrAuthMechanism
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString Type;
+	UPROPERTY() FString Prompt;
+	UPROPERTY() FString Domain;
+	
+	FAbxrAuthMechanism() : Type(TEXT("")), Prompt(TEXT("")), Domain(TEXT("")) { }
+	
+	FAbxrAuthMechanism(const FString& InType, const FString& InPrompt, const FString& InDomain)
+		: Type(InType), Prompt(InPrompt), Domain(InDomain) { }
+};
+
+USTRUCT()
 struct FAbxrConfigPayload
 {
 	GENERATED_BODY()
@@ -172,3 +187,5 @@ public:
 	// Optional (debug / validation).
 	UPROPERTY() FString UserId;
 };
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrAuthMechanism& /*Request*/);

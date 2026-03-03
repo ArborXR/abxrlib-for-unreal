@@ -23,8 +23,7 @@ private:
 	
 	UFUNCTION()
 	void HandlePopupClicked(const FText& InputText);
-
-	UFUNCTION()
+	
 	void HandleInputRequested(const FAbxrAuthMechanism& Request);
 	
 	AActor* SpawnActor(const FString& Type) const;

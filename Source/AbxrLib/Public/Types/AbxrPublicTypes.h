@@ -45,22 +45,6 @@ struct FAbxrModuleData
 	UPROPERTY() int Order = 0;
 };
 
-USTRUCT()
-struct FAbxrAuthMechanism
-{
-	GENERATED_BODY()
-
-	UPROPERTY() FString Type;
-	UPROPERTY() FString Prompt;
-	UPROPERTY() FString Domain;
-	
-	FAbxrAuthMechanism() : Type(TEXT("")), Prompt(TEXT("")), Domain(TEXT("")) { }
-	
-	FAbxrAuthMechanism(const FString& InType, const FString& InPrompt, const FString& InDomain)
-		: Type(InType), Prompt(InPrompt), Domain(InDomain) { }
-};
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrAuthMechanism&, Request);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrAuthCompleted, const bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrModuleTarget, const FString&, ModuleTarget);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAllModulesCompleted);

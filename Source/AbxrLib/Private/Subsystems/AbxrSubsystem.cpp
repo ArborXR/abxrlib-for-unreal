@@ -97,7 +97,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		{
 			if (!WeakThis.IsValid()) return;
 			const UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
-			Self->OnInputRequested.Broadcast(Request);
+			Self->OnInputRequested(Request);
 		});
 	};
 	Callbacks.OnSucceeded = [WeakThis = TWeakObjectPtr(this)]
