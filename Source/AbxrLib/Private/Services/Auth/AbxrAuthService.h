@@ -33,7 +33,7 @@ private:
 	void GetConfigData();
 	void GetArborData();
 	void AuthSucceeded();
-	void KeyboardAuthenticate();
+	void KeyboardAuthenticate(const bool FirstAttempt);
 	
 	bool CheckAuthHandoff();
 	static FString GetCommandLineArg(const FString& Key);
@@ -53,7 +53,6 @@ private:
 	
 	FAbxrAuthPayload Payload;
 	int TokenExpiry;
-	int FailedAuthAttempts;
 	
 	FTSTicker::FDelegateHandle ReAuthTickHandle;
 	double NextReAuthCheckAtSeconds = 0.0;

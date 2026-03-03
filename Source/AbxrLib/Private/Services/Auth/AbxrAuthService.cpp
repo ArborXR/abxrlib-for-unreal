@@ -60,9 +60,8 @@ void FAbxrAuthService::ScheduleRetry(TFunction<void()> Fn)
 	);
 }
 
-FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) : SessionUsedAuthHandoff(false),
-                                                                          bAuthenticated(false), TokenExpiry(0),
-                                                                          FailedAuthAttempts(0)
+FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) :
+	SessionUsedAuthHandoff(false), bAuthenticated(false), TokenExpiry(0)
 {
 	Callbacks = callbacks;
 	FString HMDName = TEXT("None");
@@ -132,7 +131,7 @@ void FAbxrAuthService::Authenticate()
 						if (!Self3 || Self3->bStopping || !Self3->bAttemptActive) return;
 						if (Self3->Payload.AuthMechanism.Contains(TEXT("prompt")))
 						{
-							Self3->KeyboardAuthenticate();
+							Self3->KeyboardAuthenticate(true);
 						}
 						else
 						{
@@ -508,10 +507,10 @@ void FAbxrAuthService::AuthSucceeded()
 	UE_LOG(LogAbxrLib, Log, TEXT("Authenticated successfully"));
 }
 
-void FAbxrAuthService::KeyboardAuthenticate()
+void FAbxrAuthService::KeyboardAuthenticate(const bool FirstAttempt)
 {
 	FString Prompt = TEXT("");
-	if (FailedAuthAttempts > 0) Prompt = TEXT("Authentication Failed (") + FString::FromInt(FailedAuthAttempts) + ")\n";
+	if (!FirstAttempt) Prompt = TEXT("Authentication Failed\n");
 	Prompt.Append(Payload.AuthMechanism[TEXT("prompt")]);
 	
 	FAbxrKeyboardRequest Request;
@@ -521,8 +520,6 @@ void FAbxrAuthService::KeyboardAuthenticate()
 
 	// Emit an input request. This may fire multiple times as the user retries.
 	Callbacks.OnInputRequested(Request);
-	
-	FailedAuthAttempts++;
 }
 
 void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
@@ -536,7 +533,7 @@ void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 		
 		Self->Payload.AuthMechanism[TEXT("prompt")] = OriginalPrompt;
 		if (bSuccess) Self->AuthSucceeded();
-		else Self->KeyboardAuthenticate();
+		else Self->KeyboardAuthenticate(false);
 	});
 }
 
@@ -564,6 +561,5 @@ void FAbxrAuthService::ClearAuthenticationState()
 	ResponseData = FAbxrAuthResponse();
 	TokenExpiry = 0;
 	Payload.SessionId = TEXT("");
-	FailedAuthAttempts = 0;
 	UE_LOG(LogAbxrLib, Log, TEXT("Authentication state cleared - data transmission stopped"));
 }
