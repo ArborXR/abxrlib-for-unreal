@@ -91,7 +91,7 @@ void UAbxrSubsystem::Deinitialize()
 FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 {
 	FAbxrAuthCallbacks Callbacks;
-	Callbacks.OnInputRequested = [WeakThis = TWeakObjectPtr(this)](const FAbxrAuthMechanism& Request)
+	Callbacks.OnInputRequested = [WeakThis = TWeakObjectPtr(this)](const FAbxrKeyboardRequest& Request)
 	{
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, Request]
 		{

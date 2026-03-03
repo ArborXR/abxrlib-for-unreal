@@ -130,7 +130,7 @@ void FAbxrAuthService::Authenticate()
 					{
 						const TSharedPtr<FAbxrAuthService> Self3 = AuthPtr.Pin();
 						if (!Self3 || Self3->bStopping || !Self3->bAttemptActive) return;
-						if (!Self3->AuthMechanism.Prompt.IsEmpty())
+						if (Self3->Payload.AuthMechanism.Contains(TEXT("prompt")))
 						{
 							Self3->KeyboardAuthenticate();
 						}
@@ -216,8 +216,6 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 {
 	if (bStopping || !bAttemptActive) { OnComplete(false); return; }
 	if (Payload.SessionId.IsEmpty()) Payload.SessionId = FGuid::NewGuid().ToString();
-
-	Payload.AuthMechanism = CreateAuthMechanismDict();
 
 	FString Json;
 	FJsonObjectConverter::UStructToJsonObjectString(Payload, Json);
@@ -379,7 +377,7 @@ void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 					FAbxrConfigPayload Config;
 					FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
 					Self2->SetConfigFromPayload(Config);
-					Self2->AuthMechanism = Config.AuthMechanism;
+					Self2->Payload.AuthMechanism = Config.AuthMechanism;
 					UE_LOG(LogAbxrLib, Log, TEXT("GetConfiguration() successful"));
 					OnComplete(true);
 					return;
@@ -514,31 +512,31 @@ void FAbxrAuthService::KeyboardAuthenticate()
 {
 	FString Prompt = TEXT("");
 	if (FailedAuthAttempts > 0) Prompt = TEXT("Authentication Failed (") + FString::FromInt(FailedAuthAttempts) + ")\n";
-	Prompt.Append(AuthMechanism.Prompt);
+	Prompt.Append(Payload.AuthMechanism[TEXT("prompt")]);
+	
+	FAbxrKeyboardRequest Request;
+	Request.Prompt = Prompt;
+	if (Payload.AuthMechanism.Contains(TEXT("type"))) Request.Type = Payload.AuthMechanism[TEXT("type")];
+	if (Payload.AuthMechanism.Contains(TEXT("domain"))) Request.Domain = Payload.AuthMechanism[TEXT("domain")];
 
 	// Emit an input request. This may fire multiple times as the user retries.
-	Callbacks.OnInputRequested(FAbxrAuthMechanism(AuthMechanism.Type, Prompt, AuthMechanism.Domain));
+	Callbacks.OnInputRequested(Request);
 	
 	FailedAuthAttempts++;
 }
 
 void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 {
-	FString OriginalPrompt = AuthMechanism.Prompt;
-	AuthMechanism.Prompt = KeyboardInput;
+	FString OriginalPrompt = Payload.AuthMechanism[TEXT("prompt")];
+	Payload.AuthMechanism[TEXT("prompt")] = KeyboardInput;
 	AuthRequest([AuthPtr = AsWeak(), OriginalPrompt](const bool bSuccess)
 	{
 		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
 		if (!Self) return;
-		if (bSuccess)
-		{
-			Self->AuthSucceeded();
-		}
-		else
-		{
-			Self->AuthMechanism.Prompt = OriginalPrompt;
-			Self->KeyboardAuthenticate();
-		}
+		
+		Self->Payload.AuthMechanism[TEXT("prompt")] = OriginalPrompt;
+		if (bSuccess) Self->AuthSucceeded();
+		else Self->KeyboardAuthenticate();
 	});
 }
 
@@ -560,22 +558,12 @@ void FAbxrAuthService::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, c
 	Request->SetHeader("x-abxrlib-hash", AbxrUtil::ComputeSHA256(HashString));
 }
 
-TMap<FString, FString> FAbxrAuthService::CreateAuthMechanismDict() const
-{
-	TMap<FString, FString> Dict;
-	if (!AuthMechanism.Type.IsEmpty()) Dict.Add(TEXT("type"), AuthMechanism.Type);
-	if (!AuthMechanism.Prompt.IsEmpty()) Dict.Add(TEXT("prompt"), AuthMechanism.Prompt);
-	if (!AuthMechanism.Domain.IsEmpty()) Dict.Add(TEXT("domain"), AuthMechanism.Domain);
-	return Dict;
-}
-
 void FAbxrAuthService::ClearAuthenticationState()
 {
 	bAuthenticated = false;
 	ResponseData = FAbxrAuthResponse();
 	TokenExpiry = 0;
 	Payload.SessionId = TEXT("");
-	AuthMechanism = FAbxrAuthMechanism();
 	FailedAuthAttempts = 0;
 	UE_LOG(LogAbxrLib, Log, TEXT("Authentication state cleared - data transmission stopped"));
 }

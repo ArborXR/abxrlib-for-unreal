@@ -23,8 +23,7 @@ private:
 	static bool ShouldRetry(bool bOk, const FHttpResponsePtr& Response);
 	void ScheduleRetry(TFunction<void()> Fn);
 	void CancelRetryTimer();
-
-	TMap<FString, FString> CreateAuthMechanismDict() const;
+	
 	void ClearAuthenticationState();
 	void AuthRequest(TFunction<void(bool)> OnComplete);
 	bool ParseAuthResponse(const FString& Body, const bool Handoff);
@@ -54,7 +53,6 @@ private:
 	
 	FAbxrAuthPayload Payload;
 	int TokenExpiry;
-	FAbxrAuthMechanism AuthMechanism;
 	int FailedAuthAttempts;
 	
 	FTSTicker::FDelegateHandle ReAuthTickHandle;

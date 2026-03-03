@@ -24,7 +24,7 @@ private:
 	UFUNCTION()
 	void HandlePopupClicked(const FText& InputText);
 	
-	void HandleInputRequested(const FAbxrAuthMechanism& Request);
+	void HandleInputRequested(const FAbxrKeyboardRequest& Request);
 	
 	AActor* SpawnActor(const FString& Type) const;
 };

@@ -12,7 +12,7 @@ void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	if (UAbxrSubsystem* Abxr = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
 	{
-	    Abxr->OnInputRequested = [this](const FAbxrAuthMechanism& Request)
+	    Abxr->OnInputRequested = [this](const FAbxrKeyboardRequest& Request)
 	    {
 	        HandleInputRequested(Request);
 	    };
@@ -132,7 +132,7 @@ void UAbxrUISubsystem::HandlePopupClicked(const FText& InputText)
     HideKeyboardUI();
 }
 
-void UAbxrUISubsystem::HandleInputRequested(const FAbxrAuthMechanism& Request)
+void UAbxrUISubsystem::HandleInputRequested(const FAbxrKeyboardRequest& Request)
 {
 	ShowKeyboardUI(FText::FromString(Request.Prompt), Request.Type);
 }

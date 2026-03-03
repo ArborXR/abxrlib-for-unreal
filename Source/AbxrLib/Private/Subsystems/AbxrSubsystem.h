@@ -14,7 +14,7 @@ public:
 	virtual void Deinitialize() override;
 	void SubmitInput(const FString& Input) const { AuthService->KeyboardAuthenticate(Input); }
 	
-	TFunction<void(const FAbxrAuthMechanism&)> OnInputRequested;
+	TFunction<void(const FAbxrKeyboardRequest&)> OnInputRequested;
 	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
 	FAbxrAuthCompleted OnAuthCompleted;
 

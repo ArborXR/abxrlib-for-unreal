@@ -73,19 +73,11 @@ struct FAbxrAuthResponse
 	UPROPERTY() TArray<FAbxrModuleData> Modules;
 };
 
-USTRUCT()
-struct FAbxrAuthMechanism
+struct FAbxrKeyboardRequest
 {
-	GENERATED_BODY()
-
-	UPROPERTY() FString Type;
-	UPROPERTY() FString Prompt;
-	UPROPERTY() FString Domain;
-	
-	FAbxrAuthMechanism() : Type(TEXT("")), Prompt(TEXT("")), Domain(TEXT("")) { }
-	
-	FAbxrAuthMechanism(const FString& InType, const FString& InPrompt, const FString& InDomain)
-		: Type(InType), Prompt(InPrompt), Domain(InDomain) { }
+	FString Type;
+	FString Prompt;
+	FString Domain;
 };
 
 USTRUCT()
@@ -93,7 +85,7 @@ struct FAbxrConfigPayload
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FAbxrAuthMechanism AuthMechanism;
+	UPROPERTY() TMap<FString, FString> AuthMechanism;
 	UPROPERTY() FString FrameRateCapturePeriod;
 	UPROPERTY() FString TelemetryCapturePeriod;
 	UPROPERTY() FString RestUrl;
@@ -111,7 +103,7 @@ struct FAbxrConfigPayload
 
 struct FAbxrAuthCallbacks
 {
-	TFunction<void(const FAbxrAuthMechanism&)> OnInputRequested;
+	TFunction<void(const FAbxrKeyboardRequest&)> OnInputRequested;
 	TFunction<void()> OnSucceeded;
 	TFunction<void(const FString&)> OnFailed;
 };
@@ -157,7 +149,7 @@ struct FAbxrDataPayloadWrapper
 	UPROPERTY() TArray<FAbxrLogPayload> basicLog;
 };
 
-UENUM(BlueprintType)
+UENUM()
 enum class EPartner : uint8
 {
 	None,
@@ -173,4 +165,4 @@ public:
 	UPROPERTY() TMap<FString, FString> SuperMetaData;
 };
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrAuthMechanism& /*Request*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrKeyboardRequest& Request);
