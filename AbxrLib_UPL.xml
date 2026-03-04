@@ -15,13 +15,8 @@
 
 	<buildGradleAdditions>
 		<insert>
-			repositories {
-				flatDir {
-					dirs 'libs'
-				}
-			}
 			dependencies {
-				implementation(name:'XRDM.SDK.External.NativeWithShim', ext:'aar')
+				implementation fileTree(include: ['*.aar'], dir: 'libs')
 			}
 		</insert>
 	</buildGradleAdditions>
