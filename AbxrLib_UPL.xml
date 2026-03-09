@@ -5,10 +5,20 @@
 	</init>
 
 	<resourceCopies>
+		<!-- XRDM SDK AAR (pre-compiled) -->
 		<copyFile src="$S(PluginDir)/libs/XRDM.SDK.External.NativeWithShim.aar"
 				  dst="$S(BuildDir)/gradle/app/libs/XRDM.SDK.External.NativeWithShim.aar" />
+				  
 		<copyFile src="$S(PluginDir)/Source/AbxrLib/Private/Android/Java/com/abxr/lib/AbxrAndroidPackageUtils.java"
 				  dst="$S(BuildDir)/src/com/abxr/lib/AbxrAndroidPackageUtils.java" />
+				  
+		<!-- QR Java sources (compiled by Gradle alongside everything else) -->
+		<copyFile src="$S(PluginDir)/Source/AbxrLib/Private/Android/Java/com/abxr/qr/AbxrQRScannerCallback.java"
+				  dst="$S(BuildDir)/src/com/abxr/qr/AbxrQRScannerCallback.java" />
+		<copyFile src="$S(PluginDir)/Source/AbxrLib/Private/Android/Java/com/abxr/qr/AbxrQRScanner.java"
+				  dst="$S(BuildDir)/src/com/abxr/qr/AbxrQRScanner.java" />
+		<copyFile src="$S(PluginDir)/Source/AbxrLib/Private/Android/Java/com/abxr/qr/AbxrQRScanActivity.java"
+				  dst="$S(BuildDir)/src/com/abxr/qr/AbxrQRScanActivity.java" />
 	</resourceCopies>
 
 	<androidManifestUpdates>
@@ -17,12 +27,31 @@
 				<package android:name="app.xrdm.client" />
 			</queries>
 		</addElements>
+
+		<!-- Camera permission required for QR code scanning -->
+		<addPermission android:name="android.permission.CAMERA" />
+
+		<addElements tag="application">
+			<activity
+				android:name="com.abxr.qr.AbxrQRScanActivity"
+				android:screenOrientation="landscape"
+				android:exported="false" />
+		</addElements>
 	</androidManifestUpdates>
 
 	<buildGradleAdditions>
 		<insert>
 			dependencies {
+				// XRDM + any other AARs in libs/
 				implementation fileTree(include: ['*.aar'], dir: 'libs')
+
+				// ZXing (QR decode) and CameraX (camera preview)
+				implementation "com.google.zxing:core:3.5.2"
+				implementation "androidx.camera:camera-camera2:1.3.0"
+				implementation "androidx.camera:camera-lifecycle:1.3.0"
+				implementation "androidx.camera:camera-view:1.3.0"
+				implementation "com.google.guava:guava:31.1-android"
+				implementation "androidx.core:core:1.10.1"
 			}
 		</insert>
 	</buildGradleAdditions>

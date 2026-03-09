@@ -35,10 +35,14 @@ void AAbxrDisplayActor::BeginPlay()
 	Super::BeginPlay();
 	
 	if (PopupType == TEXT("assessmentPin"))
+	{
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PinPad.WBP_PinPad_C"));
+	}
 	else
+	{
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_Keyboard.WBP_Keyboard_C"));
-	
+	}
+
 	if (!WidgetClass) return;
 	
 	UUserWidget* Widget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);

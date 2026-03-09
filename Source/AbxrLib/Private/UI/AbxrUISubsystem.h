@@ -1,4 +1,5 @@
 #pragma once
+#include "Services/Auth/AbxrQRService.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Types/AbxrTypes.h"
 #include "AbxrUISubsystem.generated.h"
@@ -20,9 +21,13 @@ public:
 private:
 	TWeakObjectPtr<AActor> ActivePopupActor;
 	TWeakObjectPtr<class UAbxrWidget> ActivePopupWidget;
+	FAbxrQRService QRService;
 	
 	UFUNCTION()
 	void HandleSubmitClicked(const FText& InputText);
+	
+	UFUNCTION()
+	void HandleScanQRClicked();
 	
 	void HandleInputRequested(const FAbxrKeyboardRequest& Request);
 	
