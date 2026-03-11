@@ -12,7 +12,7 @@
     {
       "Name": "AbxrLib",
       "Type": "Runtime",
-      "LoadingPhase": "Default",
+      "LoadingPhase": "PostDefault",
       "PlatformAllowList": [ "Win64", "Android" ]
     }
   ],
