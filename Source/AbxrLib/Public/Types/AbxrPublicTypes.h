@@ -48,3 +48,5 @@ struct FAbxrModuleData
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrAuthCompleted, const bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbxrModuleTarget, const FString&, ModuleTarget);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrAllModulesCompleted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrPopupShown);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAbxrPopupHidden);

@@ -8,6 +8,14 @@ namespace Abxr
 	
 	ABXRLIB_API FAbxrAuthCompleted& OnAuthCompleted();
 	
+	ABXRLIB_API bool IsPopupVisible();
+	
+	// Fired when an Abxr UI popup becomes visible
+	ABXRLIB_API FAbxrPopupShown& OnPopupShown();
+
+	// Fired when an Abxr UI popup is dismissed
+	ABXRLIB_API FAbxrPopupHidden& OnPopupHidden();
+	
 	// Fired when a new module target becomes active (LMS-driven sequencing)
 	ABXRLIB_API FAbxrModuleTarget& OnModuleTarget();
 

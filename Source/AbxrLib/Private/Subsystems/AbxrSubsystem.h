@@ -14,6 +14,15 @@ public:
 	virtual void Deinitialize() override;
 	void SubmitInput(const FString& Input) const { AuthService->KeyboardAuthenticate(Input); }
 	
+	UFUNCTION(BlueprintCallable, Category = "Abxr|UI")
+	bool IsPopupVisible() const { return bIsPopupVisible; }
+	
+	UPROPERTY(BlueprintAssignable, Category = "Abxr|UI")
+	FAbxrPopupShown OnPopupShown;
+
+	UPROPERTY(BlueprintAssignable, Category = "Abxr|UI")
+	FAbxrPopupHidden OnPopupHidden;
+	
 	TFunction<void(const FAbxrKeyboardRequest&)> OnInputRequested;
 	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
 	FAbxrAuthCompleted OnAuthCompleted;
@@ -282,7 +291,7 @@ public:
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
 	FAbxrAuthCallbacks CreateAuthCallbacks();
-	void HandleAuthCompleted(const bool bSuccess) const;
+	void HandleAuthCompleted(const bool bSuccess);
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 	void Register(const FString& Key, const FString& Value, bool Overwrite);
@@ -319,6 +328,7 @@ private:
 	FTimerHandle AuthenticationTimerHandle;
 	FDelegateHandle PostLoadMapHandle;
 	bool bInitialized = false;
+	bool bIsPopupVisible = false;
 	
 	TMap<FString, int64> AssessmentStartTimes;
 	TMap<FString, int64> ObjectiveStartTimes;

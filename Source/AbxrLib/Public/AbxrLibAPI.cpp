@@ -27,6 +27,41 @@ namespace Abxr
 		return Subsystem->OnAuthCompleted;
 	}
 	
+	bool IsPopupVisible()
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. IsPopupVisible() failed."));
+			return false;
+		}
+		return Subsystem->IsPopupVisible();
+	}
+	
+	FAbxrPopupShown& OnPopupShown()
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnPopupShown() binding will be ignored."));
+			static FAbxrPopupShown Dummy;
+			return Dummy;
+		}
+		return Subsystem->OnPopupShown;
+	}
+	
+	FAbxrPopupHidden& OnPopupHidden()
+	{
+		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnPopupHidden() binding will be ignored."));
+			static FAbxrPopupHidden Dummy;
+			return Dummy;
+		}
+		return Subsystem->OnPopupHidden;
+	}
+	
 	// Fired when a new module target becomes active (LMS-driven sequencing)
 	FAbxrModuleTarget& OnModuleTarget()
 	{
