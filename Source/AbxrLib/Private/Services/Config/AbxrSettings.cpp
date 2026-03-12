@@ -31,14 +31,14 @@ UAbxrSettings::UAbxrSettings()
 bool UAbxrSettings::IsValid() const
 {
     // appID must pass format validation if set (UUID format)
-    if (!AbxrUtil::IsUuidFormat(AppId))
+    if (!FAbxrUtil::IsUuidFormat(AppId))
     {
 		UE_LOG(LogAbxrLib, Error, TEXT("Invalid Application ID format. Must be a valid UUID. Cannot authenticate."));
         return false;
     }
 
     // orgID is optional but must pass format validation if set (UUID format)
-    if (!OrgId.IsEmpty() && !AbxrUtil::IsUuidFormat(OrgId))
+    if (!OrgId.IsEmpty() && !FAbxrUtil::IsUuidFormat(OrgId))
     {
         UE_LOG(LogAbxrLib, Error, TEXT("Invalid Organization ID format. Must be a valid UUID. Cannot authenticate."));
         return false;
@@ -51,7 +51,7 @@ bool UAbxrSettings::IsValid() const
         return false;
     }
     
-    if (!AbxrUtil::IsValidUrl(RestUrl))
+    if (!FAbxrUtil::IsValidUrl(RestUrl))
     {
     	UE_LOG(LogAbxrLib, Error, TEXT("Configuration validation failed - RestUrl '%s' is not a valid HTTP/HTTPS URL"), *RestUrl);
         return false;

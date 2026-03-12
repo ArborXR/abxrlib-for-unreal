@@ -228,7 +228,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 
 		const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 		Self->ActiveRequest = Request;
-		Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/auth/token")));
+		Request->SetURL(FAbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/auth/token")));
 		Request->SetVerb(TEXT("POST"));
 		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 		Request->SetContentAsString(Json);
@@ -356,7 +356,7 @@ void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 
 		const TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 		Self->ActiveRequest = Request;
-		Request->SetURL(AbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
+		Request->SetURL(FAbxrUtil::CombineUrl(GetDefault<UAbxrSettings>()->RestUrl, TEXT("/v1/storage/config")));
 		Request->SetVerb(TEXT("GET"));
 		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 		Self->SetAuthHeaders(Request);
@@ -548,11 +548,11 @@ void FAbxrAuthService::SetAuthHeaders(const TSharedRef<IHttpRequest>& Request, c
 	FString HashString = ResponseData.Token + ResponseData.Secret + UnixTime;
 	if (!Json.IsEmpty())
 	{
-		const uint32 CRC = AbxrUtil::ComputeCRC32(Json);
+		const uint32 CRC = FAbxrUtil::ComputeCRC32(Json);
 		HashString += LexToString(CRC);
 	}
 	
-	Request->SetHeader("x-abxrlib-hash", AbxrUtil::ComputeSHA256(HashString));
+	Request->SetHeader("x-abxrlib-hash", FAbxrUtil::ComputeSHA256(HashString));
 }
 
 void FAbxrAuthService::ClearAuthenticationState()

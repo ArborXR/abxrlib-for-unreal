@@ -10,7 +10,11 @@
 	</resourceCopies>
 
 	<androidManifestUpdates>
-		<!-- Add any required permissions here if needed -->
+		<addElements tag="manifest">
+			<queries>
+				<package android:name="app.xrdm.client" />
+			</queries>
+		</addElements>
 	</androidManifestUpdates>
 
 	<buildGradleAdditions>

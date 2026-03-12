@@ -2,6 +2,11 @@
 #include "Misc/Base64.h"
 #include <openssl/sha.h>
 #include "Internationalization/Regex.h"
+#if PLATFORM_ANDROID
+#include "Android/AndroidApplication.h"
+#include "Android/AndroidJNI.h"
+#include "Android/AndroidJavaEnv.h"
+#endif
 
 static constexpr uint32 CRC32Table[256] = {
     0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
@@ -70,7 +75,7 @@ static constexpr uint32 CRC32Table[256] = {
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 };
 
-FString AbxrUtil::ComputeSHA256(const FString& Input)
+FString FAbxrUtil::ComputeSHA256(const FString& Input)
 {
 	// Convert FString to UTF-8
 	const FTCHARToUTF8 Converter(*Input);
@@ -83,7 +88,7 @@ FString AbxrUtil::ComputeSHA256(const FString& Input)
 	return FBase64::Encode(Hash, SHA256_DIGEST_LENGTH);
 }
 
-uint32 AbxrUtil::ComputeCRC32(const FString& Input)
+uint32 FAbxrUtil::ComputeCRC32(const FString& Input)
 {
 	const FTCHARToUTF8 Utf8(*Input);
 	const uint8* Data = reinterpret_cast<const uint8*>(Utf8.Get());
@@ -100,7 +105,7 @@ uint32 AbxrUtil::ComputeCRC32(const FString& Input)
 	return ~Crc;
 }
 
-FString AbxrUtil::CombineUrl(const FString& Base, const FString& Path)
+FString FAbxrUtil::CombineUrl(const FString& Base, const FString& Path)
 {
 	FString NormalizedBase = Base;
 	FString NormalizedPath = Path;
@@ -114,7 +119,7 @@ FString AbxrUtil::CombineUrl(const FString& Base, const FString& Path)
 	return NormalizedBase + TEXT("/") + NormalizedPath;
 }
 
-bool AbxrUtil::IsUuidFormat(const FString& Input)
+bool FAbxrUtil::IsUuidFormat(const FString& Input)
 {
 	static const FRegexPattern UuidPattern(
 		TEXT("^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$")
@@ -124,7 +129,7 @@ bool AbxrUtil::IsUuidFormat(const FString& Input)
 	return Matcher.FindNext(); // with ^ and $ this means full-string match
 }
 
-bool AbxrUtil::IsValidUrl(const FString& InUrl)
+bool FAbxrUtil::IsValidUrl(const FString& InUrl)
 {
 	FString Url = InUrl;
 	Url.TrimStartAndEndInline();
@@ -154,4 +159,60 @@ bool AbxrUtil::IsValidUrl(const FString& InUrl)
 	if (Remainder.Contains(TEXT(" "))) return false;
 
 	return true;
+}
+
+bool FAbxrUtil::IsPackageInstalled(const FString& PackageName)
+{
+#if PLATFORM_ANDROID
+	JNIEnv* Env = FAndroidApplication::GetJavaEnv();
+	if (!Env)
+	{
+		return false;
+	}
+
+	jobject Activity = FAndroidApplication::GetGameActivityThis();
+	if (!Activity)
+	{
+		return false;
+	}
+
+	jclass ActivityClass = Env->GetObjectClass(Activity);
+	jmethodID GetPackageManager = Env->GetMethodID(
+		ActivityClass,
+		"getPackageManager",
+		"()Landroid/content/pm/PackageManager;"
+	);
+	jobject PackageManager = Env->CallObjectMethod(Activity, GetPackageManager);
+	if (Env->ExceptionCheck() || !PackageManager)
+	{
+		Env->ExceptionClear();
+		return false;
+	}
+
+	jclass PackageManagerClass = Env->GetObjectClass(PackageManager);
+	jmethodID GetPackageInfo = Env->GetMethodID(
+		PackageManagerClass,
+		"getPackageInfo",
+		"(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;"
+	);
+
+	jstring JPackageName = Env->NewStringUTF(TCHAR_TO_UTF8(*PackageName));
+	Env->CallObjectMethod(PackageManager, GetPackageInfo, JPackageName, 0);
+
+	const bool bInstalled = !Env->ExceptionCheck();
+
+	if (Env->ExceptionCheck())
+	{
+		Env->ExceptionClear();
+	}
+
+	Env->DeleteLocalRef(JPackageName);
+	Env->DeleteLocalRef(PackageManagerClass);
+	Env->DeleteLocalRef(PackageManager);
+	Env->DeleteLocalRef(ActivityClass);
+
+	return bInstalled;
+#else
+	return false;
+#endif
 }
