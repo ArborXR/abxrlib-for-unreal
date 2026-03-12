@@ -5,10 +5,12 @@
 #include "Interfaces/IHttpRequest.h"
 #include "Types/AbxrTypes.h"
 
+class UXRDMService;
+
 class FAbxrAuthService : public TSharedFromThis<FAbxrAuthService>
 {
 public:
-	explicit FAbxrAuthService(const FAbxrAuthCallbacks& callbacks);
+	explicit FAbxrAuthService(const FAbxrAuthCallbacks& callbacks, UXRDMService* InXRDMService);
 	~FAbxrAuthService();
 	
 	void Authenticate();
@@ -44,6 +46,7 @@ private:
 	void StartReAuthPolling();
 	
 	FAbxrAuthCallbacks Callbacks;
+	TWeakObjectPtr<UXRDMService> XRDMService;
 	FThreadSafeBool bStopping{false};
 	FThreadSafeBool bAttemptActive{false};
 	FHttpRequestPtr ActiveRequest;

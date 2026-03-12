@@ -60,10 +60,11 @@ void FAbxrAuthService::ScheduleRetry(TFunction<void()> Fn)
 	);
 }
 
-FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks) :
+FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks, UXRDMService* InXRDMService) :
 	SessionUsedAuthHandoff(false), bAuthenticated(false), TokenExpiry(0)
 {
 	Callbacks = callbacks;
+	XRDMService = InXRDMService;
 	FString HMDName = TEXT("None");
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
@@ -151,7 +152,7 @@ void FAbxrAuthService::Authenticate()
 	};
 
 #if PLATFORM_ANDROID
-	if (UXRDMService* XRDM = UXRDMService::GetInstance())
+	if (UXRDMService* XRDM = XRDMService.Get())
 	{
 		const auto Promise = XRDM->WaitForConnection();
 		Promise->GetFuture().Next([KickAuthChain](const bool bConnected)
@@ -427,13 +428,13 @@ void FAbxrAuthService::GetConfigData()
 
 void FAbxrAuthService::GetArborData()
 {
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
+	if (UXRDMService* XRDM = XRDMService.Get())
 	{
-		Payload.OrgId = XRDMService->GetOrgId();
+		Payload.OrgId = XRDM->GetOrgId();
 		Payload.Partner = TEXT("arborxr");
-		Payload.DeviceId = XRDMService->GetDeviceId();
-		Payload.Tags = XRDMService->GetDeviceTags();
-		Payload.AuthSecret = XRDMService->GetFingerprint();
+		Payload.DeviceId = XRDM->GetDeviceId();
+		Payload.Tags = XRDM->GetDeviceTags();
+		Payload.AuthSecret = XRDM->GetFingerprint();
 	}
 }
 

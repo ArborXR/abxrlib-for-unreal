@@ -17,24 +17,25 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	bInitialized = true;
 	Super::Initialize(Collection);
 	AbxrLib_SetActiveSubsystem(this);
-	AuthService = MakeShared<FAbxrAuthService>(CreateAuthCallbacks());
+#if PLATFORM_ANDROID
+	XRDMService = NewObject<UXRDMService>(this);
+	if (XRDMService)
+	{
+		XRDMService->Initialize();
+		UE_LOG(LogAbxrLib, Log, TEXT("XRDM Service created and initialized"));
+	}
+	else
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("Failed to create XRDM Service"));
+	}
+#endif
+	AuthService = MakeShared<FAbxrAuthService>(CreateAuthCallbacks(), XRDMService);
 	DataService = MakeShared<FAbxrDataService>(*AuthService);
 	SuperMetaData = TMap<FString, FString>();
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
 		this, 
 		&UAbxrSubsystem::OnPostLoadMapWithWorld
 	);
-#if PLATFORM_ANDROID
-	if (UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		XRDMService->Initialize();
-		UE_LOG(LogAbxrLib, Log, TEXT("XRDM Service singleton retrieved and initialized"));
-	}
-	else
-	{
-		UE_LOG(LogAbxrLib, Error, TEXT("Failed to get XRDM Service singleton"));
-	}
-#endif
 	LoadSuperMetaData();
 	if (GetDefault<UAbxrSettings>()->EnableAutoStartAuth)
 	{
@@ -82,6 +83,12 @@ void UAbxrSubsystem::Deinitialize()
 	
 	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
 	
+	if (XRDMService)
+	{
+		XRDMService->Shutdown();
+		XRDMService = nullptr;
+	}
+	
 	AbxrLib_ClearActiveSubsystem(this);
 	
 	Super::Deinitialize();
@@ -96,7 +103,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, Request]
 		{
 			if (!WeakThis.IsValid()) return;
-			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
+			UAbxrSubsystem* Self = WeakThis.Get();
 			Self->OnInputRequested(Request);
 			if (!Self->bIsPopupVisible)
 			{
@@ -110,7 +117,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis]
 		{
 			if (!WeakThis.IsValid()) return;
-			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
+			UAbxrSubsystem* Self = WeakThis.Get();
 			Self->HandleAuthCompleted(true);
 		});
 	};
@@ -119,7 +126,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, Error]
 		{
 			if (!WeakThis.IsValid()) return;
-			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
+			UAbxrSubsystem* Self = WeakThis.Get();
 			UE_LOG(LogAbxrLib, Warning, TEXT("Auth failed: %s"), *Error);
 			Self->HandleAuthCompleted(false);
 		});
@@ -470,144 +477,74 @@ void UAbxrSubsystem::AddDuration(TMap<FString, int64>& StartTimes, const FString
 	}
 }
 
-FString UAbxrSubsystem::GetDeviceId()
+FString UAbxrSubsystem::GetDeviceId() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetDeviceId();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetDeviceId() : TEXT("");
 }
 
-FString UAbxrSubsystem::GetDeviceSerial()
+FString UAbxrSubsystem::GetDeviceSerial() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetDeviceSerial();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetDeviceSerial() : TEXT("");
 }
 
-FString UAbxrSubsystem::GetDeviceTitle()
+FString UAbxrSubsystem::GetDeviceTitle() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetDeviceTitle();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetDeviceTitle() : TEXT("");
 }
 
-TArray<FString> UAbxrSubsystem::GetDeviceTags()
+TArray<FString> UAbxrSubsystem::GetDeviceTags() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetDeviceTags();
-	}
-
-	return TArray<FString>();
+	return XRDMService ? XRDMService->GetDeviceTags() : TArray<FString>();
 }
 
-FString UAbxrSubsystem::GetOrgId()
+FString UAbxrSubsystem::GetOrgId() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetOrgId();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetOrgId() : TEXT("");
 }
 
-FString UAbxrSubsystem::GetOrgTitle()
+FString UAbxrSubsystem::GetOrgTitle() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetOrgTitle();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetOrgTitle() : TEXT("");
 }
 
-FString UAbxrSubsystem::GetOrgSlug()
+FString UAbxrSubsystem::GetOrgSlug() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetOrgSlug();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetOrgSlug() : TEXT("");
 }
 
-FString UAbxrSubsystem::GetMacAddressFixed()
+FString UAbxrSubsystem::GetMacAddressFixed() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetMacAddressFixed();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetMacAddressFixed() : TEXT("");
 }
 
-FString UAbxrSubsystem::GetMacAddressRandom()
+FString UAbxrSubsystem::GetMacAddressRandom() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetMacAddressRandom();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetMacAddressRandom() : TEXT("");
 }
 
-bool UAbxrSubsystem::GetIsAuthenticated()
+bool UAbxrSubsystem::GetIsAuthenticated() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetIsAuthenticated();
-	}
-
-	return false;
+	return XRDMService ? XRDMService->GetIsAuthenticated() : false;
 }
 
-FString UAbxrSubsystem::GetAccessToken()
+FString UAbxrSubsystem::GetAccessToken() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetAccessToken();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetAccessToken() : TEXT("");
 }
 
-FString UAbxrSubsystem::GetRefreshToken()
+FString UAbxrSubsystem::GetRefreshToken() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetRefreshToken();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetRefreshToken() : TEXT("");
 }
 
-FDateTime UAbxrSubsystem::GetExpiresDateUtc()
+FDateTime UAbxrSubsystem::GetExpiresDateUtc() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetExpiresDateUtc();
-	}
-
-	return FDateTime::MinValue();
+	return XRDMService ? XRDMService->GetExpiresDateUtc() : FDateTime::MinValue();
 }
 
-FString UAbxrSubsystem::GetFingerprint()
+FString UAbxrSubsystem::GetFingerprint() const
 {
-	if (const UXRDMService* XRDMService = UXRDMService::GetInstance())
-	{
-		return XRDMService->GetFingerprint();
-	}
-
-	return TEXT("");
+	return XRDMService ? XRDMService->GetFingerprint() : TEXT("");
 }
 
 void UAbxrSubsystem::StartNewSession()
