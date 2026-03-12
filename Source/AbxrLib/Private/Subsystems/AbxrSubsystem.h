@@ -280,13 +280,6 @@ public:
 	TMap<FString, FString> GetSuperMetaData();
 
 	void LoadSuperMetaData();
-	
-	FAbxrAuthService* GetAuthService() const { return AuthService.Get(); }
-	FAbxrAuthService& GetAuthServiceChecked() const
-	{
-		check(AuthService);
-		return *AuthService;
-	}
 
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
