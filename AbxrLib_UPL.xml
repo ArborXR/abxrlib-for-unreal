@@ -7,6 +7,8 @@
 	<resourceCopies>
 		<copyFile src="$S(PluginDir)/libs/XRDM.SDK.External.NativeWithShim.aar"
 				  dst="$S(BuildDir)/gradle/app/libs/XRDM.SDK.External.NativeWithShim.aar" />
+		<copyFile src="$S(PluginDir)/Source/AbxrLib/Private/Android/Java/com/abxr/lib/AbxrAndroidPackageUtils.java"
+				  dst="$S(BuildDir)/src/com/abxr/lib/AbxrAndroidPackageUtils.java" />
 	</resourceCopies>
 
 	<androidManifestUpdates>

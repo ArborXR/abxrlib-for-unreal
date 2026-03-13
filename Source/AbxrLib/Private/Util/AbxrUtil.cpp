@@ -165,53 +165,29 @@ bool FAbxrUtil::IsPackageInstalled(const FString& PackageName)
 {
 #if PLATFORM_ANDROID
 	JNIEnv* Env = FAndroidApplication::GetJavaEnv();
-	if (!Env)
-	{
-		return false;
-	}
+	if (!Env) return false;
 
-	jobject Activity = FAndroidApplication::GetGameActivityThis();
-	if (!Activity)
-	{
-		return false;
-	}
+	jclass Class = FAndroidApplication::FindJavaClass("com/abxr/lib/AbxrAndroidPackageUtils");
+	if (!Class) return false;
 
-	jclass ActivityClass = Env->GetObjectClass(Activity);
-	jmethodID GetPackageManager = Env->GetMethodID(
-		ActivityClass,
-		"getPackageManager",
-		"()Landroid/content/pm/PackageManager;"
+	jmethodID Method = Env->GetStaticMethodID(
+		Class,
+		"isPackageInstalled",
+		"(Ljava/lang/String;)Z"
 	);
-	jobject PackageManager = Env->CallObjectMethod(Activity, GetPackageManager);
-	if (Env->ExceptionCheck() || !PackageManager)
+	if (!Method)
 	{
-		Env->ExceptionClear();
+		Env->DeleteLocalRef(Class);
 		return false;
 	}
 
-	jclass PackageManagerClass = Env->GetObjectClass(PackageManager);
-	jmethodID GetPackageInfo = Env->GetMethodID(
-		PackageManagerClass,
-		"getPackageInfo",
-		"(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;"
-	);
+	jstring JPackage = Env->NewStringUTF(TCHAR_TO_UTF8(*PackageName));
+	const jboolean bInstalled = Env->CallStaticBooleanMethod(Class, Method, JPackage);
 
-	jstring JPackageName = Env->NewStringUTF(TCHAR_TO_UTF8(*PackageName));
-	Env->CallObjectMethod(PackageManager, GetPackageInfo, JPackageName, 0);
+	Env->DeleteLocalRef(JPackage);
+	Env->DeleteLocalRef(Class);
 
-	const bool bInstalled = !Env->ExceptionCheck();
-
-	if (Env->ExceptionCheck())
-	{
-		Env->ExceptionClear();
-	}
-
-	Env->DeleteLocalRef(JPackageName);
-	Env->DeleteLocalRef(PackageManagerClass);
-	Env->DeleteLocalRef(PackageManager);
-	Env->DeleteLocalRef(ActivityClass);
-
-	return bInstalled;
+	return bInstalled == JNI_TRUE;
 #else
 	return false;
 #endif

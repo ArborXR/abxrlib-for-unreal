@@ -95,7 +95,7 @@ TSharedPtr<TPromise<bool>> UXRDMService::WaitForConnection()
     {
         ConnectionTimeoutHandle = FTSTicker::GetCoreTicker().AddTicker(
             FTickerDelegate::CreateUObject(this, &UXRDMService::OnConnectionTimeout), 
-            1.0f // 1 second timeout
+            5.0f // 5 second timeout
         );
     }
     

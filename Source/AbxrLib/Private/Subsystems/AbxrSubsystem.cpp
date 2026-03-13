@@ -8,6 +8,7 @@
 #include "UI/AbxrUISubsystem.h"
 #include "Async/Async.h"
 #include "Types/AbxrLog.h"
+#include "Util/AbxrUtil.h"
 
 const FString UAbxrSubsystem::SuperMetaDataKey(TEXT("AbxrSuperMetaData"));
 
@@ -18,15 +19,22 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	AbxrLib_SetActiveSubsystem(this);
 #if PLATFORM_ANDROID
-	XRDMService = NewObject<UXRDMService>(this);
-	if (XRDMService)
+	if (FAbxrUtil::IsPackageInstalled(TEXT("app.xrdm.client")))
 	{
-		XRDMService->Initialize();
-		UE_LOG(LogAbxrLib, Log, TEXT("XRDM Service created and initialized"));
+		XRDMService = NewObject<UXRDMService>(this);
+		if (XRDMService)
+		{
+			XRDMService->Initialize();
+			UE_LOG(LogAbxrLib, Log, TEXT("XRDM Service created and initialized"));
+		}
+		else
+		{
+			UE_LOG(LogAbxrLib, Error, TEXT("Failed to create XRDM Service"));
+		}
 	}
 	else
 	{
-		UE_LOG(LogAbxrLib, Error, TEXT("Failed to create XRDM Service"));
+		UE_LOG(LogAbxrLib, Warning, TEXT("XRDM Service not installed"));
 	}
 #endif
 	AuthService = MakeShared<FAbxrAuthService>(CreateAuthCallbacks(), XRDMService);
