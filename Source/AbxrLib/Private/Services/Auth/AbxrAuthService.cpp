@@ -562,5 +562,5 @@ void FAbxrAuthService::ClearAuthenticationState()
 	ResponseData = FAbxrAuthResponse();
 	TokenExpiry = 0;
 	Payload.SessionId = TEXT("");
-	UE_LOG(LogAbxrLib, Log, TEXT("Authentication state cleared - data transmission stopped"));
+	UE_LOG(LogAbxrLib, Log, TEXT("Authentication state cleared"));
 }
