@@ -514,6 +514,8 @@ void UAbxrSubsystem::Reset()
 
 void UAbxrSubsystem::LoadSuperMetaData()
 {
+	if (!UGameplayStatics::DoesSaveGameExist(SuperMetaDataKey, 0)) return;
+	
 	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(SuperMetaDataKey, 0))
 	{
 		if (const USuperMetaSave* SaveObject = Cast<USuperMetaSave>(Loaded))
