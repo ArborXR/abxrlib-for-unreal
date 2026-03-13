@@ -328,24 +328,12 @@ void UAbxrSubsystem::Log(const FString& Text, const ELogLevel Level, TMap<FStrin
 	FString LevelText;
     switch (Level)
     {
-        case ELogLevel::Debug:
-    		LevelText = "debug";
-            break;
-        case ELogLevel::Info:
-    		LevelText = "info";
-            break;
-        case ELogLevel::Warn:
-    		LevelText = "warn";
-            break;
-        case ELogLevel::Error:
-    		LevelText = "error";
-            break;
-        case ELogLevel::Critical:
-    		LevelText = "critical";
-            break;
-        default:
-    		LevelText = "info";
-            break;
+        case ELogLevel::Debug:     LevelText = "debug";     break;
+        case ELogLevel::Info:      LevelText = "info";      break;
+        case ELogLevel::Warn:      LevelText = "warn";      break;
+        case ELogLevel::Error:     LevelText = "error";     break;
+        case ELogLevel::Critical:  LevelText = "critical";  break;
+        default:                   LevelText = "info";      break;
     }
 
 	DataService->AddLog(LevelText, Text, Meta);
@@ -485,85 +473,10 @@ void UAbxrSubsystem::AddDuration(TMap<FString, int64>& StartTimes, const FString
 	}
 }
 
-FString UAbxrSubsystem::GetDeviceId() const
-{
-	return XRDMService ? XRDMService->GetDeviceId() : TEXT("");
-}
-
-FString UAbxrSubsystem::GetDeviceSerial() const
-{
-	return XRDMService ? XRDMService->GetDeviceSerial() : TEXT("");
-}
-
-FString UAbxrSubsystem::GetDeviceTitle() const
-{
-	return XRDMService ? XRDMService->GetDeviceTitle() : TEXT("");
-}
-
-TArray<FString> UAbxrSubsystem::GetDeviceTags() const
-{
-	return XRDMService ? XRDMService->GetDeviceTags() : TArray<FString>();
-}
-
-FString UAbxrSubsystem::GetOrgId() const
-{
-	return XRDMService ? XRDMService->GetOrgId() : TEXT("");
-}
-
-FString UAbxrSubsystem::GetOrgTitle() const
-{
-	return XRDMService ? XRDMService->GetOrgTitle() : TEXT("");
-}
-
-FString UAbxrSubsystem::GetOrgSlug() const
-{
-	return XRDMService ? XRDMService->GetOrgSlug() : TEXT("");
-}
-
-FString UAbxrSubsystem::GetMacAddressFixed() const
-{
-	return XRDMService ? XRDMService->GetMacAddressFixed() : TEXT("");
-}
-
-FString UAbxrSubsystem::GetMacAddressRandom() const
-{
-	return XRDMService ? XRDMService->GetMacAddressRandom() : TEXT("");
-}
-
-bool UAbxrSubsystem::GetIsAuthenticated() const
-{
-	return XRDMService ? XRDMService->GetIsAuthenticated() : false;
-}
-
-FString UAbxrSubsystem::GetAccessToken() const
-{
-	return XRDMService ? XRDMService->GetAccessToken() : TEXT("");
-}
-
-FString UAbxrSubsystem::GetRefreshToken() const
-{
-	return XRDMService ? XRDMService->GetRefreshToken() : TEXT("");
-}
-
-FDateTime UAbxrSubsystem::GetExpiresDateUtc() const
-{
-	return XRDMService ? XRDMService->GetExpiresDateUtc() : FDateTime::MinValue();
-}
-
-FString UAbxrSubsystem::GetFingerprint() const
-{
-	return XRDMService ? XRDMService->GetFingerprint() : TEXT("");
-}
-
-void UAbxrSubsystem::StartNewSession()
+void UAbxrSubsystem::StartNewSession() const
 {
 	AuthService->SetSessionId(FGuid::NewGuid().ToString());
 	Authenticate();
-}
-
-TMap<FString, FString> UAbxrSubsystem::GetUserData() const
-{
-	return AuthService->GetAuthResponse().UserData;
 }
 
 void UAbxrSubsystem::Register(const FString& Key, const FString& Value, const bool Overwrite)
@@ -587,16 +500,6 @@ void UAbxrSubsystem::Register(const FString& Key, const FString& Value, const bo
 	}
 }
 
-void UAbxrSubsystem::Register(const FString& Key, const FString& Value)
-{
-	Register(Key, Value, true);
-}
-
-void UAbxrSubsystem::RegisterOnce(const FString& Key, const FString& Value)
-{
-	Register(Key, Value, false);
-}
-
 void UAbxrSubsystem::Unregister(const FString& Key)
 {
 	SuperMetaData.Remove(Key);
@@ -607,11 +510,6 @@ void UAbxrSubsystem::Reset()
 {
 	SuperMetaData.Empty();
 	SaveSuperMetaData();
-}
-
-TMap<FString, FString> UAbxrSubsystem::GetSuperMetaData()
-{
-	return SuperMetaData;
 }
 
 void UAbxrSubsystem::LoadSuperMetaData()
