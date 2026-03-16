@@ -111,7 +111,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, Request]
 		{
 			if (!WeakThis.IsValid()) return;
-			UAbxrSubsystem* Self = WeakThis.Get();
+			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
 			Self->OnInputRequested(Request);
 			if (!Self->bIsPopupVisible)
 			{
@@ -125,7 +125,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis]
 		{
 			if (!WeakThis.IsValid()) return;
-			UAbxrSubsystem* Self = WeakThis.Get();
+			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
 			Self->HandleAuthCompleted(true);
 		});
 	};
@@ -134,7 +134,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, Error]
 		{
 			if (!WeakThis.IsValid()) return;
-			UAbxrSubsystem* Self = WeakThis.Get();
+			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
 			UE_LOG(LogAbxrLib, Warning, TEXT("Auth failed: %s"), *Error);
 			Self->HandleAuthCompleted(false);
 		});
