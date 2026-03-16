@@ -22,7 +22,7 @@ private:
 	TWeakObjectPtr<class UAbxrWidget> ActivePopupWidget;
 	
 	UFUNCTION()
-	void HandlePopupClicked(const FText& InputText);
+	void HandleSubmitClicked(const FText& InputText);
 	
 	void HandleInputRequested(const FAbxrKeyboardRequest& Request);
 	

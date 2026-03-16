@@ -100,7 +100,7 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
 
     // Bind click delegate once
     PopupWidget->OnSubmitButtonClicked.RemoveAll(this);
-    PopupWidget->OnSubmitButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandlePopupClicked);
+    PopupWidget->OnSubmitButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandleSubmitClicked);
 
     if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
     {
@@ -123,7 +123,7 @@ void UAbxrUISubsystem::HideKeyboardUI()
     ActivePopupWidget.Reset();
 }
 
-void UAbxrUISubsystem::HandlePopupClicked(const FText& InputText)
+void UAbxrUISubsystem::HandleSubmitClicked(const FText& InputText)
 {
     if (const UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
     {

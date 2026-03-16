@@ -31,6 +31,11 @@ void UAbxrInteractionSubsystem::BeginUIInteraction()
 void UAbxrInteractionSubsystem::EndUIInteraction()
 {
     if (!bInteractionActive) return;
+    
+    if (UWidgetInteractionComponent* Existing = FindExistingWidgetInteraction())
+    {
+        Existing->ReleasePointerKey(EKeys::LeftMouseButton);
+    }
 
     DestroyLaserActor(ActiveHandle);
     TeardownWidgetInteraction(ActiveHandle);
