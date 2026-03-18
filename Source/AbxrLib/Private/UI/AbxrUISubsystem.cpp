@@ -101,6 +101,8 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
     // Bind click delegate once
     PopupWidget->OnSubmitButtonClicked.RemoveAll(this);
     PopupWidget->OnSubmitButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandleSubmitClicked);
+    PopupWidget->OnScanQRButtonClicked.RemoveAll(this);
+    PopupWidget->OnScanQRButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandleScanQRClicked);
 
     if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
     {
@@ -114,11 +116,9 @@ void UAbxrUISubsystem::HideKeyboardUI()
     {
         Subsystem->EndUIInteraction();
     }
-    
-    if (AActor* A = ActivePopupActor.Get())
-    {
-        A->Destroy();
-    }
+
+    if (AActor* A = ActivePopupActor.Get()) A->Destroy();
+
     ActivePopupActor.Reset();
     ActivePopupWidget.Reset();
 }
@@ -130,6 +130,17 @@ void UAbxrUISubsystem::HandleSubmitClicked(const FText& InputText)
         Subsystem->SubmitInput(InputText.ToString());
     }
     HideKeyboardUI();
+}
+
+void UAbxrUISubsystem::HandleScanQRClicked()
+{
+    //QRService.OnQRCodeScanned.Clear();
+    //QRService.OnQRCodeScanned.AddLambda([this](const FString& DecodedText)
+    //{
+    //    HandleSubmitClicked(FText::FromString(DecodedText));
+    //});
+    //QRService.StartScan();
+    //HideKeyboardUI();
 }
 
 void UAbxrUISubsystem::HandleInputRequested(const FAbxrKeyboardRequest& Request)

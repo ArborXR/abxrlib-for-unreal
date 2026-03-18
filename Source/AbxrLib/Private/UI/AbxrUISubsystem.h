@@ -24,6 +24,9 @@ private:
 	UFUNCTION()
 	void HandleSubmitClicked(const FText& InputText);
 	
+	UFUNCTION()
+	void HandleScanQRClicked();
+	
 	void HandleInputRequested(const FAbxrKeyboardRequest& Request);
 	
 	AActor* SpawnActor(const FString& Type) const;
