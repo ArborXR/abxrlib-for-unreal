@@ -11,15 +11,25 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 	
+	bool IsPopupVisible() const { return bIsPopupVisible; }
+	
+	FAbxrPopupShown OnPopupShown;
+	FAbxrPopupHidden OnPopupHidden;
+	
 	UFUNCTION()
-	void ShowKeyboardUI(const FText& Prompt, const FString& Type);
+	bool ShowUI();
 
 	UFUNCTION()
-	void HideKeyboardUI();
+	void HideUI();
 
 private:
 	TWeakObjectPtr<AActor> ActivePopupActor;
 	TWeakObjectPtr<class UAbxrWidget> ActivePopupWidget;
+	FAbxrInputRequest ActiveInputRequest;
+	bool bIsPopupVisible = false;
+	
+	UPROPERTY()
+	TArray<FAbxrInputRequest> PendingInputRequests;
 	
 	UFUNCTION()
 	void HandleSubmitClicked(const FText& InputText);
@@ -27,7 +37,9 @@ private:
 	UFUNCTION()
 	void HandleScanQRClicked();
 	
-	void HandleInputRequested(const FAbxrKeyboardRequest& Request);
+	void HandleInputRequested(const FAbxrInputRequest& Request);
 	
-	AActor* SpawnActor(const FString& Type) const;
+	void TryProcessNextInputRequest();
+	
+	AActor* SpawnActor(const EAbxrPopupType& PopupType) const;
 };

@@ -12,7 +12,7 @@ void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	if (UAbxrSubsystem* Abxr = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
 	{
-	    Abxr->OnInputRequested = [this](const FAbxrKeyboardRequest& Request)
+	    Abxr->OnInputRequested = [this](const FAbxrInputRequest& Request)
 	    {
 	        HandleInputRequested(Request);
 	    };
@@ -25,11 +25,11 @@ void UAbxrUISubsystem::Deinitialize()
 	{
 	    Abxr->OnInputRequested = nullptr;
 	}
-	HideKeyboardUI();
+	HideUI();
 	Super::Deinitialize();
 }
 
-AActor* UAbxrUISubsystem::SpawnActor(const FString& Type) const
+AActor* UAbxrUISubsystem::SpawnActor(const EAbxrPopupType& PopupType) const
 {
     UWorld* World = GetWorld();
     if (!World) return nullptr;
@@ -48,7 +48,7 @@ AActor* UAbxrUISubsystem::SpawnActor(const FString& Type) const
 
     if (Popup)
     {
-        Popup->PopupType = Type;
+        Popup->PopupType = PopupType;
         Popup->FinishSpawning(SpawnTransform);
     }
 
@@ -69,33 +69,21 @@ static bool SetUserWidgetTextProperty(UUserWidget* Widget, const FName PropertyN
     return false;
 }
 
-void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
+bool UAbxrUISubsystem::ShowUI()
 {
-    AActor* Spawned = SpawnActor(Type);
-    if (!Spawned)
-    {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Popup spawn failed"));
-        return;
-    }
+    AActor* Spawned = SpawnActor(ActiveInputRequest.PopupType);
+    if (!Spawned) return false;
 
     UWidgetComponent* WC = Spawned->FindComponentByClass<UWidgetComponent>();
-    if (!WC)
-    {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Spawned popup has no WidgetComponent"));
-        return;
-    }
+    if (!WC) return false;
 
     UAbxrWidget* PopupWidget = Cast<UAbxrWidget>(WC->GetUserWidgetObject());
-    if (!PopupWidget)
-    {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Widget is not UAbxrWidget"));
-        return;
-    }
+    if (!PopupWidget) return false;
 
     ActivePopupActor = Spawned;
     ActivePopupWidget = PopupWidget;
 
-    SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), Prompt);
+    SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), FText::FromString(ActiveInputRequest.Prompt));
     PopupWidget->SynchronizeProperties();
 
     // Bind click delegate once
@@ -108,10 +96,16 @@ void UAbxrUISubsystem::ShowKeyboardUI(const FText& Prompt, const FString& Type)
     {
         Subsystem->BeginUIInteraction();
     }
+    
+    bIsPopupVisible = true;
+    OnPopupShown.Broadcast();
+    return true;
 }
 
-void UAbxrUISubsystem::HideKeyboardUI()
+void UAbxrUISubsystem::HideUI()
 {
+    if (!bIsPopupVisible) return;
+    
     if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
     {
         Subsystem->EndUIInteraction();
@@ -121,15 +115,18 @@ void UAbxrUISubsystem::HideKeyboardUI()
 
     ActivePopupActor.Reset();
     ActivePopupWidget.Reset();
+    OnPopupHidden.Broadcast();
+    bIsPopupVisible = false;
+    TryProcessNextInputRequest();
 }
 
 void UAbxrUISubsystem::HandleSubmitClicked(const FText& InputText)
 {
-    if (const UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
+    if (UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
     {
-        Subsystem->SubmitInput(InputText.ToString());
+        Subsystem->SubmitResponse(InputText.ToString(), ActiveInputRequest);
     }
-    HideKeyboardUI();
+    HideUI();
 }
 
 void UAbxrUISubsystem::HandleScanQRClicked()
@@ -143,7 +140,22 @@ void UAbxrUISubsystem::HandleScanQRClicked()
     //HideKeyboardUI();
 }
 
-void UAbxrUISubsystem::HandleInputRequested(const FAbxrKeyboardRequest& Request)
+void UAbxrUISubsystem::HandleInputRequested(const FAbxrInputRequest& Request)
 {
-	ShowKeyboardUI(FText::FromString(Request.Prompt), Request.Type);
+    PendingInputRequests.Add(Request);
+    TryProcessNextInputRequest();
+}
+
+void UAbxrUISubsystem::TryProcessNextInputRequest()
+{
+    if (bIsPopupVisible || PendingInputRequests.IsEmpty()) return;
+
+    ActiveInputRequest = PendingInputRequests[0];
+    PendingInputRequests.RemoveAt(0);
+    
+    if (!ShowUI())
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("ShowUI() failed"));
+        TryProcessNextInputRequest();
+    }
 }

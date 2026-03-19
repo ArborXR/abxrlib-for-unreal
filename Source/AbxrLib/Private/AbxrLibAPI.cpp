@@ -1,4 +1,5 @@
 #include "AbxrLibAPI.h"
+#include "UI/AbxrUISubsystem.h"
 #include "AbxrLibAPI_Internal.h"
 #include "Types/AbxrLog.h"
 
@@ -29,7 +30,7 @@ namespace Abxr
 	
 	bool IsPopupVisible()
 	{
-		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrUISubsystem* Subsystem = AbxrLib_GetActiveSubsystem()->GetUISubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. IsPopupVisible() failed."));
@@ -40,7 +41,7 @@ namespace Abxr
 	
 	FAbxrPopupShown& OnPopupShown()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		UAbxrUISubsystem* Subsystem = AbxrLib_GetActiveSubsystem()->GetUISubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnPopupShown() binding will be ignored."));
@@ -52,7 +53,7 @@ namespace Abxr
 	
 	FAbxrPopupHidden& OnPopupHidden()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		UAbxrUISubsystem* Subsystem = AbxrLib_GetActiveSubsystem()->GetUISubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnPopupHidden() binding will be ignored."));
@@ -108,6 +109,22 @@ namespace Abxr
 			return false;
 		}
 		return Subsystem->StartModuleAtIndex(ModuleIndex);
+	}
+	
+	void PollUser(const FString& Prompt, const EPollType PollType)
+	{
+		const TArray<FString> Responses;
+		PollUser(Prompt, PollType, Responses);
+	}
+	void PollUser(const FString& Prompt, const EPollType PollType, const TArray<FString>& Responses)
+	{
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		if (Subsystem == nullptr)
+		{
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. PollUser() failed."));
+			return;
+		}
+		Subsystem->PollUser(Prompt, PollType, Responses);
 	}
 	
 	void LogDebug(const FString& Text, TMap<FString, FString>& Meta)

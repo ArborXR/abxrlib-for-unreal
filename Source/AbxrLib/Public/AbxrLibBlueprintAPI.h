@@ -5,6 +5,7 @@
 #include "AbxrLibBlueprintAPI.generated.h"
 
 class UAbxrSubsystem;
+class UAbxrUISubsystem;
 
 UCLASS(BlueprintType)
 class ABXRLIB_API UAbxrLibBlueprintEvents : public UObject
@@ -46,6 +47,7 @@ private:
 	void HandleAllModulesCompleted();
 
 	TWeakObjectPtr<UAbxrSubsystem> BoundSubsystem;
+	TWeakObjectPtr<UAbxrUISubsystem> BoundUISubsystem;
 };
 
 UCLASS()
@@ -67,7 +69,10 @@ public:
 	static TArray<FAbxrModuleData> GetModuleList();
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr|Modules")
-	static bool StartModuleAtIndex(int32 ModuleIndex);
+	static bool StartModuleAtIndex(const int ModuleIndex);
+	
+	UFUNCTION(BlueprintCallable, Category = "Abxr")
+	static void PollUser(const FString& Prompt, const EPollType PollType, const TArray<FString>& Responses);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
 	static void LogDebug(const FString& Text, const TMap<FString, FString>& Meta);
@@ -85,7 +90,7 @@ public:
 	static void LogCritical(const FString& Text, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
-	static void Log(const FString& Text, ELogLevel Level, const TMap<FString, FString>& Meta);
+	static void Log(const FString& Text, const ELogLevel Level, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
 	static void Event(const FString& Name, const FVector& Position, const TMap<FString, FString>& Meta);
@@ -97,25 +102,25 @@ public:
 	static void EventAssessmentStart(const FString& AssessmentName, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
-	static void EventAssessmentComplete(const FString& AssessmentName, int32 Score, EEventStatus Status, const TMap<FString, FString>& Meta);
+	static void EventAssessmentComplete(const FString& AssessmentName, const int Score, const EEventStatus Status, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
 	static void EventObjectiveStart(const FString& ObjectiveName, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
-	static void EventObjectiveComplete(const FString& ObjectiveName, int32 Score, EEventStatus Status, const TMap<FString, FString>& Meta);
+	static void EventObjectiveComplete(const FString& ObjectiveName, const int Score, const EEventStatus Status, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
 	static void EventInteractionStart(const FString& InteractionName, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
-	static void EventInteractionComplete(const FString& InteractionName, EInteractionType InteractionType, const FString& Response, const TMap<FString, FString>& Meta);
+	static void EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
 	static void EventLevelStart(const FString& LevelName, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
-	static void EventLevelComplete(const FString& LevelName, int32 Score, const TMap<FString, FString>& Meta);
+	static void EventLevelComplete(const FString& LevelName, const int Score, const TMap<FString, FString>& Meta);
 
 	UFUNCTION(BlueprintCallable, Category = "Abxr", meta = (AutoCreateRefTerm = "Meta"))
 	static void EventCritical(const FString& Label, const TMap<FString, FString>& Meta);

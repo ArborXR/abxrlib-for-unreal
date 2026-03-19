@@ -28,6 +28,9 @@ namespace Abxr
 	// Manually jumps to a specific module index and broadcasts its target (if in range)
 	ABXRLIB_API bool StartModuleAtIndex(const int ModuleIndex);
 	
+	ABXRLIB_API void PollUser(const FString& Prompt, const EPollType PollType);
+	ABXRLIB_API void PollUser(const FString& Prompt, const EPollType PollType, const TArray<FString>& Responses);
+	
 	ABXRLIB_API void LogDebug(const FString& Text, TMap<FString, FString>& Meta);
 	ABXRLIB_API void LogDebug(const FString& Text);
 	
