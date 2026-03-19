@@ -34,14 +34,14 @@ void AAbxrDisplayActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (PopupType == TEXT("assessmentPin"))
-	{
+	if (PopupType == EAbxrPopupType::PinPad)
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PinPad.WBP_PinPad_C"));
-	}
+	else if (PopupType == EAbxrPopupType::PollMultipleChoice)
+		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PollMulti.WBP_PollMulti_C"));
+	else if (PopupType == EAbxrPopupType::PollRating)
+		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PollRating.WBP_PollRating_C"));
 	else
-	{
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_Keyboard.WBP_Keyboard_C"));
-	}
 
 	if (!WidgetClass) return;
 	

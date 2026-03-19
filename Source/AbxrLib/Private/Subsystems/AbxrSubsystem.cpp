@@ -11,6 +11,9 @@
 #include "Util/AbxrUtil.h"
 
 const FString UAbxrSubsystem::SuperMetaDataKey(TEXT("AbxrSuperMetaData"));
+const FString UAbxrSubsystem::PollEventString(TEXT("poll"));
+const FString UAbxrSubsystem::PollResponseString(TEXT("answer"));
+const FString UAbxrSubsystem::PollQuestionString(TEXT("prompt"));
 
 void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -103,21 +106,25 @@ void UAbxrSubsystem::Deinitialize()
 	bInitialized = false;
 }
 
+UAbxrUISubsystem* UAbxrSubsystem::GetUISubsystem() const
+{
+	if (const UGameInstance* GI = GetGameInstance())
+	{
+		return GI->GetSubsystem<UAbxrUISubsystem>();
+	}
+	return nullptr;
+}
+
 FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 {
 	FAbxrAuthCallbacks Callbacks;
-	Callbacks.OnInputRequested = [WeakThis = TWeakObjectPtr(this)](const FAbxrKeyboardRequest& Request)
+	Callbacks.OnInputRequested = [WeakThis = TWeakObjectPtr(this)](const FAbxrInputRequest& Request)
 	{
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, Request]
 		{
 			if (!WeakThis.IsValid()) return;
 			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
 			Self->OnInputRequested(Request);
-			if (!Self->bIsPopupVisible)
-			{
-				Self->OnPopupShown.Broadcast();
-				Self->bIsPopupVisible = true;
-			}
 		});
 	};
 	Callbacks.OnSucceeded = [WeakThis = TWeakObjectPtr(this)]
@@ -143,20 +150,47 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 	return Callbacks;
 }
 
+void UAbxrSubsystem::SubmitResponse(const FString& Response, const FAbxrInputRequest& InputRequest)
+{
+	if (InputRequest.PopupType == EAbxrPopupType::Keyboard || InputRequest.PopupType == EAbxrPopupType::PinPad)
+	{
+		AuthService->KeyboardAuthenticate(Response);
+	}
+	else
+	{
+		TMap<FString, FString> Meta;
+		Meta.Add(PollQuestionString, InputRequest.Prompt);
+		Meta.Add(PollResponseString, Response);
+		Event(PollEventString, Meta);
+	}
+}
+
 void UAbxrSubsystem::Authenticate() const
 {
 	if (!AuthService) return;
 	AuthService->Authenticate();
 }
 
-void UAbxrSubsystem::HandleAuthCompleted(const bool bSuccess)
+void UAbxrSubsystem::PollUser(const FString& Prompt, const EPollType PollType, const TArray<FString>& Responses) const
+{
+	FAbxrInputRequest Request;
+	Request.Prompt = Prompt;
+	Request.Responses = Responses;
+	if (PollType == EPollType::MultipleChoice) Request.PopupType = EAbxrPopupType::PollMultipleChoice;
+	else if (PollType == EPollType::Rating) Request.PopupType = EAbxrPopupType::PollRating;
+	
+	if (PollType == EPollType::MultipleChoice && (Responses.Num() < 2 || Responses.Num() > 5))
+	{
+		UE_LOG(LogAbxrLib, Warning, TEXT("Please use between 2 and 5 response for your Multiple-Choice Poll"));
+		return;
+	}
+	
+	OnInputRequested(Request);
+}
+
+void UAbxrSubsystem::HandleAuthCompleted(const bool bSuccess) const
 {
 	OnAuthCompleted.Broadcast(bSuccess);
-	if (bIsPopupVisible)
-	{
-		OnPopupHidden.Broadcast();
-		bIsPopupVisible = false;
-	}
 	
 	if (!bSuccess) return;
 	

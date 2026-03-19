@@ -6,6 +6,8 @@
 #include "Services/Auth/AbxrAuthService.h"
 #include "AbxrSubsystem.generated.h"
 
+class UAbxrUISubsystem;
+
 UCLASS()
 class ABXRLIB_API UAbxrSubsystem : public UGameInstanceSubsystem
 {
@@ -13,14 +15,10 @@ class ABXRLIB_API UAbxrSubsystem : public UGameInstanceSubsystem
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
-	void SubmitInput(const FString& Input) const { AuthService->KeyboardAuthenticate(Input); }
+	UAbxrUISubsystem* GetUISubsystem() const;
+	void SubmitResponse(const FString& Response, const FAbxrInputRequest& InputRequest);
 	
-	bool IsPopupVisible() const { return bIsPopupVisible; }
-	
-	FAbxrPopupShown OnPopupShown;
-	FAbxrPopupHidden OnPopupHidden;
-	
-	TFunction<void(const FAbxrKeyboardRequest&)> OnInputRequested;
+	TFunction<void(const FAbxrInputRequest&)> OnInputRequested;
 	FAbxrAuthCompleted OnAuthCompleted;
 	
 	FAbxrModuleTarget OnModuleTarget;
@@ -31,6 +29,13 @@ public:
 	bool StartModuleAtIndex(const int ModuleIndex);
 
 	void Authenticate() const;
+	
+	void PollUser(const FString& Prompt, const EPollType PollType, const TArray<FString>& Responses) const;
+	void PollUser(const FString& Prompt, const EPollType PollType) const
+	{
+		const TArray<FString> Responses;
+		PollUser(Prompt, PollType, Responses);
+	}
 	
 	void LogDebug(const FString& Text, TMap<FString, FString>& Meta) { Log(Text, ELogLevel::Debug, Meta); }
 	void LogDebug(const FString& Text) { TMap<FString, FString> Meta; LogDebug(Text, Meta); }
@@ -162,7 +167,7 @@ public:
 private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
 	FAbxrAuthCallbacks CreateAuthCallbacks();
-	void HandleAuthCompleted(const bool bSuccess);
+	void HandleAuthCompleted(const bool bSuccess) const;
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 	void Register(const FString& Key, const FString& Value, bool Overwrite);
@@ -202,7 +207,6 @@ private:
 	FTimerHandle AuthenticationTimerHandle;
 	FDelegateHandle PostLoadMapHandle;
 	bool bInitialized = false;
-	bool bIsPopupVisible = false;
 	
 	TMap<FString, int64> AssessmentStartTimes;
 	TMap<FString, int64> ObjectiveStartTimes;
@@ -212,4 +216,8 @@ private:
 	
 	TMap<FString, FString> SuperMetaData;
 	static const FString SuperMetaDataKey;
+	
+	static const FString PollEventString;
+	static const FString PollResponseString;
+	static const FString PollQuestionString;
 };

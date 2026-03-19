@@ -1,5 +1,6 @@
 #pragma once
 #include "Components/WidgetComponent.h"
+#include "Types/AbxrTypes.h"
 #include "AbxrDisplayActor.generated.h"
 
 UCLASS()
@@ -12,7 +13,7 @@ public:
 	virtual void BeginPlay() override;
 	
 	UPROPERTY()
-	FString PopupType;
+	EAbxrPopupType PopupType;
 	
 private:
 	UPROPERTY()

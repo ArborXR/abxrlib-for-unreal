@@ -7,6 +7,31 @@
 class UWidgetInteractionComponent;
 class AAbxrLaserPointerActor;
 
+UENUM()
+enum class EAbxrPopupType : uint8
+{
+	Keyboard,
+	PinPad,
+	PollMultipleChoice,
+	PollRating
+};
+
+USTRUCT()
+struct FAbxrInputRequest
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	EAbxrPopupType PopupType;
+	
+	UPROPERTY()
+	FString Prompt;
+
+	// For multiple choice poll
+	UPROPERTY()
+	TArray<FString> Responses;
+};
+
 USTRUCT()
 struct FAbxrWidgetInteractionBackup
 {
@@ -74,13 +99,6 @@ struct FAbxrAuthResponse
 	UPROPERTY() TArray<FAbxrModuleData> Modules;
 };
 
-struct FAbxrKeyboardRequest
-{
-	FString Type;
-	FString Prompt;
-	FString Domain;
-};
-
 USTRUCT()
 struct FAbxrConfigPayload
 {
@@ -104,7 +122,7 @@ struct FAbxrConfigPayload
 
 struct FAbxrAuthCallbacks
 {
-	TFunction<void(const FAbxrKeyboardRequest&)> OnInputRequested;
+	TFunction<void(const FAbxrInputRequest&)> OnInputRequested;
 	TFunction<void()> OnSucceeded;
 	TFunction<void(const FString&)> OnFailed;
 };
@@ -166,4 +184,4 @@ public:
 	UPROPERTY() TMap<FString, FString> SuperMetaData;
 };
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrKeyboardRequest& Request);
+DECLARE_MULTICAST_DELEGATE_OneParam(FAbxrInputRequested, const FAbxrInputRequest& Request);

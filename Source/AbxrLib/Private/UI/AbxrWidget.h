@@ -25,4 +25,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText InputText;
+	
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category="Abxr|Poll")
+	void InitializePoll(const TArray<FText>& Responses);
 };
