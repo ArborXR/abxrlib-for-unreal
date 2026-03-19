@@ -514,10 +514,17 @@ void FAbxrAuthService::KeyboardAuthenticate(const bool FirstAttempt)
 	if (!FirstAttempt) Prompt = TEXT("Authentication Failed\n");
 	Prompt.Append(Payload.AuthMechanism[TEXT("prompt")]);
 	
-	FAbxrKeyboardRequest Request;
-	Request.Prompt = Prompt;
-	if (Payload.AuthMechanism.Contains(TEXT("type"))) Request.Type = Payload.AuthMechanism[TEXT("type")];
-	if (Payload.AuthMechanism.Contains(TEXT("domain"))) Request.Domain = Payload.AuthMechanism[TEXT("domain")];
+	FAbxrInputRequest Request;
+	Request.PopupType = EAbxrPopupType::Keyboard;
+	if (const FString* Type = Payload.AuthMechanism.Find(TEXT("type")))
+	{
+		if (*Type == TEXT("assessmentPin"))
+		{
+			Request.PopupType = EAbxrPopupType::PinPad;
+		}
+	}
+	
+	Request.Prompt = Prompt;  // TODO handle email domains
 
 	// Emit an input request. This may fire multiple times as the user retries.
 	Callbacks.OnInputRequested(Request);

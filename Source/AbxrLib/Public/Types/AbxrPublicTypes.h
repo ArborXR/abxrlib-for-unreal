@@ -2,6 +2,14 @@
 #include "AbxrPublicTypes.generated.h"
 
 UENUM(BlueprintType)
+enum class EPollType : uint8
+{
+	MultipleChoice  UMETA(DisplayName = "Multiple Choice"),
+	Rating          UMETA(DisplayName = "Rating 1-5"),
+	ThumbsUpDown    UMETA(DisplayName = "Thumbs Up / Down")
+};
+
+UENUM(BlueprintType)
 enum class EEventStatus : uint8
 {
 	Pass        UMETA(DisplayName = "pass"),
