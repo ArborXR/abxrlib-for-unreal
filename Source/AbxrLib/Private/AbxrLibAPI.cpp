@@ -29,7 +29,7 @@ namespace Abxr
 	
 	bool IsPopupVisible()
 	{
-		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
+		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
 			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. IsPopupVisible() failed."));

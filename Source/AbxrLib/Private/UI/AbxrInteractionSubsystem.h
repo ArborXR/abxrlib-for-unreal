@@ -11,12 +11,9 @@ class ABXRLIB_API UAbxrInteractionSubsystem : public UGameInstanceSubsystem
     GENERATED_BODY()
 
 public:
-    UFUNCTION()
     void BeginUIInteraction();
-    
-    UFUNCTION()
     void EndUIInteraction();
-    
+
     UFUNCTION(BlueprintCallable, Category="Abxr|Interaction")
     void PressUISelect();
 

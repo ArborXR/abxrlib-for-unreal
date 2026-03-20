@@ -15,64 +15,42 @@ public:
 	virtual void Deinitialize() override;
 	void SubmitInput(const FString& Input) const { AuthService->KeyboardAuthenticate(Input); }
 	
-	UFUNCTION(BlueprintCallable, Category = "Abxr|UI")
 	bool IsPopupVisible() const { return bIsPopupVisible; }
 	
-	UPROPERTY(BlueprintAssignable, Category = "Abxr|UI")
 	FAbxrPopupShown OnPopupShown;
-
-	UPROPERTY(BlueprintAssignable, Category = "Abxr|UI")
 	FAbxrPopupHidden OnPopupHidden;
 	
 	TFunction<void(const FAbxrKeyboardRequest&)> OnInputRequested;
-	UPROPERTY(BlueprintAssignable, Category = "Abxr|Auth")
 	FAbxrAuthCompleted OnAuthCompleted;
-
-	// Fired when a new module target becomes active (LMS-driven sequencing).
-	UPROPERTY(BlueprintAssignable, Category = "Abxr|Modules")
+	
 	FAbxrModuleTarget OnModuleTarget;
-
-	// Fired when module sequencing has completed (i.e., module index >= module count).
-	UPROPERTY(BlueprintAssignable, Category = "Abxr|Modules")
 	FAbxrAllModulesCompleted OnAllModulesCompleted;
-
-	// Returns the full module list from the auth response (sorted by Order).
-	UFUNCTION(BlueprintCallable, Category = "Abxr|Modules")
+	
 	TArray<FAbxrModuleData> GetModuleList() const { return AuthService->GetAuthResponse().Modules; }
-
-	// Manually jumps to a specific module index and broadcasts its target (if in range)
-	UFUNCTION(BlueprintCallable, Category = "Abxr|Modules")
+	
 	bool StartModuleAtIndex(const int ModuleIndex);
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr|Auth")
 	void Authenticate() const;
 	
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void LogDebug(const FString& Text, TMap<FString, FString>& Meta) { Log(Text, ELogLevel::Debug, Meta); }
 	void LogDebug(const FString& Text) { TMap<FString, FString> Meta; LogDebug(Text, Meta); }
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void LogInfo(const FString& Text, TMap<FString, FString>& Meta) { Log(Text, ELogLevel::Info, Meta); }
 	void LogInfo(const FString& Text) { TMap<FString, FString> Meta; LogInfo(Text, Meta); }
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void LogWarn(const FString& Text, TMap<FString, FString>& Meta) { Log(Text, ELogLevel::Warn, Meta); }
 	void LogWarn(const FString& Text) { TMap<FString, FString> Meta; LogWarn(Text, Meta); }
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void LogError(const FString& Text, TMap<FString, FString>& Meta) { Log(Text, ELogLevel::Error, Meta); }
 	void LogError(const FString& Text) { TMap<FString, FString> Meta; LogError(Text, Meta); }
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void LogCritical(const FString& Text, TMap<FString, FString>& Meta) { Log(Text, ELogLevel::Critical, Meta); }
 	void LogCritical(const FString& Text) { TMap<FString, FString> Meta; LogCritical(Text, Meta); }
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void Log(const FString& Text, const ELogLevel Level, TMap<FString, FString>& Meta);
 	void Log(const FString& Text, const ELogLevel Level) { TMap<FString, FString> Meta; Log(Text, Level, Meta); }
 	void Log(const FString& Text) { TMap<FString, FString> Meta; Log(Text, ELogLevel::Info, Meta); }
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void Event(const FString& Name, TMap<FString, FString>& Meta);
 	void Event(const FString& Name) { TMap<FString, FString> Meta; Event(Name, Meta); }
 	void Event(const FString& Name, const FVector& Position, TMap<FString, FString>& Meta);
@@ -82,7 +60,6 @@ public:
 		Event(Name, Position, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void Telemetry(const FString& Name, TMap<FString, FString>& Meta);
 	void Telemetry(const FString& Name)
 	{
@@ -90,7 +67,6 @@ public:
 		Telemetry(Name, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventAssessmentStart(const FString& AssessmentName, TMap<FString, FString>& Meta);
 	void EventAssessmentStart(const FString& AssessmentName)
 	{
@@ -98,7 +74,6 @@ public:
 		EventAssessmentStart(AssessmentName, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventAssessmentComplete(const FString& AssessmentName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta);
 	void EventAssessmentComplete(const FString& AssessmentName, const int Score, const EEventStatus Status)
 	{
@@ -106,7 +81,6 @@ public:
 		EventAssessmentComplete(AssessmentName, Score, Status, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventObjectiveStart(const FString& ObjectiveName, TMap<FString, FString>& Meta);
 	void EventObjectiveStart(const FString& ObjectiveName)
 	{
@@ -114,7 +88,6 @@ public:
 		EventObjectiveStart(ObjectiveName, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventObjectiveComplete(const FString& ObjectiveName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta);
 	void EventObjectiveComplete(const FString& ObjectiveName, const int Score, const EEventStatus Status)
 	{
@@ -122,7 +95,6 @@ public:
 		EventObjectiveComplete(ObjectiveName, Score, Status, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventInteractionStart(const FString& InteractionName, TMap<FString, FString>& Meta);
 	void EventInteractionStart(const FString& InteractionName)
 	{
@@ -130,7 +102,6 @@ public:
 		EventInteractionStart(InteractionName, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response, TMap<FString, FString>& Meta);
 	void EventInteractionComplete(const FString& InteractionName, const EInteractionType InteractionType, const FString& Response)
 	{
@@ -138,7 +109,6 @@ public:
 		EventInteractionComplete(InteractionName, InteractionType, Response, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventLevelStart(const FString& LevelName, TMap<FString, FString>& Meta);
 	void EventLevelStart(const FString& LevelName)
 	{
@@ -146,7 +116,6 @@ public:
 		EventLevelStart(LevelName, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventLevelComplete(const FString& LevelName, const int Score, TMap<FString, FString>& Meta);
 	void EventLevelComplete(const FString& LevelName, const int Score)
 	{
@@ -154,7 +123,6 @@ public:
 		EventLevelComplete(LevelName, Score, Meta);
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void EventCritical(const FString& Label, TMap<FString, FString>& Meta);
 	void EventCritical(const FString& Label)
 	{
@@ -162,90 +130,31 @@ public:
 		EventCritical(Label, Meta);
 	}
 	
-	// Gets the UUID assigned to device by ArborXR
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
+	// XRDM Functions
 	FString GetDeviceId() const { return XRDMService ? XRDMService->GetDeviceId() : TEXT(""); }
-
-	// Gets the serial number assigned to device by OEM
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetDeviceSerial() const { return XRDMService ? XRDMService->GetDeviceSerial() : TEXT(""); }
-
-	// Gets the title given to device by admin through the ArborXR Web Portal
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetDeviceTitle() const { return XRDMService ? XRDMService->GetDeviceTitle() : TEXT(""); }
-
-	// Gets the tags added to device by admin through the ArborXR Web Portal
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	TArray<FString> GetDeviceTags() const { return XRDMService ? XRDMService->GetDeviceTags() : TArray<FString>(); }
-
-	// Gets the UUID of the organization where the device is assigned. Organizations are created in the ArborXR Web Portal
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetOrgId() const { return XRDMService ? XRDMService->GetOrgId() : TEXT(""); }
-
-	// Gets the name assigned to organization by admin through the ArborXR Web Portal
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetOrgTitle() const { return XRDMService ? XRDMService->GetOrgTitle() : TEXT(""); }
-
-	// Gets the identifier generated by ArborXR when admin assigns title to organization
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetOrgSlug() const { return XRDMService ? XRDMService->GetOrgSlug() : TEXT(""); }
-
-	// Gets the physical MAC address assigned to device by OEM
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetMacAddressFixed() const { return XRDMService ? XRDMService->GetMacAddressFixed() : TEXT(""); }
-
-	// Gets the randomized MAC address for the current WiFi connection
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetMacAddressRandom() const { return XRDMService ? XRDMService->GetMacAddressRandom() : TEXT(""); }
-
-	// Gets whether the device is SSO authenticated
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	bool GetIsAuthenticated() const { return XRDMService ? XRDMService->GetIsAuthenticated() : false; }
-
-	// Gets SSO access token
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetAccessToken() const { return XRDMService ? XRDMService->GetAccessToken() : TEXT(""); }
-
-	// Gets SSO refresh token
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetRefreshToken() const { return XRDMService ? XRDMService->GetRefreshToken() : TEXT(""); }
-
-	// Gets SSO token remaining lifetime
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FDateTime GetExpiresDateUtc() const { return XRDMService ? XRDMService->GetExpiresDateUtc() : FDateTime::MinValue(); }
-
-	// Gets the device fingerprint
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	FString GetFingerprint() const { return XRDMService ? XRDMService->GetFingerprint() : TEXT(""); }
 	
-	// Start a new session with a fresh session identifier
-	// Generates a new session ID and performs fresh authentication
-	// Useful for starting new training experiences or resetting user context
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
 	void StartNewSession() const;
-
-	// Get the learner/user data from the most recent authentication completion
-	// This is the userData object from the authentication response, containing user preferences and information
-	// Returns an empty map if no authentication has completed yet
-	UFUNCTION(BlueprintCallable, Category = "Abxr")
-	TMap<FString, FString> GetUserData() const { return AuthService->GetAuthResponse().UserData; }
-
-	// Register a super metadata that will be automatically included in all events
-	// super metadata persist across app sessions and are stored locally
-	void Register(const FString& Key, const FString& Value) { Register(Key, Value, true); }
-
-	// Register a super metadata only if it doesn't already exist
-	// Will not overwrite existing super metadata with the same key
-	void RegisterOnce(const FString& Key, const FString& Value) { Register(Key, Value, false); }
 	
-	// Remove a super metadata entry
+	TMap<FString, FString> GetUserData() const { return AuthService->GetAuthResponse().UserData; }
+	
+	void Register(const FString& Key, const FString& Value) { Register(Key, Value, true); }
+	void RegisterOnce(const FString& Key, const FString& Value) { Register(Key, Value, false); }
 	void Unregister(const FString& Key);
-
-	// Clear all super metadata
-	// Clears all super metadata from persistent storage
 	void Reset();
-
-	// Get a copy of all current super metadata
+	
 	TMap<FString, FString> GetSuperMetaData() { return SuperMetaData; }
 
 	void LoadSuperMetaData();

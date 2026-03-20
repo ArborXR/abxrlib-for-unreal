@@ -22,8 +22,10 @@ namespace Abxr
 	// Fired when module sequencing has completed
 	ABXRLIB_API FAbxrAllModulesCompleted& OnAllModulesCompleted();
 	
+	// Returns the full module list from the auth response (sorted by Order).
 	ABXRLIB_API TArray<FAbxrModuleData> GetModuleList();
 	
+	// Manually jumps to a specific module index and broadcasts its target (if in range)
 	ABXRLIB_API bool StartModuleAtIndex(const int ModuleIndex);
 	
 	ABXRLIB_API void LogDebug(const FString& Text, TMap<FString, FString>& Meta);
