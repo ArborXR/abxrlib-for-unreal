@@ -156,7 +156,7 @@ void UAbxrSubsystem::SubmitResponse(const FString& Response, const FAbxrInputReq
 	{
 		AuthService->KeyboardAuthenticate(Response);
 	}
-	else if (InputRequest.PopupType == EAbxrPopupType::PollRating)
+	else
 	{
 		TMap<FString, FString> Meta;
 		Meta.Add(PollQuestionString, InputRequest.Prompt);
@@ -179,6 +179,13 @@ void UAbxrSubsystem::PollUser(const FString& Prompt, const EPollType PollType, c
 	if (PollType == EPollType::MultipleChoice) Request.PopupType = EAbxrPopupType::PollMultipleChoice;
 	else if (PollType == EPollType::Rating) Request.PopupType = EAbxrPopupType::PollRating;
 	else if (PollType == EPollType::ThumbsUpDown) Request.PopupType = EAbxrPopupType::PollThumbs;
+	
+	if (PollType == EPollType::MultipleChoice && (Responses.Num() < 2 || Responses.Num() > 5))
+	{
+		UE_LOG(LogAbxrLib, Warning, TEXT("Please use between 2 and 5 response for your Multiple-Choice Poll"));
+		return;
+	}
+	
 	OnInputRequested(Request);
 }
 

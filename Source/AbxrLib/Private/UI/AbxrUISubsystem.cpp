@@ -82,6 +82,17 @@ bool UAbxrUISubsystem::ShowUI()
 
     ActivePopupActor = Spawned;
     ActivePopupWidget = PopupWidget;
+    
+    if (ActiveInputRequest.PopupType == EAbxrPopupType::PollMultipleChoice)
+    {
+        TArray<FText> ResponseTexts;
+        for (const FString& Response : ActiveInputRequest.Responses)
+        {
+            ResponseTexts.Add(FText::FromString(Response));
+        }
+
+        PopupWidget->InitializePoll(FText::FromString(ActiveInputRequest.Prompt), ResponseTexts);
+    }
 
     SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), FText::FromString(ActiveInputRequest.Prompt));
     PopupWidget->SynchronizeProperties();
