@@ -51,11 +51,12 @@ struct FAbxrAuthPayload
 	UPROPERTY() FString IpAddress;
 	UPROPERTY() FString DeviceModel;
 	UPROPERTY() TMap<FString, FString> Geolocation;
-	UPROPERTY() FString OsVersion;
+	UPROPERTY() FString osversion;  // need this casing to get it to convert to json correctly
 	UPROPERTY() FString XrdmVersion;
 	UPROPERTY() FString AppVersion;
 	UPROPERTY() FString UnrealVersion;
 	UPROPERTY() FString AbxrLibVersion;
+	UPROPERTY() FString AbxrLibType;
 	UPROPERTY() TMap<FString, FString> AuthMechanism;
 };
 

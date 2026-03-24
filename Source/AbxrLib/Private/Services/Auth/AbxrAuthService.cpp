@@ -78,11 +78,12 @@ FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks, UXRDMSer
 	Payload.IpAddress = TEXT("");
 	Payload.DeviceModel = HMDName;
 	Payload.Geolocation = TMap<FString, FString>();
-	Payload.OsVersion = FPlatformMisc::GetOSVersion();
+	Payload.osversion = FPlatformMisc::GetOSVersion();
 	Payload.XrdmVersion = TEXT("1.0.0");
 	Payload.AppVersion = TEXT("1.0.0");
 	Payload.UnrealVersion = FString::Printf(TEXT("%d.%d.%d"), ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION, ENGINE_PATCH_VERSION);
 	Payload.AbxrLibVersion = IPluginManager::Get().FindPlugin(TEXT("AbxrLib"))->GetDescriptor().VersionName;
+	Payload.AbxrLibType = TEXT("unreal");
 }
 
 FAbxrAuthService::~FAbxrAuthService()
