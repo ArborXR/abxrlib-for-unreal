@@ -151,7 +151,7 @@ public:
 	FDateTime GetExpiresDateUtc() const { return XRDMService ? XRDMService->GetExpiresDateUtc() : FDateTime::MinValue(); }
 	FString GetFingerprint() const { return XRDMService ? XRDMService->GetFingerprint() : TEXT(""); }
 	
-	void StartNewSession() const;
+	void StartNewSession();
 	
 	TMap<FString, FString> GetUserData() const { return AuthService->GetAuthResponse().UserData; }
 	

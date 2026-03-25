@@ -49,7 +49,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	
 	AppWillEnterBackgroundHandle = FCoreDelegates::ApplicationWillEnterBackgroundDelegate.AddLambda([this]
 		{
-			if (DataService) DataService->Send();
+			if (DataService) DataService->Send(true);
 		});
 	
 	LoadSuperMetaData();
@@ -433,7 +433,7 @@ void UAbxrSubsystem::EventAssessmentComplete(const FString& AssessmentName, cons
 	Meta.Add(TEXT("status"), StaticEnum<EEventStatus>()->GetNameStringByValue(static_cast<int64>(Status)));
 	AddDuration(AssessmentStartTimes, AssessmentName, Meta);
 	Event(AssessmentName, Meta);
-	DataService->Send();
+	DataService->Send(true);
 	if (!AuthService->GetAuthResponse().Modules.IsEmpty() && GetDefault<UAbxrSettings>()->EnableAutoAdvanceModules)
 	{
 		AdvanceToNextModule();
@@ -513,8 +513,11 @@ void UAbxrSubsystem::AddDuration(TMap<FString, int64>& StartTimes, const FString
 	}
 }
 
-void UAbxrSubsystem::StartNewSession() const
+void UAbxrSubsystem::StartNewSession()
 {
+	SuperMetaData.Reset();  // Super metadata is per-session
+	CurrentModuleIndex = 0;
+	DataService->Send(true);
 	AuthService->SetSessionId(FGuid::NewGuid().ToString());
 	Authenticate();
 }

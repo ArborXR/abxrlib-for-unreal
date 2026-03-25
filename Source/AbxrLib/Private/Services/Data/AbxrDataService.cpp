@@ -9,8 +9,7 @@
 
 bool FAbxrDataService::Tick(float /*DeltaTime*/)
 {
-	const double Now = FPlatformTime::Seconds();
-	if (Now >= NextAt) Send();
+	if (FPlatformTime::Seconds() >= NextAt) Send();
 	return true;
 }
 
@@ -89,10 +88,10 @@ void FAbxrDataService::AddLog(const FString& Level, const FString& Text, const T
 	}
 }
 
-void FAbxrDataService::Send()
+void FAbxrDataService::Send(const bool bForce)
 {
 	const int64 UnixSeconds = FDateTime::UtcNow().ToUnixTimestamp();
-	if (UnixSeconds - LastCallTime < GetDefault<UAbxrSettings>()->MaxCallFrequencySeconds) return;
+	if (!bForce && UnixSeconds - LastCallTime < GetDefault<UAbxrSettings>()->MaxCallFrequencySeconds) return;
 	LastCallTime = UnixSeconds;
 	NextAt = FPlatformTime::Seconds() + GetDefault<UAbxrSettings>()->SendNextBatchWaitSeconds;
 	if (!AuthService.Authenticated()) return;

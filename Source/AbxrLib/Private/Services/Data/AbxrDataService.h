@@ -16,7 +16,8 @@ public:
 
 	void Start();
 	void Stop();
-	void Send();
+	void Send(const bool bForce);
+	void Send() { Send(false); }
 
 private:
 	bool Tick(float DeltaTime);
