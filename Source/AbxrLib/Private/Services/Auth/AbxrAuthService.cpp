@@ -516,16 +516,24 @@ void FAbxrAuthService::KeyboardAuthenticate(const bool FirstAttempt)
 	Prompt.Append(Payload.AuthMechanism[TEXT("prompt")]);
 	
 	FAbxrInputRequest Request;
-	Request.PopupType = EAbxrPopupType::Keyboard;
-	if (const FString* Type = Payload.AuthMechanism.Find(TEXT("type")))
-	{
-		if (*Type == TEXT("assessmentPin"))
-		{
-			Request.PopupType = EAbxrPopupType::PinPad;
-		}
-	}
 	
-	Request.Prompt = Prompt;  // TODO handle email domains
+	const FString* Type = Payload.AuthMechanism.Find(TEXT("type"));
+	if (*Type == TEXT("assessmentPin"))
+	{
+		Request.PopupType = EAbxrPopupType::PinPad;
+		Request.Prompt = !Prompt.IsEmpty() ? Prompt : TEXT("Enter Your 6-digit PIN");
+	}
+	else if (*Type == TEXT("email"))
+	{
+		Request.PopupType = EAbxrPopupType::Keyboard;
+		const FString* Domain = Payload.AuthMechanism.Find(TEXT("domain"));
+		Request.Prompt = FString::Printf(TEXT("Enter your email username\n(username@%s)"), **Domain);
+	}
+	else
+	{
+		Request.PopupType = EAbxrPopupType::Keyboard;
+		Request.Prompt = !Prompt.IsEmpty() ? Prompt : TEXT("Enter Your Login");
+	}
 
 	// Emit an input request. This may fire multiple times as the user retries.
 	Callbacks.OnInputRequested(Request);
@@ -534,7 +542,10 @@ void FAbxrAuthService::KeyboardAuthenticate(const bool FirstAttempt)
 void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 {
 	FString OriginalPrompt = Payload.AuthMechanism[TEXT("prompt")];
-	Payload.AuthMechanism[TEXT("prompt")] = KeyboardInput;
+	Payload.AuthMechanism[TEXT("prompt")] = *Payload.AuthMechanism.Find(TEXT("type")) == TEXT("email")
+		? KeyboardInput + TEXT("@") + *Payload.AuthMechanism.Find(TEXT("domain"))
+		: KeyboardInput;
+	
 	AuthRequest([AuthPtr = AsWeak(), OriginalPrompt](const bool bSuccess)
 	{
 		const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
