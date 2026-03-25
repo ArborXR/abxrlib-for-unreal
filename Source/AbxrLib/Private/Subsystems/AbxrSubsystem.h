@@ -194,6 +194,8 @@ private:
 	// Example: "ModuleName" -> "Module Name", "myModule" -> "My Module"
 	static FString FormatModuleNameForDisplay(const FString& ModuleName);
 	
+	FDelegateHandle AppWillEnterBackgroundHandle;
+	
 	void AdvanceToNextModule();
 	
 	int CurrentModuleIndex = 0;

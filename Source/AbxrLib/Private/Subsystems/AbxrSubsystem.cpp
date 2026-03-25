@@ -45,8 +45,13 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	SuperMetaData = TMap<FString, FString>();
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
 		this, 
-		&UAbxrSubsystem::OnPostLoadMapWithWorld
-	);
+		&UAbxrSubsystem::OnPostLoadMapWithWorld);
+	
+	AppWillEnterBackgroundHandle = FCoreDelegates::ApplicationWillEnterBackgroundDelegate.AddLambda([this]
+		{
+			if (DataService) DataService->Send();
+		});
+	
 	LoadSuperMetaData();
 	if (GetDefault<UAbxrSettings>()->EnableAutoStartAuth)
 	{
@@ -93,6 +98,7 @@ void UAbxrSubsystem::Deinitialize()
 	}
 	
 	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+	FCoreDelegates::ApplicationWillEnterBackgroundDelegate.Remove(AppWillEnterBackgroundHandle);
 	
 	if (XRDMService)
 	{
