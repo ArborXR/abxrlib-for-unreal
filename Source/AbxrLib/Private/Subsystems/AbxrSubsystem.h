@@ -168,6 +168,7 @@ private:
 	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
 	FAbxrAuthCallbacks CreateAuthCallbacks();
 	void HandleAuthCompleted(const bool bSuccess) const;
+	static void AddScoreData(TMap<FString, FString>& Meta, int Score, const FString& EventName);
 
 	static void AddDuration(TMap<FString, int64>& StartTimes, const FString& Name, TMap<FString, FString>& Meta);
 	void Register(const FString& Key, const FString& Value, bool Overwrite);

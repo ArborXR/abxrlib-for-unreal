@@ -11,34 +11,34 @@ enum class EPollType : uint8
 UENUM(BlueprintType)
 enum class EEventStatus : uint8
 {
-	Pass        UMETA(DisplayName = "pass"),
-	Fail        UMETA(DisplayName = "fail"),
-	Complete    UMETA(DisplayName = "complete"),
-	Incomplete  UMETA(DisplayName = "incomplete"),
-	Browsed     UMETA(DisplayName = "browsed")
+	Pass,
+	Fail,
+	Complete,
+	Incomplete,
+	Browsed
 };
 
 UENUM(BlueprintType)
 enum class ELogLevel : uint8
 {
-	Debug     UMETA(DisplayName = "debug"),
-	Info      UMETA(DisplayName = "info"),
-	Warn      UMETA(DisplayName = "warn"),
-	Error     UMETA(DisplayName = "error"),
-	Critical  UMETA(DisplayName = "critical")
+	Debug,
+	Info,
+	Warn,
+	Error,
+	Critical
 };
 
 UENUM(BlueprintType)
 enum class EInteractionType : uint8
 {
-	Bool         UMETA(DisplayName = "bool"),
-	Select       UMETA(DisplayName = "select"),
-	Text         UMETA(DisplayName = "text"),
-	Rating       UMETA(DisplayName = "rating"),
-	Number       UMETA(DisplayName = "number"),
-	Matching     UMETA(DisplayName = "matching"),
-	Performance  UMETA(DisplayName = "performance"),
-	Sequencing   UMETA(DisplayName = "sequencing")
+	Bool,
+	Select,
+	Text,
+	Rating,
+	Number,
+	Matching,
+	Performance,
+	Sequencing
 };
 
 USTRUCT(BlueprintType)

@@ -216,6 +216,34 @@ void UAbxrSubsystem::HandleAuthCompleted(const bool bSuccess) const
 	}
 }
 
+void UAbxrSubsystem::AddScoreData(TMap<FString, FString>& Meta, int Score, const FString& EventName)
+{
+	const FString MinScoreString = Meta.Contains(TEXT("score_min")) ? Meta.FindRef(TEXT("score_min")) : TEXT("0");
+	const int MinScoreInt = FCString::Atoi(*MinScoreString);
+	Meta.Add(TEXT("score_min"), MinScoreString);
+	
+	const FString MaxScoreString = Meta.Contains(TEXT("score_max")) ? Meta.FindRef(TEXT("score_max")) : TEXT("100");
+	const int MaxScoreInt = FCString::Atoi(*MaxScoreString);
+	Meta.Add(TEXT("score_max"), MaxScoreString);
+	
+	if (Score > MaxScoreInt)
+	{
+		UE_LOG(LogAbxrLib, Warning, TEXT("score of %d exceeded the score_max limit of %s for event '%s'; score was set to %s. "
+										 "Provide score_min and score_max in meta when your scoring range is not 0-100."),
+										 Score, *MaxScoreString, *EventName, *MaxScoreString);
+		Score = MaxScoreInt;
+	}
+	else if (Score < MinScoreInt)
+	{
+		UE_LOG(LogAbxrLib, Warning, TEXT("score of %d was below the score_min limit of %s for event '%s'; score was set to %s. "
+										 "Provide score_min and score_max in meta when your scoring range is not 0-100."),
+										 Score, *MinScoreString, *EventName, *MinScoreString);
+		Score = MinScoreInt;
+	}
+	
+	Meta.Add(TEXT("score"), FString::FromInt(Score));
+}
+
 bool UAbxrSubsystem::StartModuleAtIndex(const int ModuleIndex)
 {
 	if (!AuthService || AuthService->GetAuthResponse().Modules.IsEmpty())
@@ -427,10 +455,10 @@ void UAbxrSubsystem::EventAssessmentStart(const FString& AssessmentName, TMap<FS
 
 void UAbxrSubsystem::EventAssessmentComplete(const FString& AssessmentName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta)
 {
+	AddScoreData(Meta, Score, AssessmentName);
 	Meta.Add(TEXT("type"), TEXT("assessment"));
 	Meta.Add(TEXT("verb"), TEXT("completed"));
-	Meta.Add(TEXT("score"), FString::FromInt(Score));
-	Meta.Add(TEXT("status"), StaticEnum<EEventStatus>()->GetNameStringByValue(static_cast<int64>(Status)));
+	Meta.Add(TEXT("status"), StaticEnum<EEventStatus>()->GetNameStringByValue(static_cast<int64>(Status)).ToLower());
 	AddDuration(AssessmentStartTimes, AssessmentName, Meta);
 	Event(AssessmentName, Meta);
 	DataService->Send(true);
@@ -450,10 +478,10 @@ void UAbxrSubsystem::EventObjectiveStart(const FString& ObjectiveName, TMap<FStr
 
 void UAbxrSubsystem::EventObjectiveComplete(const FString& ObjectiveName, const int Score, EEventStatus Status, TMap<FString, FString>& Meta)
 {
+	AddScoreData(Meta, Score, ObjectiveName);
 	Meta.Add(TEXT("type"), TEXT("objective"));
 	Meta.Add(TEXT("verb"), TEXT("completed"));
-	Meta.Add(TEXT("score"), FString::FromInt(Score));
-	Meta.Add(TEXT("status"), StaticEnum<EEventStatus>()->GetNameStringByValue(static_cast<int64>(Status)));
+	Meta.Add(TEXT("status"), StaticEnum<EEventStatus>()->GetNameStringByValue(static_cast<int64>(Status)).ToLower());
 	AddDuration(ObjectiveStartTimes, ObjectiveName, Meta);
 	Event(ObjectiveName, Meta);
 }
@@ -470,7 +498,7 @@ void UAbxrSubsystem::EventInteractionComplete(const FString& InteractionName, co
 {
 	Meta.Add(TEXT("type"), TEXT("interaction"));
 	Meta.Add(TEXT("verb"), TEXT("completed"));
-	Meta.Add(TEXT("interaction"), StaticEnum<EInteractionType>()->GetNameStringByValue(static_cast<int64>(InteractionType)));
+	Meta.Add(TEXT("interaction"), StaticEnum<EInteractionType>()->GetNameStringByValue(static_cast<int64>(InteractionType)).ToLower());
 	if (!Response.IsEmpty()) Meta.Add(TEXT("response"), Response);
 	AddDuration(InteractionStartTimes, InteractionName, Meta);
 	Event(InteractionName, Meta);
