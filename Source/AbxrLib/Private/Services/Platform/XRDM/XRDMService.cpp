@@ -95,7 +95,7 @@ TSharedPtr<TPromise<bool>> UXRDMService::WaitForConnection()
     {
         ConnectionTimeoutHandle = FTSTicker::GetCoreTicker().AddTicker(
             FTickerDelegate::CreateUObject(this, &UXRDMService::OnConnectionTimeout), 
-            5.0f // 5 second timeout
+            8.0f // 8 second timeout
         );
     }
     
@@ -106,7 +106,7 @@ bool UXRDMService::OnConnectionTimeout(float DeltaTime)
 {
     if (!bConnectionAttemptComplete)
     {
-        UE_LOG(LogAbxrLib, Warning, TEXT("XRDM connection attempt timed out after 1 second"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("XRDM connection attempt timed out after 8 seconds"));
         CompleteConnectionAttempt(false);
     }
     
