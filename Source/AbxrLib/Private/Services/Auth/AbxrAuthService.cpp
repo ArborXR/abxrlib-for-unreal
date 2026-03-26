@@ -245,7 +245,6 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 				if (Self2->bStopping || !Self2->bAttemptActive) return;
 
 				const int32 Code = Response.IsValid() ? Response->GetResponseCode() : 0;
-				
 				const FString Body = Response->GetContentAsString();
 
 				// Success
@@ -580,6 +579,6 @@ void FAbxrAuthService::ClearAuthenticationState()
 	bAuthenticated = false;
 	ResponseData = FAbxrAuthResponse();
 	TokenExpiry = 0;
-	Payload.SessionId = TEXT("");
+	Payload.AuthMechanism.Empty();
 	UE_LOG(LogAbxrLib, Log, TEXT("Authentication state cleared"));
 }
