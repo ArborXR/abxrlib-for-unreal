@@ -1,4 +1,5 @@
 #include "AbxrUtil.h"
+#include "Types/AbxrLog.h"
 #include "Misc/Base64.h"
 #include <openssl/sha.h>
 #include "Internationalization/Regex.h"
@@ -165,10 +166,18 @@ bool FAbxrUtil::IsPackageInstalled(const FString& PackageName)
 {
 #if PLATFORM_ANDROID
 	JNIEnv* Env = FAndroidApplication::GetJavaEnv();
-	if (!Env) return false;
+	if (!Env)
+	{
+		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM IsPackageInstalled: no JNI env"));
+		return false;
+	}
 
 	jclass Class = FAndroidApplication::FindJavaClass("com/abxr/lib/AbxrAndroidPackageUtils");
-	if (!Class) return false;
+	if (!Class)
+	{
+		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM IsPackageInstalled: com.abxr.lib.AbxrAndroidPackageUtils not found — proguard or AAR missing?"));
+		return false;
+	}
 
 	jmethodID Method = Env->GetStaticMethodID(
 		Class,
@@ -177,6 +186,7 @@ bool FAbxrUtil::IsPackageInstalled(const FString& PackageName)
 	);
 	if (!Method)
 	{
+		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM IsPackageInstalled: isPackageInstalled static method not found"));
 		Env->DeleteLocalRef(Class);
 		return false;
 	}

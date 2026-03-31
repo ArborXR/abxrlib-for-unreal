@@ -20,7 +20,7 @@ void UAbxrInteractionSubsystem::BeginUIInteraction()
 
     if (!AcquireWidgetInteraction())
     {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to acquire/create WidgetInteractionComponent"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Failed to acquire/create WidgetInteractionComponent"));
         return;
     }
 
@@ -74,7 +74,7 @@ UWidgetInteractionComponent* UAbxrInteractionSubsystem::FindExistingWidgetIntera
     const APawn* Pawn = GetLocalPawn();
     if (!Pawn)
     {
-        UE_LOG(LogAbxrLib, Warning, TEXT("No local pawn found"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] No local pawn found"));
         return nullptr;
     }
     
@@ -149,7 +149,7 @@ void UAbxrInteractionSubsystem::EnsureLaserActor(FAbxrWidgetInteractionHandle& H
     AAbxrLaserPointerActor* Laser = World->SpawnActor<AAbxrLaserPointerActor>(AAbxrLaserPointerActor::StaticClass(), Params);
     if (!Laser)
     {
-        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to spawn laser actor"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Failed to spawn laser actor"));
         return;
     }
 

@@ -42,6 +42,9 @@ public:
     bool GetIsInitialized() const;
     FString GetFingerprint() const;
 
+    /** Logs connection flags and JNI state for debugging MDM/XRDM integration (LogAbxrLib). */
+    void LogXrdmConnectionState(const TCHAR* Context) const;
+
 protected:
     virtual void BeginDestroy() override;
 
