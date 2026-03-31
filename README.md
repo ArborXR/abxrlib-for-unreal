@@ -66,34 +66,37 @@ Developers can implement their own backend services by following the ABXR protoc
 
 ### Using with ArborXR Insights
 
-To use the ABXRLib SDK with ArborXR Insights:
+To use the ABXRLib SDK with ArborXR Insights, configure **app token** and **org token** (recommended)—same model as the [Unity SDK](https://github.com/ArborXR/abxrlib-for-unity/blob/main/README.md#configuration) and [WebXR SDK](https://github.com/ArborXR/abxrlib-for-webxr/blob/main/README.md#configuration).
 
-#### Get Your Credentials
-1. Go to the ArborXR Insights web app and log in.
-2. Grab these three values from the **View Data** screen of the specific app you are configuring:
-- App ID
-- Organization ID
-- Authentication Secret
+#### App token and org token (recommended)
 
-#### Configure Unreal Project
+##### Configure Unreal project
 
-> **⚠️ Security Note:** For production builds distributed to third parties, avoid compiling `Org ID` and `Auth Secret` directly into your Unreal project. These credentials should only be compiled into builds when creating custom applications for specific individual clients. For general distribution, use ArborXR-managed devices or implement runtime credential provisioning.
+1. Open `Edit > Project Settings > Plugins > AbxrLib Configuration` in the Unreal Editor.
+2. **Use App Tokens** should be enabled (default for new projects aligned with the Unity SDK).
+3. Set **App Token** (required): JWT for your app, from your distribution channel or ArborXR portal (**Content Library** → **Managed** app → **Insights Hub**).
+4. **Org Token:** Leave empty to use the **dynamic org token** (derived from device/org context when available). For single-customer builds (e.g. production_custom), set the org token as required. For local testing in the Editor, you can paste your **App Token** into the **Org Token** field when you need both fields populated.
 
-1. Open `Project Settings > Plugins > AbxrLib Configuration` in the Unreal Editor.
-2. **For Development/Testing:** Paste in the App ID, Org ID, and Auth Secret. All 3 are required if you are testing from Unreal itself.
-3. **For Production Builds:** Only include the App ID. Leave Org ID and Auth Secret empty for third-party distribution.
-4. Open `Project Settings > Packaging > Advanced > Additional Asset Directories to Alway Cook`
-5. Add '/AbxrLib/UI'
-6. Open your VRPawn from the Content Drawer
-7. Add Press/Release UI Select to your Grab or Click trigger (this will be used for interacting with our UI)
-8. Search for 'Get AbxrInteractionSubsystem' and add it to the graph space
-9. Create a node off of this and search for 'Press UISelect' and add it
-10. Wire this in after your selected trigger
-11. Repeat for 'Release' 
+**Development / testing:** Set App Token; on ArborXR-managed devices, org context can be supplied at runtime (dynamic org token).
 
-#### Alternative for Managed Headsets:
-If you're using an ArborXR-managed device, only the App ID is required. The Org ID and Auth Secret auto-fill. 
-On any non-managed headset, you must manually enter all three values for testing purposes only.
+**Production builds:** Set App Token; use dynamic org token (empty org token in config) where the device or runtime provides org context.
+
+> **⚠️ Security Note:** Avoid compiling org tokens or long-lived secrets into builds distributed to third parties. For general distribution, use ArborXR-managed devices or dynamic org token. For single-customer deployments, follow your security guidelines.
+
+##### Additional Unreal setup (UI)
+
+5. Open `Project Settings > Packaging > Advanced > Additional Asset Directories to Alway Cook`
+6. Add '/AbxrLib/UI'
+7. Open your VRPawn from the Content Drawer
+8. Add Press/Release UI Select to your Grab or Click trigger (this will be used for interacting with our UI)
+9. Search for 'Get AbxrInteractionSubsystem' and add it to the graph space
+10. Create a node off of this and search for 'Press UISelect' and add it
+11. Wire this in after your selected trigger
+12. Repeat for 'Release'
+
+#### Legacy (App ID / Org ID / Auth Secret)
+
+If your project still uses the legacy scheme: turn **Use App Tokens** off and set App ID, Org ID, and Auth Secret from the app’s credential or details views in the portal where your organization still exposes them. On ArborXR-managed devices, only App ID may be required; Org ID and Auth Secret can auto-fill. New integrations should use app token and org token.
 
 ### Using with Other Backend Services
 For information on implementing your own backend service or using other compatible services, please refer to the ABXR protocol specification.
@@ -160,7 +163,7 @@ The full documentation includes:
 
 ### FAQ
 
-#### How do I retrieve my Application ID and Authorization Secret?
-Your Application ID can be found in the Web Dashboard under the application details (you must be sure to use the App ID from the specific application you need data sent through). For the Authorization Secret, navigate to Settings > Organization Codes on the same dashboard.
+#### How do I get my App Token and Org Token?
+Use **App Token** and **Org Token** (recommended). Copy them from **Content Library** → **Managed** app → **Insights Hub** in the portal, or use values from your distribution channel. Leave **Org Token** empty to use the dynamic org token when the device or runtime provides org context; for Editor testing you can paste **App Token** into **Org Token** if needed. For legacy setups, Application ID and Authorization Secret are still available under application details and Settings > Organization Codes.
 
 For more troubleshooting help and detailed FAQs, see the [full documentation](https://developers.arborxr.com/docs/insights/full-documentation/).
