@@ -536,7 +536,7 @@ void FAbxrAuthService::KeyboardAuthenticate(const bool FirstAttempt)
 	if (*Type == TEXT("assessmentPin"))
 	{
 		Request.PopupType = EAbxrPopupType::PinPad;
-		Request.Prompt = Prompt ? *Prompt : TEXT("Enter Your 6-digit PIN");
+		Request.Prompt = Prompt ? FString::Printf(TEXT("Enter Your %s PIN"), **Prompt) : TEXT("Enter Your 6-digit PIN");
 	}
 	else if (*Type == TEXT("email"))
 	{
@@ -547,7 +547,7 @@ void FAbxrAuthService::KeyboardAuthenticate(const bool FirstAttempt)
 	else
 	{
 		Request.PopupType = EAbxrPopupType::Keyboard;
-		Request.Prompt = Prompt ? *Prompt : TEXT("Enter Your Login");
+		Request.Prompt = Prompt ? FString::Printf(TEXT("Enter Your %s"), **Prompt) : TEXT("Enter Your Login");
 	}
 	
 	if (!FirstAttempt) Request.Prompt = TEXT("Authentication Failed\n") + Request.Prompt;
