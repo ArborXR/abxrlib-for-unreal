@@ -166,38 +166,33 @@ bool FAbxrUtil::IsPackageInstalled(const FString& PackageName)
 {
 #if PLATFORM_ANDROID
 	JNIEnv* Env = FAndroidApplication::GetJavaEnv();
-	if (!Env)
+	if (!Env) return false;
+
+	jobject Activity = FAndroidApplication::GetGameActivityThis();
+	if (!Activity) return false;
+
+	jclass ActivityClass = Env->GetObjectClass(Activity);
+	jmethodID GetPackageManager = Env->GetMethodID(ActivityClass, "getPackageManager", "()Landroid/content/pm/PackageManager;");
+	if (!GetPackageManager) return false;
+
+	jobject PackageManager = Env->CallObjectMethod(Activity, GetPackageManager);
+	if (!PackageManager) return false;
+
+	jclass PackageManagerClass = Env->GetObjectClass(PackageManager);
+	jmethodID GetPackageInfo = Env->GetMethodID(PackageManagerClass, "getPackageInfo", "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+	if (!GetPackageInfo) return false;
+
+	jstring JPackageName = Env->NewStringUTF(TCHAR_TO_UTF8(*PackageName));
+	jobject PackageInfo = Env->CallObjectMethod(PackageManager, GetPackageInfo, JPackageName, 0);
+	Env->DeleteLocalRef(JPackageName);
+
+	if (Env->ExceptionCheck())
 	{
-		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM IsPackageInstalled: no JNI env"));
-		return false;
+		Env->ExceptionClear();
+		return false; // NameNotFoundException means not installed
 	}
 
-	jclass Class = FAndroidApplication::FindJavaClass("com/abxr/lib/AbxrAndroidPackageUtils");
-	if (!Class)
-	{
-		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM IsPackageInstalled: com.abxr.lib.AbxrAndroidPackageUtils not found — proguard or AAR missing?"));
-		return false;
-	}
-
-	jmethodID Method = Env->GetStaticMethodID(
-		Class,
-		"isPackageInstalled",
-		"(Ljava/lang/String;)Z"
-	);
-	if (!Method)
-	{
-		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM IsPackageInstalled: isPackageInstalled static method not found"));
-		Env->DeleteLocalRef(Class);
-		return false;
-	}
-
-	jstring JPackage = Env->NewStringUTF(TCHAR_TO_UTF8(*PackageName));
-	const jboolean bInstalled = Env->CallStaticBooleanMethod(Class, Method, JPackage);
-
-	Env->DeleteLocalRef(JPackage);
-	Env->DeleteLocalRef(Class);
-
-	return bInstalled == JNI_TRUE;
+	return PackageInfo != nullptr;
 #else
 	return false;
 #endif
