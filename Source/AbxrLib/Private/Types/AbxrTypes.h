@@ -22,7 +22,7 @@ struct FAbxrInputRequest
 	GENERATED_BODY()
 
 	UPROPERTY()
-	EAbxrPopupType PopupType;
+	EAbxrPopupType PopupType = EAbxrPopupType::Keyboard;
 	
 	UPROPERTY()
 	FString Prompt;

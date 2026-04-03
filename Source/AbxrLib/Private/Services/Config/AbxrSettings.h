@@ -72,7 +72,7 @@ public:
 	// The plugin's existing keyboard Actor is reused — only the widget displayed inside it is swapped out.
 	UPROPERTY(EditAnywhere, Config, Category="Custom UI",
 		meta=(DisplayName="Custom Keyboard Widget Class",
-			  MetaClass="AbxrWidget",
+			  MetaClass="/Script/AbxrLib.AbxrWidget",
 			  ToolTip="Override the default keyboard widget. Must inherit from UAbxrWidget and call SubmitInput()."))
 	TSoftClassPtr<UAbxrWidget> CustomKeyboardWidgetClass;
 
@@ -80,7 +80,7 @@ public:
 	// The same UAbxrWidget inheritance requirement applies.
 	UPROPERTY(EditAnywhere, Config, Category="Custom UI",
 		meta=(DisplayName="Custom PIN Pad Widget Class",
-			  MetaClass="AbxrWidget",
+			  MetaClass="/Script/AbxrLib.AbxrWidget",
 			  ToolTip="Override the default PIN pad widget. Must inherit from UAbxrWidget and call SubmitInput()."))
 	TSoftClassPtr<UAbxrWidget> CustomPinPadWidgetClass;
 
