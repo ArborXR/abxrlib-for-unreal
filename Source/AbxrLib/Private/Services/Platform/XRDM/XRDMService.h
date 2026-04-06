@@ -75,7 +75,7 @@ private:
     TArray<FString> CallJNIStringArrayMethod(const char* MethodName) const;
     jobject CallJNIResultMethod(const char* MethodName) const;
 
-    static void RegisterNativeMethods();
+    static bool RegisterNativeMethods();
     static void JNICALL NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject Service);
     static void JNICALL NativeOnDisconnected(JNIEnv* Env, jclass Clazz, jboolean WasClean);
 

@@ -30,8 +30,7 @@ void UXRDMService::Initialize()
 
     if (!bNativeMethodsRegistered)
     {
-        RegisterNativeMethods();
-        bNativeMethodsRegistered = true;
+        if (RegisterNativeMethods()) bNativeMethodsRegistered = true;
     }
 
     UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Initialize: registering JNI bridge and starting SDK connect"));
@@ -374,20 +373,20 @@ FString UXRDMService::GetFingerprint() const
 
 #if PLATFORM_ANDROID
 
-void UXRDMService::RegisterNativeMethods()
+bool UXRDMService::RegisterNativeMethods()
 {
     JNIEnv* Env = FAndroidApplication::GetJavaEnv();
     if (!Env)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to get JNI environment for native method registration"));
-        return;
+        return false;
     }
     
     jclass CallbackClass = FAndroidApplication::FindJavaClass("com.xrdm.xrdmbridge.NativeConnectionCallback");
     if (!CallbackClass)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to find NativeConnectionCallback class for native method registration"));
-        return;
+        return false;
     }
 
     // Define the native methods (both onConnected and onDisconnected)
@@ -400,10 +399,12 @@ void UXRDMService::RegisterNativeMethods()
     if (Result < 0)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to register native methods"));
+        return false;
     }
     else
     {
         UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Successfully registered XRDM native methods (onConnected & onDisconnected)"));
+        return true;
     }
 }
 
