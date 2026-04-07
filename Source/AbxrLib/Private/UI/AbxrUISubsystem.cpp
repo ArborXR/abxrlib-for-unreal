@@ -166,7 +166,7 @@ void UAbxrUISubsystem::TryProcessNextInputRequest()
     
     if (!ShowUI())
     {
-        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] ShowUI() failed"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("ShowUI() failed"));
         TryProcessNextInputRequest();
     }
 }

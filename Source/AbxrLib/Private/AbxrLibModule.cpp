@@ -8,11 +8,11 @@ class FAbxrLibModule : public IModuleInterface
 public:
     virtual void StartupModule() override
     {
-        UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] StartupModule"));
+        UE_LOG(LogAbxrLib, Log, TEXT("StartupModule"));
     }
     virtual void ShutdownModule() override
     {
-        UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] ShutdownModule"));
+        UE_LOG(LogAbxrLib, Log, TEXT("ShutdownModule"));
     }
 };
 

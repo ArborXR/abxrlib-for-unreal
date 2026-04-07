@@ -22,11 +22,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	AbxrLib_SetActiveSubsystem(this);
 #if PLATFORM_ANDROID
-	const FString XrdmPackage(TEXT("app.xrdm.client"));
-	const bool bXrdmInstalled = FAbxrUtil::IsPackageInstalled(XrdmPackage);
-	UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Package check %s installed=%d (GetOrgId/GetFingerprint require this + successful Sdk.connect)"),
-		*XrdmPackage, bXrdmInstalled ? 1 : 0);
-	if (bXrdmInstalled)
+	if (FAbxrUtil::IsPackageInstalled(TEXT("app.xrdm.client")))
 	{
 		XRDMService = NewObject<UXRDMService>(this);
 		if (XRDMService)
@@ -41,8 +37,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 	else
 	{
-		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM Package %s not reported as installed — XRDM bridge disabled; IsPackageInstalled uses com.abxr.lib.AbxrAndroidPackageUtils"),
-			*XrdmPackage);
+		UE_LOG(LogAbxrLib, Warning, TEXT("XRDM Service not installed"));
 	}
 #endif
 	AuthService = MakeShared<FAbxrAuthService>(CreateAuthCallbacks(), XRDMService);
@@ -77,7 +72,7 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 	else
 	{
-		UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
+		UE_LOG(LogAbxrLib, Log, TEXT("Auto-start authentication is disabled. Call UAbxr::Authenticate() manually when ready."));
 	}
 	
 	DataService->Start();
@@ -153,7 +148,7 @@ FAbxrAuthCallbacks UAbxrSubsystem::CreateAuthCallbacks()
 		{
 			if (!WeakThis.IsValid()) return;
 			UAbxrSubsystem* Self = dynamic_cast<UAbxrSubsystem*>(WeakThis.Get());
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Auth failed: %s"), *Error);
+			UE_LOG(LogAbxrLib, Warning, TEXT("Auth failed: %s"), *Error);
 			Self->HandleAuthCompleted(false);
 		});
 	};
@@ -192,7 +187,7 @@ void UAbxrSubsystem::PollUser(const FString& Prompt, const EPollType PollType, c
 	
 	if (PollType == EPollType::MultipleChoice && (Responses.Num() < 2 || Responses.Num() > 5))
 	{
-		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Please use between 2 and 5 response for your Multiple-Choice Poll"));
+		UE_LOG(LogAbxrLib, Warning, TEXT("Please use between 2 and 5 response for your Multiple-Choice Poll"));
 		return;
 	}
 	
@@ -217,7 +212,7 @@ void UAbxrSubsystem::HandleAuthCompleted(const bool bSuccess) const
 	}
 	else
 	{
-		UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] Need to subscribe to OnModuleTarget before running modules"));
+		UE_LOG(LogAbxrLib, Error, TEXT("Need to subscribe to OnModuleTarget before running modules"));
 	}
 }
 
@@ -233,14 +228,14 @@ void UAbxrSubsystem::AddScoreData(TMap<FString, FString>& Meta, int Score, const
 	
 	if (Score > MaxScoreInt)
 	{
-		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] score of %d exceeded the score_max limit of %s for event '%s'; score was set to %s. "
+		UE_LOG(LogAbxrLib, Warning, TEXT("Score of %d exceeded the score_max limit of %s for event '%s'; score was set to %s. "
 										 "Provide score_min and score_max in meta when your scoring range is not 0-100."),
 										 Score, *MaxScoreString, *EventName, *MaxScoreString);
 		Score = MaxScoreInt;
 	}
 	else if (Score < MinScoreInt)
 	{
-		UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] score of %d was below the score_min limit of %s for event '%s'; score was set to %s. "
+		UE_LOG(LogAbxrLib, Warning, TEXT("Score of %d was below the score_min limit of %s for event '%s'; score was set to %s. "
 										 "Provide score_min and score_max in meta when your scoring range is not 0-100."),
 										 Score, *MinScoreString, *EventName, *MinScoreString);
 		Score = MinScoreInt;
@@ -253,19 +248,19 @@ bool UAbxrSubsystem::StartModuleAtIndex(const int ModuleIndex)
 {
 	if (!AuthService || AuthService->GetAuthResponse().Modules.IsEmpty())
 	{
-		UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] No modules available"));
+		UE_LOG(LogAbxrLib, Error, TEXT("No modules available"));
 		return false;
 	}
 	
 	if (ModuleIndex >= AuthService->GetAuthResponse().Modules.Num() || ModuleIndex < 0)
 	{
-		UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] Invalid module index - %d"), ModuleIndex);
+		UE_LOG(LogAbxrLib, Error, TEXT("Invalid module index - %d"), ModuleIndex);
 		return false;
 	}
 	
 	if (!OnModuleTarget.IsBound())
 	{
-		UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] Need to subscribe to OnModuleTarget before running modules"));
+		UE_LOG(LogAbxrLib, Error, TEXT("Need to subscribe to OnModuleTarget before running modules"));
 		return false;
 	}
 	
@@ -279,14 +274,14 @@ void UAbxrSubsystem::AdvanceToNextModule()
 	CurrentModuleIndex++;
 	if (CurrentModuleIndex < AuthService->GetAuthResponse().Modules.Num())
 	{
-		UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] Module '%s' complete. Advancing to next module - '%s'"),
+		UE_LOG(LogAbxrLib, Log, TEXT("Module '%s' complete. Advancing to next module - '%s'"),
 			*AuthService->GetAuthResponse().Modules[CurrentModuleIndex-1].Name,
 			*AuthService->GetAuthResponse().Modules[CurrentModuleIndex].Name);
 		OnModuleTarget.Broadcast(AuthService->GetAuthResponse().Modules[CurrentModuleIndex].Target);
 	}
 	else
 	{
-		UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] All modules complete"));
+		UE_LOG(LogAbxrLib, Log, TEXT("All modules complete"));
 		OnAllModulesCompleted.Broadcast();
 	}
 }

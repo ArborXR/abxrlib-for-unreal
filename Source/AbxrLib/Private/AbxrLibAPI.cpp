@@ -10,7 +10,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Authenticate() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
 			return;
 		}
 		Subsystem->Authenticate();
@@ -21,7 +21,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. OnAuthCompleted() binding will be ignored."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnAuthCompleted() binding will be ignored."));
 			static FAbxrAuthCompleted Dummy;
 			return Dummy;
 		}
@@ -33,7 +33,7 @@ namespace Abxr
 		const UAbxrUISubsystem* Subsystem = AbxrLib_GetActiveSubsystem()->GetUISubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. IsPopupVisible() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. IsPopupVisible() failed."));
 			return false;
 		}
 		return Subsystem->IsPopupVisible();
@@ -44,7 +44,7 @@ namespace Abxr
 		UAbxrUISubsystem* Subsystem = AbxrLib_GetActiveSubsystem()->GetUISubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. OnPopupShown() binding will be ignored."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnPopupShown() binding will be ignored."));
 			static FAbxrPopupShown Dummy;
 			return Dummy;
 		}
@@ -56,7 +56,7 @@ namespace Abxr
 		UAbxrUISubsystem* Subsystem = AbxrLib_GetActiveSubsystem()->GetUISubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. OnPopupHidden() binding will be ignored."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnPopupHidden() binding will be ignored."));
 			static FAbxrPopupHidden Dummy;
 			return Dummy;
 		}
@@ -69,7 +69,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. OnModuleTarget() binding will be ignored."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnModuleTarget() binding will be ignored."));
 			static FAbxrModuleTarget Dummy;
 			return Dummy;
 		}
@@ -82,7 +82,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. OnAllModulesCompleted() binding will be ignored."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. OnAllModulesCompleted() binding will be ignored."));
 			static FAbxrAllModulesCompleted Dummy;
 			return Dummy;
 		}
@@ -94,7 +94,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Authenticate() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
 			return TArray<FAbxrModuleData>();
 		}
 		return Subsystem->GetModuleList();
@@ -105,7 +105,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Authenticate() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Authenticate() failed."));
 			return false;
 		}
 		return Subsystem->StartModuleAtIndex(ModuleIndex);
@@ -121,7 +121,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. PollUser() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. PollUser() failed."));
 			return;
 		}
 		Subsystem->PollUser(Prompt, PollType, Responses);
@@ -132,7 +132,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. LogDebug() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. LogDebug() failed."));
 			return;
 		}
 		Subsystem->LogDebug(Text, Meta);
@@ -148,7 +148,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. LogInfo() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. LogInfo() failed."));
 			return;
 		}
 		Subsystem->LogInfo(Text, Meta);
@@ -164,7 +164,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. LogWarn() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. LogWarn() failed."));
 			return;
 		}
 		Subsystem->LogWarn(Text, Meta);
@@ -180,7 +180,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. LogError() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. LogError() failed."));
 			return;
 		}
 		Subsystem->LogError(Text, Meta);
@@ -196,7 +196,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. LogCritical() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. LogCritical() failed."));
 			return;
 		}
 		Subsystem->LogCritical(Text, Meta);
@@ -212,7 +212,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Log() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Log() failed."));
 			return;
 		}
 		Subsystem->Log(Text, Level, Meta);
@@ -233,7 +233,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Event() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Event() failed."));
 			return;
 		}
 		Subsystem->Event(Name, Meta);
@@ -248,7 +248,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Event() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Event() failed."));
 			return;
 		}
 		Subsystem->Event(Name, Position, Meta);
@@ -264,7 +264,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Telemetry() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Telemetry() failed."));
 			return;
 		}
 		Subsystem->Telemetry(Name, Meta);
@@ -280,7 +280,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventAssessmentStart() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventAssessmentStart() failed."));
 			return;
 		}
 		Subsystem->EventAssessmentStart(AssessmentName, Meta);
@@ -296,7 +296,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventAssessmentComplete() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventAssessmentComplete() failed."));
 			return;
 		}
 		Subsystem->EventAssessmentComplete(AssessmentName, Score, Status, Meta);
@@ -312,7 +312,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventObjectiveStart() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventObjectiveStart() failed."));
 			return;
 		}
 		Subsystem->EventObjectiveStart(ObjectiveName, Meta);
@@ -328,7 +328,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventObjectiveComplete() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventObjectiveComplete() failed."));
 			return;
 		}
 		Subsystem->EventObjectiveComplete(ObjectiveName, Score, Status, Meta);
@@ -344,7 +344,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventInteractionStart() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventInteractionStart() failed."));
 			return;
 		}
 		Subsystem->EventInteractionStart(InteractionName, Meta);
@@ -360,7 +360,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventInteractionComplete() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventInteractionComplete() failed."));
 			return;
 		}
 		Subsystem->EventInteractionComplete(InteractionName, InteractionType, Response, Meta);
@@ -376,7 +376,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventLevelStart() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventLevelStart() failed."));
 			return;
 		}
 		Subsystem->EventLevelStart(LevelName, Meta);
@@ -392,7 +392,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventLevelComplete() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventLevelComplete() failed."));
 			return;
 		}
 		Subsystem->EventLevelComplete(LevelName, Score, Meta);
@@ -408,7 +408,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. EventCritical() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. EventCritical() failed."));
 			return;
 		}
 		Subsystem->EventCritical(Label, Meta);
@@ -425,7 +425,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetDeviceId() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetDeviceId() failed."));
 			return FString();
 		}
 		return Subsystem->GetDeviceId();
@@ -437,7 +437,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetDeviceSerial() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetDeviceSerial() failed."));
 			return FString();
 		}
 		return Subsystem->GetDeviceSerial();
@@ -449,7 +449,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetDeviceTitle() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetDeviceTitle() failed."));
 			return FString();
 		}
 		return Subsystem->GetDeviceTitle();
@@ -461,7 +461,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetDeviceTags() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetDeviceTags() failed."));
 			return TArray<FString>();
 		}
 		return Subsystem->GetDeviceTags();
@@ -473,7 +473,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetOrgId() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetOrgId() failed."));
 			return FString();
 		}
 		return Subsystem->GetOrgId();
@@ -485,7 +485,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetOrgTitle() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetOrgTitle() failed."));
 			return FString();
 		}
 		return Subsystem->GetOrgTitle();
@@ -497,7 +497,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetOrgSlug() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetOrgSlug() failed."));
 			return FString();
 		}
 		return Subsystem->GetOrgSlug();
@@ -509,7 +509,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetMacAddressFixed() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetMacAddressFixed() failed."));
 			return FString();
 		}
 		return Subsystem->GetMacAddressFixed();
@@ -521,7 +521,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetMacAddressRandom() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetMacAddressRandom() failed."));
 			return FString();
 		}
 		return Subsystem->GetMacAddressRandom();
@@ -533,7 +533,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetIsAuthenticated() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetIsAuthenticated() failed."));
 			return false;
 		}
 		return Subsystem->GetIsAuthenticated();
@@ -545,7 +545,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetAccessToken() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetAccessToken() failed."));
 			return FString();
 		}
 		return Subsystem->GetAccessToken();
@@ -557,7 +557,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetRefreshToken() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetRefreshToken() failed."));
 			return FString();
 		}
 		return Subsystem->GetRefreshToken();
@@ -569,7 +569,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetExpiresDateUtc() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetExpiresDateUtc() failed."));
 			return FDateTime();
 		}
 		return Subsystem->GetExpiresDateUtc();
@@ -581,7 +581,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetFingerprint() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetFingerprint() failed."));
 			return FString();
 		}
 		return Subsystem->GetFingerprint();
@@ -595,7 +595,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. StartNewSession() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. StartNewSession() failed."));
 			return;
 		}
 		return Subsystem->StartNewSession();
@@ -609,7 +609,7 @@ namespace Abxr
 		const UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetUserData() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetUserData() failed."));
 			return TMap<FString, FString>();
 		}
 		return Subsystem->GetUserData();
@@ -622,7 +622,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Register() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Register() failed."));
 			return;
 		}
 		Subsystem->Register(Key, Value);
@@ -635,7 +635,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. RegisterOnce() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. RegisterOnce() failed."));
 			return;
 		}
 		Subsystem->RegisterOnce(Key, Value);
@@ -647,7 +647,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Unregister() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Unregister() failed."));
 			return;
 		}
 		Subsystem->Unregister(Key);
@@ -660,7 +660,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. Reset() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. Reset() failed."));
 			return;
 		}
 		Subsystem->Reset();
@@ -672,7 +672,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. GetSuperMetaData() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. GetSuperMetaData() failed."));
 			return TMap<FString, FString>();
 		}
 		return Subsystem->GetSuperMetaData();
@@ -683,7 +683,7 @@ namespace Abxr
 		UAbxrSubsystem* Subsystem = AbxrLib_GetActiveSubsystem();
 		if (Subsystem == nullptr)
 		{
-			UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] Not initialized yet. LoadSuperMetaData() failed."));
+			UE_LOG(LogAbxrLib, Warning, TEXT("Not initialized yet. LoadSuperMetaData() failed."));
 			return;
 		}
 		Subsystem->LoadSuperMetaData();

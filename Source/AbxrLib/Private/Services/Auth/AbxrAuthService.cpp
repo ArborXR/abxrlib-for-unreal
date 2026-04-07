@@ -119,7 +119,6 @@ void FAbxrAuthService::Authenticate()
 			const TSharedPtr<FAbxrAuthService> Self = AuthPtr.Pin();
 			if (!Self || Self->bStopping || !Self->bAttemptActive) return;
 #if PLATFORM_ANDROID
-			UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] Auth: XRDM WaitForConnection result=%d (if false, GetArborData is skipped; payload uses project defaults from GetConfigData)"), bConnected ? 1 : 0);
 			if (bConnected) Self->GetArborData();
 #endif
 			Self->AuthRequest([AuthPtr](const bool bSuccess)
@@ -263,17 +262,17 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 
 				// Failure
 				const FString RespStr = Response.IsValid() ? Body : TEXT("<no response>");
-				UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] AuthRequest attempt failed: %s"), *RespStr);
+				UE_LOG(LogAbxrLib, Warning, TEXT("AuthRequest attempt failed: %s"), *RespStr);
 				
 				if (ShouldRetry(bOk, Response) && *Attempt < RetryMaxAttempts)
 				{
 					(*Attempt)++;
-					UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] AuthRequest retrying in %ds (attempt %d/%d)"), RetryDelaySeconds, *Attempt, RetryMaxAttempts);
+					UE_LOG(LogAbxrLib, Log, TEXT("AuthRequest retrying in %ds (attempt %d/%d)"), RetryDelaySeconds, *Attempt, RetryMaxAttempts);
 					Self2->ScheduleRetry([DoAttempt]() mutable { DoAttempt(); });
 					return;
 				}
 				
-				if (*Attempt >= RetryMaxAttempts) UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] AuthRequest failed (no more retries)"));
+				if (*Attempt >= RetryMaxAttempts) UE_LOG(LogAbxrLib, Error, TEXT("AuthRequest failed (no more retries)"));
 				OnComplete(false);
 			});
 
@@ -288,7 +287,7 @@ bool FAbxrAuthService::ParseAuthResponse(const FString& Body, const bool Handoff
 	FAbxrAuthResponse AuthResponse;
 	if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
 	{
-		UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] Failed to parse auth response JSON: %s"), *Body);
+		UE_LOG(LogAbxrLib, Error, TEXT("Failed to parse auth response JSON: %s"), *Body);
 		return false;
 	}
 
@@ -337,7 +336,7 @@ bool FAbxrAuthService::ParseAuthResponse(const FString& Body, const bool Handoff
 	
 	if (Handoff)
 	{
-		UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] Authentication handoff successful. Modules: %d"), ResponseData.Modules.Num());
+		UE_LOG(LogAbxrLib, Error, TEXT("Authentication handoff successful. Modules: %d"), ResponseData.Modules.Num());
 		Callbacks.OnSucceeded();
 		SessionUsedAuthHandoff = true;
 	}
@@ -379,23 +378,23 @@ void FAbxrAuthService::GetConfiguration(TFunction<void(bool)> OnComplete)
 					FJsonObjectConverter::JsonObjectStringToUStruct(*Resp->GetContentAsString(), &Config, 0, 0);
 					Self2->SetConfigFromPayload(Config);
 					Self2->Payload.AuthMechanism = Config.AuthMechanism;
-					UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] GetConfiguration() successful"));
+					UE_LOG(LogAbxrLib, Log, TEXT("GetConfiguration() successful"));
 					OnComplete(true);
 					return;
 				}
 
 				const FString RespStr = Resp.IsValid() ? Resp->GetContentAsString() : TEXT("<no response>");
-				UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] GetConfiguration attempt failed: %s"), *RespStr);
+				UE_LOG(LogAbxrLib, Warning, TEXT("GetConfiguration attempt failed: %s"), *RespStr);
 				
 				if (ShouldRetry(bOk, Resp) && *Attempt < RetryMaxAttempts)
 				{
 					(*Attempt)++;
-					UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] GetConfiguration retrying in %ds (attempt %d/%d)"), RetryDelaySeconds, *Attempt, RetryMaxAttempts);
+					UE_LOG(LogAbxrLib, Log, TEXT("GetConfiguration retrying in %ds (attempt %d/%d)"), RetryDelaySeconds, *Attempt, RetryMaxAttempts);
 					Self2->ScheduleRetry([DoAttempt]() mutable { DoAttempt(); });
 					return;
 				}
 
-				UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] GetConfiguration failed (no more retries)"));
+				UE_LOG(LogAbxrLib, Error, TEXT("GetConfiguration failed (no more retries)"));
 				OnComplete(false);
 			});
 
@@ -436,24 +435,6 @@ void FAbxrAuthService::GetArborData()
 		Payload.DeviceId = XRDM->GetDeviceId();
 		Payload.Tags = XRDM->GetDeviceTags();
 		Payload.AuthSecret = XRDM->GetFingerprint();
-
-		const bool bOrgEmpty = Payload.OrgId.IsEmpty();
-		const bool bFpEmpty = Payload.AuthSecret.IsEmpty();
-		UE_LOG(LogAbxrLib, Log,
-			TEXT("[AbxrLib] XRDM GetArborData: isConnected=%d orgIdLen=%d fingerprintLen=%d deviceIdLen=%d tagCount=%d"),
-			XRDM->IsConnected() ? 1 : 0,
-			Payload.OrgId.Len(),
-			Payload.AuthSecret.Len(),
-			Payload.DeviceId.Len(),
-			Payload.Tags.Num());
-		if (bOrgEmpty || bFpEmpty)
-		{
-			UE_LOG(LogAbxrLib, Warning,
-				TEXT("[AbxrLib] XRDM GetArborData: missing org or fingerprint (orgEmpty=%d fpEmpty=%d). Auth may fail unless defaults in settings are valid."),
-				bOrgEmpty ? 1 : 0,
-				bFpEmpty ? 1 : 0);
-			XRDM->LogXrdmConnectionState(TEXT("GetArborData (empty org or fingerprint)"));
-		}
 	}
 }
 
@@ -469,7 +450,7 @@ bool FAbxrAuthService::CheckAuthHandoff()
 	
 	if (HandoffJson.IsEmpty()) return false;
 
-	UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] Processing authentication handoff from external launcher"));
+	UE_LOG(LogAbxrLib, Log, TEXT("Processing authentication handoff from external launcher"));
 	return ParseAuthResponse(HandoffJson, true);
 }
 

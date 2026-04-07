@@ -51,7 +51,7 @@ void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
     }
     else
     {
-        UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] Unable to initialize TelemetrySubsystem"));
+        UE_LOG(LogAbxrLib, Error, TEXT("Unable to initialize TelemetrySubsystem"));
     }
 }
 
