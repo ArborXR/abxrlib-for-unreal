@@ -49,15 +49,26 @@ protected:
     virtual void BeginDestroy() override;
 
 private:
+    static constexpr int32 MaxConnectionAttempts = 3;
+    static constexpr float ConnectionTimeoutSeconds = 2.0f;
+    static constexpr float ConnectionRetryDelaySeconds = 0.5f;
+
     bool bIsInitialized = false;
     bool bConnectionAttemptComplete = false;
+    bool bConnectionInProgress = false;
+    bool bConnectCallIssued = false;
+    bool bIsConnected = false;
+    int32 ConnectionAttemptCount = 0;
+
     TArray<TSharedPtr<TPromise<bool>>> PendingConnectionPromises;
     FTSTicker::FDelegateHandle ConnectionTimeoutHandle;
+    FTSTicker::FDelegateHandle ConnectionRetryHandle;
 
+    void BeginConnectionAttempt();
     void CompleteConnectionAttempt(bool bSuccess);
+    void HandleRetryableFailure(const TCHAR* Reason);
     bool OnConnectionTimeout(float DeltaTime);
-
-    bool bIsConnected = false;
+    bool OnConnectionRetry(float DeltaTime);
 
 #if PLATFORM_ANDROID
     jclass SdkClass = nullptr;

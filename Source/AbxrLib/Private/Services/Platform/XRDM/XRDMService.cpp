@@ -23,19 +23,26 @@ void UXRDMService::Initialize()
 
     bIsInitialized = true;
     bConnectionAttemptComplete = false;
+    bConnectionInProgress = false;
+    bConnectCallIssued = false;
     bIsConnected = false;
+    ConnectionAttemptCount = 0;
 
 #if PLATFORM_ANDROID
     ActiveInstance = this;
 
     if (!bNativeMethodsRegistered)
     {
-        if (RegisterNativeMethods()) bNativeMethodsRegistered = true;
+        bNativeMethodsRegistered = RegisterNativeMethods();
+        if (!bNativeMethodsRegistered)
+        {
+            UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM Initialize: native registration not ready yet; retries will continue during connection attempts"));
+        }
     }
 
     UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Initialize: registering JNI bridge and starting SDK connect"));
-    InitializeSDK();
-    LogXrdmConnectionState(TEXT("Initialize (after InitializeSDK scheduled)"));
+    BeginConnectionAttempt();
+    LogXrdmConnectionState(TEXT("Initialize (after BeginConnectionAttempt)"));
 #endif
 }
 
@@ -45,12 +52,20 @@ void UXRDMService::Shutdown()
 
     bIsInitialized = false;
     bConnectionAttemptComplete = false;
+    bConnectionInProgress = false;
+    bConnectCallIssued = false;
     bIsConnected = false;
 
     if (ConnectionTimeoutHandle.IsValid())
     {
         FTSTicker::GetCoreTicker().RemoveTicker(ConnectionTimeoutHandle);
         ConnectionTimeoutHandle.Reset();
+    }
+
+    if (ConnectionRetryHandle.IsValid())
+    {
+        FTSTicker::GetCoreTicker().RemoveTicker(ConnectionRetryHandle);
+        ConnectionRetryHandle.Reset();
     }
 
     for (auto& Promise : PendingConnectionPromises)
@@ -75,45 +90,129 @@ void UXRDMService::Shutdown()
 TSharedPtr<TPromise<bool>> UXRDMService::WaitForConnection()
 {
     auto Promise = MakeShared<TPromise<bool>>();
-    
+
     if (!bIsInitialized)
     {
         UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM WaitForConnection: not initialized, returning false"));
         Promise->SetValue(false);
         return Promise;
     }
-    
+
     if (bConnectionAttemptComplete)
     {
         UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM WaitForConnection: already complete, connected=%d"), bIsConnected ? 1 : 0);
         Promise->SetValue(bIsConnected);
         return Promise;
     }
-    
-    // Connection attempt in progress, add to pending list
+
     PendingConnectionPromises.Add(Promise);
-    
-    if (!ConnectionTimeoutHandle.IsValid())
+
+    if (!bConnectionInProgress)
     {
-        ConnectionTimeoutHandle = FTSTicker::GetCoreTicker().AddTicker(
-            FTickerDelegate::CreateUObject(this, &UXRDMService::OnConnectionTimeout), 
-            8.0f // 8 second timeout
-        );
+        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM WaitForConnection: no connection in progress; starting/restarting attempt"));
+        BeginConnectionAttempt();
     }
-    
+
     return Promise;
+}
+
+void UXRDMService::BeginConnectionAttempt()
+{
+#if PLATFORM_ANDROID
+    if (!bIsInitialized || bConnectionAttemptComplete || bConnectionInProgress) return;
+
+    if (ConnectionRetryHandle.IsValid())
+    {
+        FTSTicker::GetCoreTicker().RemoveTicker(ConnectionRetryHandle);
+        ConnectionRetryHandle.Reset();
+    }
+
+    if (ConnectionTimeoutHandle.IsValid())
+    {
+        FTSTicker::GetCoreTicker().RemoveTicker(ConnectionTimeoutHandle);
+        ConnectionTimeoutHandle.Reset();
+    }
+
+    ++ConnectionAttemptCount;
+    bConnectionInProgress = true;
+    bConnectCallIssued = false;
+
+    UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM BeginConnectionAttempt #%d"), ConnectionAttemptCount);
+
+    if (!bNativeMethodsRegistered)
+    {
+        bNativeMethodsRegistered = RegisterNativeMethods();
+        if (!bNativeMethodsRegistered)
+        {
+            HandleRetryableFailure(TEXT("RegisterNativeMethods failed"));
+            return;
+        }
+    }
+
+    InitializeSDK();
+#else
+    CompleteConnectionAttempt(false);
+#endif
 }
 
 bool UXRDMService::OnConnectionTimeout(float DeltaTime)
 {
     if (!bConnectionAttemptComplete)
     {
-        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM Connection attempt timed out after 8s (no nativeOnConnected, or JNI/SDK failure)"));
+        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM Connection attempt #%d timed out after %.1fs (no nativeOnConnected, or JNI/SDK failure)"), ConnectionAttemptCount, ConnectionTimeoutSeconds);
         LogXrdmConnectionState(TEXT("OnConnectionTimeout"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Connection timeout"));
     }
-    
+
     return false;
+}
+
+bool UXRDMService::OnConnectionRetry(float DeltaTime)
+{
+    ConnectionRetryHandle.Reset();
+
+    if (!bIsInitialized || bConnectionAttemptComplete || bConnectionInProgress) return false;
+
+    BeginConnectionAttempt();
+    return false;
+}
+
+void UXRDMService::HandleRetryableFailure(const TCHAR* Reason)
+{
+    bConnectionInProgress = false;
+    bConnectCallIssued = false;
+    bIsConnected = false;
+
+#if PLATFORM_ANDROID
+    CleanupJNI();
+#endif
+
+    if (!bIsInitialized || bConnectionAttemptComplete)
+    {
+        return;
+    }
+
+    if (ConnectionTimeoutHandle.IsValid())
+    {
+        FTSTicker::GetCoreTicker().RemoveTicker(ConnectionTimeoutHandle);
+        ConnectionTimeoutHandle.Reset();
+    }
+
+    if (ConnectionAttemptCount < MaxConnectionAttempts)
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM attempt #%d failed: %s. Retrying in %.2fs"), ConnectionAttemptCount, Reason, ConnectionRetryDelaySeconds);
+        if (!ConnectionRetryHandle.IsValid())
+        {
+            ConnectionRetryHandle = FTSTicker::GetCoreTicker().AddTicker(
+                FTickerDelegate::CreateUObject(this, &UXRDMService::OnConnectionRetry),
+                ConnectionRetryDelaySeconds
+            );
+        }
+        return;
+    }
+
+    UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM attempt #%d failed: %s. No retries left"), ConnectionAttemptCount, Reason);
+    CompleteConnectionAttempt(false);
 }
 
 bool UXRDMService::IsConnectionAttemptComplete() const
@@ -123,19 +222,27 @@ bool UXRDMService::IsConnectionAttemptComplete() const
 
 void UXRDMService::CompleteConnectionAttempt(bool bSuccess)
 {
+    if (bConnectionAttemptComplete && bIsConnected == bSuccess) return;
+
     bConnectionAttemptComplete = true;
+    bConnectionInProgress = false;
+    bConnectCallIssued = false;
     bIsConnected = bSuccess;
     UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM CompleteConnectionAttempt: success=%d"), bSuccess ? 1 : 0);
     LogXrdmConnectionState(TEXT("CompleteConnectionAttempt"));
 
-    // Clear the timeout ticker if it exists
     if (ConnectionTimeoutHandle.IsValid())
     {
         FTSTicker::GetCoreTicker().RemoveTicker(ConnectionTimeoutHandle);
         ConnectionTimeoutHandle.Reset();
     }
-    
-    // Complete all pending promises
+
+    if (ConnectionRetryHandle.IsValid())
+    {
+        FTSTicker::GetCoreTicker().RemoveTicker(ConnectionRetryHandle);
+        ConnectionRetryHandle.Reset();
+    }
+
     for (auto& Promise : PendingConnectionPromises)
     {
         if (Promise.IsValid())
@@ -381,7 +488,7 @@ bool UXRDMService::RegisterNativeMethods()
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to get JNI environment for native method registration"));
         return false;
     }
-    
+
     jclass CallbackClass = FAndroidApplication::FindJavaClass("com.xrdm.xrdmbridge.NativeConnectionCallback");
     if (!CallbackClass)
     {
@@ -389,23 +496,20 @@ bool UXRDMService::RegisterNativeMethods()
         return false;
     }
 
-    // Define the native methods (both onConnected and onDisconnected)
     JNINativeMethod NativeMethods[] = {
         {"nativeOnConnected", "(Ljava/lang/Object;)V", (void*)&UXRDMService::NativeOnConnected},
         {"nativeOnDisconnected", "(Z)V", (void*)&UXRDMService::NativeOnDisconnected}
     };
-    
-    int Result = Env->RegisterNatives(CallbackClass, NativeMethods, 2);
+
+    const int Result = Env->RegisterNatives(CallbackClass, NativeMethods, 2);
     if (Result < 0)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to register native methods"));
         return false;
     }
-    else
-    {
-        UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Successfully registered XRDM native methods (onConnected & onDisconnected)"));
-        return true;
-    }
+
+    UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Successfully registered XRDM native methods (onConnected & onDisconnected)"));
+    return true;
 }
 
 void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject Service)
@@ -416,6 +520,7 @@ void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject 
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM nativeOnConnected: ActiveInstance is null (XRDMService not initialized)"));
         return;
     }
+
     if (!Service)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM nativeOnConnected: service object is null; connection failed"));
@@ -423,9 +528,15 @@ void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject 
         {
             if (UXRDMService* StrongInstance = WeakInstance.Get())
             {
-                StrongInstance->CompleteConnectionAttempt(false);
+                StrongInstance->HandleRetryableFailure(TEXT("nativeOnConnected received null service"));
             }
         });
+        return;
+    }
+
+    if (LocalInstance->bConnectionAttemptComplete && LocalInstance->bIsConnected)
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("[AbxrLib] XRDM nativeOnConnected received after successful connection; ignoring duplicate callback"));
         return;
     }
 
@@ -436,7 +547,7 @@ void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject 
     }
 
     LocalInstance->ServiceWrapper = Env->NewGlobalRef(Service);
-    LocalInstance->bIsConnected = true;
+    LocalInstance->bIsConnected = LocalInstance->ServiceWrapper != nullptr;
 
     AsyncTask(ENamedThreads::GameThread, [WeakInstance = TWeakObjectPtr<UXRDMService>(LocalInstance)]()
     {
@@ -444,8 +555,15 @@ void JNICALL UXRDMService::NativeOnConnected(JNIEnv* Env, jclass Clazz, jobject 
         {
             if (StrongInstance->bIsInitialized)
             {
-                StrongInstance->CompleteConnectionAttempt(true);
-                UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM SDK connected via native callback"));
+                if (StrongInstance->ServiceWrapper)
+                {
+                    StrongInstance->CompleteConnectionAttempt(true);
+                    UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM SDK connected via native callback on attempt #%d"), StrongInstance->ConnectionAttemptCount);
+                }
+                else
+                {
+                    StrongInstance->HandleRetryableFailure(TEXT("nativeOnConnected could not create service global ref"));
+                }
             }
             else
             {
@@ -467,6 +585,8 @@ void JNICALL UXRDMService::NativeOnDisconnected(JNIEnv* Env, jclass Clazz, jbool
             LocalInstance->ServiceWrapper = nullptr;
         }
         LocalInstance->bIsConnected = false;
+        LocalInstance->bConnectionInProgress = false;
+        LocalInstance->bConnectCallIssued = false;
         LocalInstance->bConnectionAttemptComplete = true;
         LocalInstance->LogXrdmConnectionState(TEXT("NativeOnDisconnected"));
     }
@@ -478,7 +598,7 @@ void UXRDMService::InitializeSDK()
     if (!Env)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to get JNI environment"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to get JNI environment"));
         return;
     }
 
@@ -486,7 +606,7 @@ void UXRDMService::InitializeSDK()
     if (!SdkClass)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to find any SDK class"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to find SDK class"));
         return;
     }
 
@@ -494,21 +614,28 @@ void UXRDMService::InitializeSDK()
     if (!Constructor)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to find SDK constructor"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to find SDK constructor"));
         return;
     }
 
-    SdkInstance = Env->NewObject(SdkClass, Constructor);
-    if (!SdkInstance)
+    jobject LocalSdkInstance = Env->NewObject(SdkClass, Constructor);
+    if (!LocalSdkInstance)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to create SDK instance"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to create SDK instance"));
         return;
     }
 
-    SdkInstance = Env->NewGlobalRef(SdkInstance);
+    SdkInstance = Env->NewGlobalRef(LocalSdkInstance);
+    Env->DeleteLocalRef(LocalSdkInstance);
+    if (!SdkInstance)
+    {
+        UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to promote SDK instance to global ref"));
+        HandleRetryableFailure(TEXT("Failed to create SDK global ref"));
+        return;
+    }
+
     UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM SDK instance created successfully"));
-    
     ConnectToService();
 }
 
@@ -518,7 +645,7 @@ void UXRDMService::ConnectToService()
     if (!Env || !SdkInstance)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM JNI environment or SDK instance not available"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("JNI environment or SDK instance not available"));
         return;
     }
 
@@ -526,79 +653,106 @@ void UXRDMService::ConnectToService()
     if (!CurrentActivity)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to get current activity"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to get current activity"));
         return;
     }
-    
+
     jclass CallbackClass = FAndroidApplication::FindJavaClass("com.xrdm.xrdmbridge.NativeConnectionCallback");
     if (!CallbackClass)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to find NativeConnectionCallback class"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to find NativeConnectionCallback class"));
         return;
     }
-    
+
     jmethodID CallbackConstructor = Env->GetMethodID(CallbackClass, "<init>", "()V");
     if (!CallbackConstructor)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to find NativeConnectionCallback constructor"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to find NativeConnectionCallback constructor"));
         return;
     }
-    
+
     jobject CallbackInstance = Env->NewObject(CallbackClass, CallbackConstructor);
     if (!CallbackInstance)
     {
         UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to create NativeConnectionCallback instance"));
-        CompleteConnectionAttempt(false);
+        HandleRetryableFailure(TEXT("Failed to create NativeConnectionCallback instance"));
         return;
     }
-    
-    // Keep a global reference to the callback
+
+    if (ConnectionCallback)
+    {
+        Env->DeleteGlobalRef(ConnectionCallback);
+        ConnectionCallback = nullptr;
+    }
+
     ConnectionCallback = Env->NewGlobalRef(CallbackInstance);
-    
-    // Try connect with Context + IConnectionCallback
+    Env->DeleteLocalRef(CallbackInstance);
+    if (!ConnectionCallback)
+    {
+        UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to promote NativeConnectionCallback to global ref"));
+        HandleRetryableFailure(TEXT("Failed to create callback global ref"));
+        return;
+    }
+
     jmethodID ConnectMethod = Env->GetMethodID(SdkClass, "connect", "(Landroid/content/Context;Lapp/xrdm/sdk/external/IConnectionCallback;)V");
     if (ConnectMethod)
     {
-        UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Using Sdk.connect(Context, IConnectionCallback)"));
+        UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Using Sdk.connect(Context, IConnectionCallback) on attempt #%d"), ConnectionAttemptCount);
+        bConnectCallIssued = true;
         Env->CallVoidMethod(SdkInstance, ConnectMethod, CurrentActivity, ConnectionCallback);
         if (Env->ExceptionCheck())
         {
             UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Exception from Sdk.connect(Context, ...)"));
             Env->ExceptionDescribe();
             Env->ExceptionClear();
-            CompleteConnectionAttempt(false);
+            HandleRetryableFailure(TEXT("Exception from Sdk.connect(Context, ...)"));
             return;
         }
+
         UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Sdk.connect() returned; waiting for NativeConnectionCallback.onConnected (or timeout)"));
+        if (!ConnectionTimeoutHandle.IsValid())
+        {
+            ConnectionTimeoutHandle = FTSTicker::GetCoreTicker().AddTicker(
+                FTickerDelegate::CreateUObject(this, &UXRDMService::OnConnectionTimeout),
+                ConnectionTimeoutSeconds
+            );
+        }
         return;
     }
-    
-    // Try with Activity instead of Context
+
     ConnectMethod = Env->GetMethodID(SdkClass, "connect", "(Landroid/app/Activity;Lapp/xrdm/sdk/external/IConnectionCallback;)V");
     if (ConnectMethod)
     {
-        UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Using Sdk.connect(Activity, IConnectionCallback)"));
+        UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Using Sdk.connect(Activity, IConnectionCallback) on attempt #%d"), ConnectionAttemptCount);
+        bConnectCallIssued = true;
         Env->CallVoidMethod(SdkInstance, ConnectMethod, CurrentActivity, ConnectionCallback);
         if (Env->ExceptionCheck())
         {
             UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Exception from Sdk.connect(Activity, ...)"));
             Env->ExceptionDescribe();
             Env->ExceptionClear();
-            CompleteConnectionAttempt(false);
+            HandleRetryableFailure(TEXT("Exception from Sdk.connect(Activity, ...)"));
             return;
         }
+
         UE_LOG(LogAbxrLib, Log, TEXT("[AbxrLib] XRDM Sdk.connect() returned; waiting for NativeConnectionCallback.onConnected (or timeout)"));
+        if (!ConnectionTimeoutHandle.IsValid())
+        {
+            ConnectionTimeoutHandle = FTSTicker::GetCoreTicker().AddTicker(
+                FTickerDelegate::CreateUObject(this, &UXRDMService::OnConnectionTimeout),
+                ConnectionTimeoutSeconds
+            );
+        }
         return;
     }
-    
-    // Clean up callback if we couldn't use it
+
     Env->DeleteGlobalRef(ConnectionCallback);
     ConnectionCallback = nullptr;
-    
+
     UE_LOG(LogAbxrLib, Error, TEXT("[AbxrLib] XRDM Failed to find connect method with IConnectionCallback"));
-    CompleteConnectionAttempt(false);
+    HandleRetryableFailure(TEXT("Failed to find connect method with IConnectionCallback"));
 }
 
 void UXRDMService::CleanupJNI()
