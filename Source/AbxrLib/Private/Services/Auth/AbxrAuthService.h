@@ -35,7 +35,7 @@ private:
 	void GetConfigData();
 	void GetArborData();
 	void AuthSucceeded();
-	void KeyboardAuthenticate(const bool FirstAttempt);
+	void RequestKeyboardInput(const bool FirstAttempt);
 	
 	bool CheckAuthHandoff();
 	static FString GetCommandLineArg(const FString& Key);

@@ -133,7 +133,7 @@ void FAbxrAuthService::Authenticate()
 						if (!Self3 || Self3->bStopping || !Self3->bAttemptActive) return;
 						if (Self3->Payload.AuthMechanism.Contains(TEXT("type")))
 						{
-							Self3->KeyboardAuthenticate(true);
+							Self3->RequestKeyboardInput(true);
 						}
 						else
 						{
@@ -509,7 +509,7 @@ void FAbxrAuthService::AuthSucceeded()
 	UE_LOG(LogAbxrLib, Log, TEXT("Authenticated successfully"));
 }
 
-void FAbxrAuthService::KeyboardAuthenticate(const bool FirstAttempt)
+void FAbxrAuthService::RequestKeyboardInput(const bool FirstAttempt)
 {
 	FAbxrInputRequest Request;
 	
@@ -556,7 +556,7 @@ void FAbxrAuthService::KeyboardAuthenticate(const FString& KeyboardInput)
 		Self->Payload.AuthMechanism.Remove(TEXT("prompt"));
 		if (!OriginalPrompt.IsEmpty()) Self->Payload.AuthMechanism.Add(TEXT("prompt"), OriginalPrompt);
 		if (bSuccess) Self->AuthSucceeded();
-		else Self->KeyboardAuthenticate(false);
+		else Self->RequestKeyboardInput(false);
 	});
 }
 
