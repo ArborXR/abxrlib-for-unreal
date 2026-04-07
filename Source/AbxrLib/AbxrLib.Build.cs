@@ -37,7 +37,13 @@ public class AbxrLib : ModuleRules
         
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
-            PublicSystemLibraries.Add("Advapi32.lib");
+            PublicSystemLibraries.AddRange(new string[]
+            {
+                "Advapi32.lib",
+                "Crypt32.lib",
+                "Ws2_32.lib",
+                "Bcrypt.lib"
+            });
         }
         if (Target.Platform == UnrealTargetPlatform.Android)
         {

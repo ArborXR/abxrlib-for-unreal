@@ -1,8 +1,16 @@
 #include "AbxrUtil.h"
 #include "Types/AbxrLog.h"
 #include "Misc/Base64.h"
-#include <openssl/sha.h>
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 #include "Internationalization/Regex.h"
+THIRD_PARTY_INCLUDES_START
+#define UI UI_ST
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+#undef UI
+THIRD_PARTY_INCLUDES_END
 #if PLATFORM_ANDROID
 #include "Android/AndroidApplication.h"
 #include "Android/AndroidJNI.h"
@@ -76,6 +84,15 @@ static constexpr uint32 CRC32Table[256] = {
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 };
 
+FString FAbxrUtil::Base64UrlEncode(const TArray<uint8>& Data)
+{
+	FString B64 = FBase64::Encode(Data.GetData(), Data.Num());
+	B64.ReplaceInline(TEXT("+"), TEXT("-"));
+	B64.ReplaceInline(TEXT("/"), TEXT("_"));
+	B64 = B64.TrimChar('=');
+	return B64;
+}
+
 FString FAbxrUtil::ComputeSHA256(const FString& Input)
 {
 	// Convert FString to UTF-8
@@ -99,11 +116,40 @@ uint32 FAbxrUtil::ComputeCRC32(const FString& Input)
 
 	for (size_t i = 0; i < Length; ++i)
 	{
-		uint8 Index = static_cast<uint8>((Crc ^ Data[i]) & 0xFF);
+		const uint8 Index = static_cast<uint8>((Crc ^ Data[i]) & 0xFF);
 		Crc = (Crc >> 8) ^ CRC32Table[Index];
 	}
 
 	return ~Crc;
+}
+
+FString FAbxrUtil::BuildOrgToken(const FString& OrgId, const FString& Fingerprint)
+{
+	if (OrgId.IsEmpty() || Fingerprint.IsEmpty()) return FString();
+
+	// Build header and payload JSON
+	const FString HeaderJson = TEXT("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
+	const FString PayloadJson = FString::Printf(TEXT("{\"orgId\":\"%s\"}"), *OrgId);
+	
+	const TArray HeaderBytes(reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*HeaderJson)), HeaderJson.Len());
+	const TArray PayloadBytes(reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*PayloadJson)), PayloadJson.Len());
+
+	const FString HeaderB64 = Base64UrlEncode(HeaderBytes);
+	const FString PayloadB64 = Base64UrlEncode(PayloadBytes);
+	const FString Message = HeaderB64 + TEXT(".") + PayloadB64;
+
+	// HMAC-SHA256 sign with fingerprint as key
+	const FTCHARToUTF8 MessageUTF8(*Message);
+	const FTCHARToUTF8 KeyUTF8(*Fingerprint);
+
+	uint8 Signature[SHA256_DIGEST_LENGTH];
+	uint32 SignatureLen = 0;
+
+	HMAC(EVP_sha256(), KeyUTF8.Get(), KeyUTF8.Length(),
+		reinterpret_cast<const uint8*>(MessageUTF8.Get()), MessageUTF8.Length(), Signature, &SignatureLen);
+
+	const TArray SigArray(Signature, SignatureLen);
+	return Message + TEXT(".") + Base64UrlEncode(SigArray);
 }
 
 FString FAbxrUtil::CombineUrl(const FString& Base, const FString& Path)
@@ -118,16 +164,6 @@ FString FAbxrUtil::CombineUrl(const FString& Base, const FString& Path)
 	NormalizedPath.RemoveFromStart(TEXT("/"));
 
 	return NormalizedBase + TEXT("/") + NormalizedPath;
-}
-
-bool FAbxrUtil::IsUuidFormat(const FString& Input)
-{
-	static const FRegexPattern UuidPattern(
-		TEXT("^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$")
-	);
-
-	FRegexMatcher Matcher(UuidPattern, Input);
-	return Matcher.FindNext(); // with ^ and $ this means full-string match
 }
 
 bool FAbxrUtil::IsValidUrl(const FString& InUrl)

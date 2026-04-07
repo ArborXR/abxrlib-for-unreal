@@ -19,17 +19,9 @@ public:
 	virtual FName GetCategoryName() const override { return TEXT("Plugins"); }
 	virtual FName GetSectionName() const override { return TEXT("AbxrLib"); }
 	
-	UPROPERTY(EditAnywhere, Config, Category="Authentication", meta=(DisplayName="Application ID (required)"))
-	FString AppId;
-	void SetAppId(const FString& NewAppId) {this->AppId = NewAppId;}
-
-	UPROPERTY(EditAnywhere, Config, Category="Authentication", meta=(DisplayName="Organization ID (optional)"))
-	FString OrgId;
-	void SetOrgId(const FString& NewOrgId) {this->OrgId = NewOrgId;}
-
-	UPROPERTY(EditAnywhere, Config, Category="Authentication", meta=(DisplayName="Authorization Secret (optional)"))
-	FString AuthSecret;
-	void SetAuthSecret(const FString& NewAuthSecret) {this->AuthSecret = NewAuthSecret;}
+	UPROPERTY(EditAnywhere, Config, Category="Authentication", meta=(DisplayName="Application Token (required)"))
+	FString AppToken;
+	void SetAppToken(const FString& NewAppToken) {this->AppToken = NewAppToken;}
 
 	UPROPERTY(EditAnywhere, Config, Category="Service Provider", meta=(DisplayName="REST URL"))
 	FString RestUrl;

@@ -1,6 +1,7 @@
 #include "AbxrLibBlueprintAPI.h"
 #include "AbxrLibAPI.h"
 #include "AbxrLibAPI_Internal.h"
+#include "Engine/GameInstance.h"
 #include "UI/AbxrUISubsystem.h"
 #include "Subsystems/AbxrSubsystem.h"
 

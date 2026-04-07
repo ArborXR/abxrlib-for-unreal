@@ -30,20 +30,6 @@ UAbxrSettings::UAbxrSettings()
 
 bool UAbxrSettings::IsValid() const
 {
-    // appID must pass format validation if set (UUID format)
-    if (!FAbxrUtil::IsUuidFormat(AppId))
-    {
-		UE_LOG(LogAbxrLib, Error, TEXT("Invalid Application ID format. Must be a valid UUID. Cannot authenticate."));
-        return false;
-    }
-
-    // orgID is optional but must pass format validation if set (UUID format)
-    if (!OrgId.IsEmpty() && !FAbxrUtil::IsUuidFormat(OrgId))
-    {
-        UE_LOG(LogAbxrLib, Error, TEXT("Invalid Organization ID format. Must be a valid UUID. Cannot authenticate."));
-        return false;
-    }
-    
     // Validate restUrl format - must be a valid HTTP/HTTPS URL
     if (RestUrl.IsEmpty())
     {

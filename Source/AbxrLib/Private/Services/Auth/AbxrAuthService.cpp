@@ -421,20 +421,21 @@ void FAbxrAuthService::SetConfigFromPayload(const FAbxrConfigPayload& Payload)
 
 void FAbxrAuthService::GetConfigData()
 {
-	Payload.AppId = GetDefault<UAbxrSettings>()->AppId;
-	Payload.OrgId = GetDefault<UAbxrSettings>()->OrgId;
-	Payload.AuthSecret = GetDefault<UAbxrSettings>()->AuthSecret;
+	Payload.AppToken = GetDefault<UAbxrSettings>()->AppToken;
+	Payload.OrgToken = GetDefault<UAbxrSettings>()->AppToken;
 }
 
 void FAbxrAuthService::GetArborData()
 {
 	if (UXRDMService* XRDM = XRDMService.Get())
 	{
-		Payload.OrgId = XRDM->GetOrgId();
 		Payload.Partner = TEXT("arborxr");
 		Payload.DeviceId = XRDM->GetDeviceId();
 		Payload.Tags = XRDM->GetDeviceTags();
-		Payload.AuthSecret = XRDM->GetFingerprint();
+		
+		const FString OrgId = XRDM->GetOrgId();
+		const FString Fingerprint = XRDM->GetFingerprint();
+		Payload.OrgToken = FAbxrUtil::BuildOrgToken(OrgId, Fingerprint);
 	}
 }
 

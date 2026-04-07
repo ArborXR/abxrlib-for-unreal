@@ -65,9 +65,8 @@ struct FAbxrAuthPayload
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FString AppId;
-	UPROPERTY() FString OrgId;
-	UPROPERTY() FString AuthSecret;
+	UPROPERTY() FString AppToken;
+	UPROPERTY() FString OrgToken;
 	UPROPERTY() FString DeviceId;
 	UPROPERTY() FString UserId;
 	UPROPERTY() TArray<FString> Tags;
