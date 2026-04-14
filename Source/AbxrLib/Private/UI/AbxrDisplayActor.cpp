@@ -1,6 +1,7 @@
 #include "AbxrDisplayActor.h"
 #include "Components/WidgetComponent.h"
 #include "Blueprint/WidgetTree.h"
+#include "Services/Config/AbxrSettings.h"
 
 AAbxrDisplayActor::AAbxrDisplayActor()
 {
@@ -33,15 +34,39 @@ void AAbxrDisplayActor::Tick(const float DeltaTime)
 void AAbxrDisplayActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	const UAbxrSettings* Settings = GetDefault<UAbxrSettings>();
 	
 	if (PopupType == EAbxrPopupType::PinPad)
-		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PinPad.WBP_PinPad_C"));
+	{
+		WidgetClass = Settings->CustomPinPadWidgetClass.IsNull() ?
+			LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PinPad.WBP_PinPad_C")) :
+			Settings->CustomPinPadWidgetClass.LoadSynchronous();
+	}
+	else if (PopupType == EAbxrPopupType::Keyboard)
+	{
+		WidgetClass = Settings->CustomKeyboardWidgetClass.IsNull() ?
+			LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_Keyboard.WBP_Keyboard_C")) :
+			Settings->CustomKeyboardWidgetClass.LoadSynchronous();
+	}
+	else if (PopupType == EAbxrPopupType::QrScan)
+	{
+		WidgetClass = Settings->CustomQrScannerWidgetClass.IsNull() ?
+			LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_QRScanner.WBP_QRScanner_C")) :
+			Settings->CustomQrScannerWidgetClass.LoadSynchronous();
+	}
 	else if (PopupType == EAbxrPopupType::PollMultipleChoice)
+	{
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PollMulti.WBP_PollMulti_C"));
+	}
 	else if (PopupType == EAbxrPopupType::PollRating)
+	{
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PollRating.WBP_PollRating_C"));
+	}
 	else
+	{
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_Keyboard.WBP_Keyboard_C"));
+	}
 
 	if (!WidgetClass) return;
 	

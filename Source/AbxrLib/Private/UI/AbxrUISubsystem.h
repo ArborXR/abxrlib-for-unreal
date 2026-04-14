@@ -26,6 +26,8 @@ private:
 	TWeakObjectPtr<AActor> ActivePopupActor;
 	TWeakObjectPtr<class UAbxrWidget> ActivePopupWidget;
 	FAbxrInputRequest ActiveInputRequest;
+	FAbxrInputRequest SuspendedInputRequest;
+	bool bHasSuspendedInputRequest = false;
 	bool bIsPopupVisible = false;
 	
 	UPROPERTY()
@@ -36,8 +38,15 @@ private:
 	
 	UFUNCTION()
 	void HandleScanQRClicked();
+
+	UFUNCTION()
+	void HandleQrScanCancelled();
 	
 	void HandleInputRequested(const FAbxrInputRequest& Request);
+	void HandleQrScanFinished(const FString& RawPayload, bool bCancelled);
+	void RestoreSuspendedInputRequest();
+	void DestroyActivePopup(bool bEndInteraction);
+	bool ShowPopupForRequest(const FAbxrInputRequest& Request);
 	
 	void TryProcessNextInputRequest();
 	

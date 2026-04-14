@@ -1,5 +1,9 @@
-#include "AbxrWidget.h"
+#include "UI/AbxrWidget.h"
+
 #include "Blueprint/WidgetTree.h"
+#include "QR/AbxrQrScannerCoordinator.h"
+#include "Components/Widget.h"
+#include "Engine/GameInstance.h"
 
 void UAbxrWidget::NativeConstruct()
 {
@@ -7,9 +11,15 @@ void UAbxrWidget::NativeConstruct()
     
 	if (UWidget* QRButton = WidgetTree->FindWidget(TEXT("QRScan")))
 	{
-		//QRButton->SetVisibility(FAbxrQRService::IsSupported()
-		//	? ESlateVisibility::Visible
-		//	: ESlateVisibility::Collapsed);
-		QRButton->SetVisibility(ESlateVisibility::Collapsed);
+		bool bShowQrButton = false;
+		if (UGameInstance* GI = GetGameInstance())
+		{
+			if (UAbxrQrScannerCoordinator* QrCoordinator = GI->GetSubsystem<UAbxrQrScannerCoordinator>())
+			{
+				bShowQrButton = QrCoordinator->IsQrScanningAvailable();
+			}
+		}
+
+		QRButton->SetVisibility(bShowQrButton ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
 }

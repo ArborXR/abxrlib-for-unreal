@@ -16,6 +16,7 @@ UAbxrSettings::UAbxrSettings()
 	EnableAutoAdvanceModules = true;
 	FrameRateTrackingPeriodSeconds = 0.5f;
 	TelemetryTrackingPeriodSeconds = 10;
+	QrPopupInputDelaySeconds = 0.5f;
 	SendRetriesOnFailure = 3;
 	SendRetryIntervalSeconds = 3;
 	SendNextBatchWaitSeconds = 30;
@@ -42,6 +43,13 @@ bool UAbxrSettings::IsValid() const
     	UE_LOG(LogAbxrLib, Error, TEXT("Configuration validation failed - RestUrl '%s' is not a valid HTTP/HTTPS URL"), *RestUrl);
         return false;
     }
+	
+	if (QrPopupInputDelaySeconds < 0.0f || QrPopupInputDelaySeconds > 5.0f)
+	{
+		UE_LOG(LogAbxrLib, Error, TEXT("Configuration validation failed - QrPopupInputDelaySeconds must be between 0 and 5, got %s"),
+			*LexToString(QrPopupInputDelaySeconds));
+		return false;
+	}
     
     // Validate numeric ranges for timeouts and intervals
     if (SendRetriesOnFailure < 0 || SendRetriesOnFailure > 10)

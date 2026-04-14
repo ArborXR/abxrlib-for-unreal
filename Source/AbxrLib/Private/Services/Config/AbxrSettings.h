@@ -5,6 +5,8 @@
 #include "UObject/SoftObjectPtr.h"
 #include "AbxrSettings.generated.h"
 
+class UAbxrQrScanWidget;
+
 UCLASS(config=Game, defaultconfig, meta=(DisplayName="AbxrLib Configuration"))
 class ABXRLIB_API UAbxrSettings : public UDeveloperSettings
 {
@@ -60,8 +62,8 @@ public:
 	void SetEnableAutoAdvanceModules(const bool NewEnableAutoAdvanceModules) {this->EnableAutoAdvanceModules = NewEnableAutoAdvanceModules;}
 	
 	// Supply your own UMG Widget Blueprint to replace the built-in keyboard.
-	// Your widget MUST inherit from UAbxrWidget and call NotifyClicked() when the user submits input.
-	// The plugin's existing keyboard Actor is reused — only the widget displayed inside it is swapped out.
+	// Your widget MUST inherit from UAbxrWidget and call SubmitInput() when the user submits input.
+	// The plugin's existing keyboard Actor is reused â€” only the widget displayed inside it is swapped out.
 	UPROPERTY(EditAnywhere, Config, Category="Custom UI",
 		meta=(DisplayName="Custom Keyboard Widget Class",
 			  MetaClass="/Script/AbxrLib.AbxrWidget",
@@ -75,6 +77,17 @@ public:
 			  MetaClass="/Script/AbxrLib.AbxrWidget",
 			  ToolTip="Override the default PIN pad widget. Must inherit from UAbxrWidget and call SubmitInput()."))
 	TSoftClassPtr<UAbxrWidget> CustomPinPadWidgetClass;
+
+	UPROPERTY(EditAnywhere, Config, Category="Custom UI",
+		meta=(DisplayName="Custom QR Scanner Widget Class",
+			  MetaClass="/Script/AbxrLib.AbxrQrScanWidget",
+			  ToolTip="Override the default QR scanner widget. Must inherit from UAbxrQrScanWidget."))
+	TSoftClassPtr<UAbxrQrScanWidget> CustomQrScannerWidgetClass;
+
+	UPROPERTY(EditAnywhere, Config, Category="Custom UI",
+		meta=(DisplayName="QR Popup Input Delay Seconds", ClampMin="0.0", ClampMax="5.0",
+			  ToolTip="Blocks clicks briefly when the QR popup first appears so the initial button press cannot also hit Cancel."))
+	float QrPopupInputDelaySeconds;
 
 	UPROPERTY(EditAnywhere, Config, Category="Network Configuration", meta=(DisplayName="Telemetry Tracking Period (seconds)"))
 	double TelemetryTrackingPeriodSeconds;

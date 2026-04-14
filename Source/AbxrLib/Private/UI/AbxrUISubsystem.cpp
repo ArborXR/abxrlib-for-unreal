@@ -1,4 +1,5 @@
 #include "UI/AbxrUISubsystem.h"
+
 #include "AbxrDisplayActor.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/GameInstance.h"
@@ -6,6 +7,9 @@
 #include "Types/AbxrLog.h"
 #include "UI/AbxrInteractionSubsystem.h"
 #include "UI/AbxrWidget.h"
+#include "QR/AbxrQrScanCommon.h"
+#include "QR/AbxrQrScanWidget.h"
+#include "QR/AbxrQrScannerCoordinator.h"
 
 void UAbxrUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -69,9 +73,9 @@ static bool SetUserWidgetTextProperty(UUserWidget* Widget, const FName PropertyN
     return false;
 }
 
-bool UAbxrUISubsystem::ShowUI()
+bool UAbxrUISubsystem::ShowPopupForRequest(const FAbxrInputRequest& Request)
 {
-    AActor* Spawned = SpawnActor(ActiveInputRequest.PopupType);
+    AActor* Spawned = SpawnActor(Request.PopupType);
     if (!Spawned) return false;
 
     UWidgetComponent* WC = Spawned->FindComponentByClass<UWidgetComponent>();
@@ -82,11 +86,12 @@ bool UAbxrUISubsystem::ShowUI()
 
     ActivePopupActor = Spawned;
     ActivePopupWidget = PopupWidget;
+    ActiveInputRequest = Request;
     
-    if (ActiveInputRequest.PopupType == EAbxrPopupType::PollMultipleChoice)
+    if (Request.PopupType == EAbxrPopupType::PollMultipleChoice)
     {
         TArray<FText> ResponseTexts;
-        for (const FString& Response : ActiveInputRequest.Responses)
+        for (const FString& Response : Request.Responses)
         {
             ResponseTexts.Add(FText::FromString(Response));
         }
@@ -94,14 +99,19 @@ bool UAbxrUISubsystem::ShowUI()
         PopupWidget->InitializePoll(ResponseTexts);
     }
 
-    SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), FText::FromString(ActiveInputRequest.Prompt));
+    SetUserWidgetTextProperty(PopupWidget, TEXT("PromptText"), FText::FromString(Request.Prompt));
     PopupWidget->SynchronizeProperties();
 
-    // Bind click delegate once
     PopupWidget->OnSubmitButtonClicked.RemoveAll(this);
     PopupWidget->OnSubmitButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandleSubmitClicked);
     PopupWidget->OnScanQRButtonClicked.RemoveAll(this);
     PopupWidget->OnScanQRButtonClicked.AddDynamic(this, &UAbxrUISubsystem::HandleScanQRClicked);
+
+    if (UAbxrQrScanWidget* QrWidget = Cast<UAbxrQrScanWidget>(PopupWidget))
+    {
+        QrWidget->OnCancelClicked.RemoveAll(this);
+        QrWidget->OnCancelClicked.AddDynamic(this, &UAbxrUISubsystem::HandleQrScanCancelled);
+    }
 
     if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
     {
@@ -113,21 +123,38 @@ bool UAbxrUISubsystem::ShowUI()
     return true;
 }
 
-void UAbxrUISubsystem::HideUI()
+bool UAbxrUISubsystem::ShowUI()
 {
-    if (!bIsPopupVisible) return;
-    
-    if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
+    return ShowPopupForRequest(ActiveInputRequest);
+}
+
+void UAbxrUISubsystem::DestroyActivePopup(bool bEndInteraction)
+{
+    if (bEndInteraction)
     {
-        Subsystem->EndUIInteraction();
+        if (UAbxrInteractionSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrInteractionSubsystem>())
+        {
+            Subsystem->EndUIInteraction();
+        }
     }
 
-    if (AActor* A = ActivePopupActor.Get()) A->Destroy();
+    if (AActor* A = ActivePopupActor.Get())
+    {
+        A->Destroy();
+    }
 
     ActivePopupActor.Reset();
     ActivePopupWidget.Reset();
+}
+
+void UAbxrUISubsystem::HideUI()
+{
+    if (!bIsPopupVisible) return;
+
+    DestroyActivePopup(true);
     OnPopupHidden.Broadcast();
     bIsPopupVisible = false;
+    bHasSuspendedInputRequest = false;
     TryProcessNextInputRequest();
 }
 
@@ -142,13 +169,112 @@ void UAbxrUISubsystem::HandleSubmitClicked(const FText& InputText)
 
 void UAbxrUISubsystem::HandleScanQRClicked()
 {
-    //QRService.OnQRCodeScanned.Clear();
-    //QRService.OnQRCodeScanned.AddLambda([this](const FString& DecodedText)
-    //{
-    //    HandleSubmitClicked(FText::FromString(DecodedText));
-    //});
-    //QRService.StartScan();
-    //HideKeyboardUI();
+    if (ActiveInputRequest.PopupType != EAbxrPopupType::PinPad)
+    {
+        return;
+    }
+
+    UAbxrQrScannerCoordinator* QrCoordinator = GetGameInstance()->GetSubsystem<UAbxrQrScannerCoordinator>();
+    if (!QrCoordinator || !QrCoordinator->IsQrScanningAvailable())
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("QR scan requested but no scanner is available"));
+        return;
+    }
+
+    SuspendedInputRequest = ActiveInputRequest;
+    bHasSuspendedInputRequest = true;
+
+    DestroyActivePopup(true);
+    OnPopupHidden.Broadcast();
+    bIsPopupVisible = false;
+
+    FAbxrInputRequest QrRequest = ActiveInputRequest;
+    QrRequest.PopupType = EAbxrPopupType::QrScan;
+    QrRequest.Prompt = TEXT("Scan your QR code");
+
+    if (!ShowPopupForRequest(QrRequest))
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to show QR popup"));
+        RestoreSuspendedInputRequest();
+        return;
+    }
+
+    UAbxrQrScanWidget* QrWidget = Cast<UAbxrQrScanWidget>(ActivePopupWidget.Get());
+    if (!QrWidget)
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("QR popup widget must inherit from UAbxrQrScanWidget"));
+        DestroyActivePopup(true);
+        OnPopupHidden.Broadcast();
+        bIsPopupVisible = false;
+        RestoreSuspendedInputRequest();
+        return;
+    }
+
+    if (!QrCoordinator->BeginScan(QrWidget, [this](const FString& RawPayload, bool bCancelled)
+    {
+        HandleQrScanFinished(RawPayload, bCancelled);
+    }))
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to begin QR scan session"));
+        DestroyActivePopup(true);
+        OnPopupHidden.Broadcast();
+        bIsPopupVisible = false;
+        RestoreSuspendedInputRequest();
+    }
+}
+
+void UAbxrUISubsystem::HandleQrScanCancelled()
+{
+    if (UAbxrQrScannerCoordinator* QrCoordinator = GetGameInstance()->GetSubsystem<UAbxrQrScannerCoordinator>())
+    {
+        QrCoordinator->CancelScan();
+    }
+}
+
+void UAbxrUISubsystem::HandleQrScanFinished(const FString& RawPayload, bool bCancelled)
+{
+    DestroyActivePopup(true);
+    OnPopupHidden.Broadcast();
+    bIsPopupVisible = false;
+
+    if (bCancelled)
+    {
+        RestoreSuspendedInputRequest();
+        return;
+    }
+
+    FString Pin;
+    if (!AbxrQrScanCommon::TryExtractPinFromQrPayload(RawPayload, Pin))
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("Invalid QR payload scanned: %s"), *RawPayload);
+        RestoreSuspendedInputRequest();
+        return;
+    }
+
+    const FAbxrInputRequest OriginalRequest = bHasSuspendedInputRequest ? SuspendedInputRequest : ActiveInputRequest;
+    bHasSuspendedInputRequest = false;
+
+    if (UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
+    {
+        Subsystem->SubmitResponse(Pin, OriginalRequest);
+    }
+
+    TryProcessNextInputRequest();
+}
+
+void UAbxrUISubsystem::RestoreSuspendedInputRequest()
+{
+    if (!bHasSuspendedInputRequest) return;
+
+    const FAbxrInputRequest RequestToRestore = SuspendedInputRequest;
+    bHasSuspendedInputRequest = false;
+    ActiveInputRequest = RequestToRestore;
+
+    if (!ShowPopupForRequest(RequestToRestore))
+    {
+        UE_LOG(LogAbxrLib, Warning, TEXT("Failed to restore PIN pad after QR flow"));
+        TryProcessNextInputRequest();
+    }
 }
 
 void UAbxrUISubsystem::HandleInputRequested(const FAbxrInputRequest& Request)
