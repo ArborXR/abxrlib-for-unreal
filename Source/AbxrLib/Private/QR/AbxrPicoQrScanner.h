@@ -11,6 +11,9 @@ class ABXRLIB_API UAbxrPicoQrScanner : public UAbxrQrScannerBase
 {
 	GENERATED_BODY()
 
+public:
+	static bool RegisterJavaBridge();
+
 protected:
 	virtual bool QueryAvailability() const override;
 	virtual bool StartPlatformScan() override;
@@ -20,19 +23,18 @@ protected:
 	virtual UTexture2D* GetPreviewTexture() const override;
 
 private:
-	/**
-	 * Port your current Unreal or Unity-equivalent PICO camera/decode backend here.
-	 *
-	 * Target behavior:
-	 *  1. Open the PICO camera asynchronously.
-	 *  2. Feed a preview UTexture2D to PreviewTexture.
-	 *  3. Decode every ~0.5s and store a matching ABXR payload in PendingPayload.
-	 *  4. Return that payload once from ConsumeLatestPayload().
-	 *
-	 * I left this seam isolated so you can drop in the device-specific logic without
-	 * touching the popup/session/auth flow again.
-	 */
-	void TickBackendPlaceholder(float DeltaTime);
+	enum class EBridgeStatus : int32
+	{
+		Starting = 0,
+		Scanning = 1,
+		PermissionDenied = 2,
+		Error = 3,
+	};
+
+	bool CallJavaVoidMethod(const ANSICHAR* MethodName) const;
+	void ConsumeBridgeUpdates();
+	void UpdatePreviewTextureFromBGRA(const TArray<uint8>& InBgraBytes, int32 Width, int32 Height);
+	void FailAndCancel(const FString& Reason);
 
 private:
 	UPROPERTY()
@@ -40,4 +42,9 @@ private:
 
 	FString PendingPayload;
 	float TimeSinceStartSeconds = 0.0f;
+	bool bHasEnteredScanningState = false;
+	bool bPendingFailure = false;
+	FString PendingFailureReason;
+
+	static constexpr float StartupTimeoutSeconds = 8.0f;
 };

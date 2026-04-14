@@ -6,12 +6,6 @@ public class AbxrLib : ModuleRules
     public AbxrLib(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        
-        // Strict compiler check
-        //bUseUnity = false;
-        //bWarningsAsErrors = true;
-        //PCHUsage = PCHUsageMode.NoPCHs;
-        //CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Error;
 
         PublicDependencyModuleNames.AddRange(new string[] {
             "Core",
@@ -32,7 +26,9 @@ public class AbxrLib : ModuleRules
             "InputCore",
             "ApplicationCore",
             "HeadMountedDisplay",
-            "XRBase"
+            "XRBase",
+            "RHI",
+            "RenderCore"
         });
         
         if (Target.Platform == UnrealTargetPlatform.Win64)

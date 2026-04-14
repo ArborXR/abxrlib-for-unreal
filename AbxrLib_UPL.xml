@@ -15,13 +15,606 @@
 				<package android:name="app.xrdm.client" />
 			</queries>
 		</addElements>
+		<addPermission android:name="android.permission.CAMERA" />
 	</androidManifestUpdates>
 
+	<gameActivityImportAdditions>
+		<insert><![CDATA[
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
+import android.media.Image;
+import android.media.ImageReader;
+import android.os.Handler;
+import android.os.HandlerThread;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Map;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.DecodeHintType;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.NotFoundException;
+import com.google.zxing.Result;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.PlanarYUVLuminanceSource;
+]]></insert>
+	</gameActivityImportAdditions>
+
+	<gameActivityClassAdditions>
+		<insert><![CDATA[
+private static final int ABXR_QR_PERMISSION_REQUEST = 44081;
+private static final long ABXR_QR_DECODE_INTERVAL_MS = 500L;
+private static final long ABXR_QR_PREVIEW_INTERVAL_MS = 100L;
+private boolean abxrQrScanning = false;
+private boolean abxrQrStartPendingAfterPermission = false;
+private String abxrQrCameraId = null;
+private HandlerThread abxrQrHandlerThread = null;
+private Handler abxrQrHandler = null;
+private CameraDevice abxrQrCameraDevice = null;
+private CameraCaptureSession abxrQrCaptureSession = null;
+private ImageReader abxrQrImageReader = null;
+private long abxrQrLastDecodeAtMs = 0L;
+private long abxrQrLastPreviewAtMs = 0L;
+private MultiFormatReader abxrQrReader = null;
+private byte[] abxrQrReusablePreviewBuffer = null;
+
+public native void nativeOnAbxrQrFrame(byte[] bgraBytes, int width, int height);
+public native void nativeOnAbxrQrPayload(String payload);
+public native void nativeOnAbxrQrStatus(int statusCode, String message);
+
+public void AndroidThunkJava_AbxrQrStart()
+{
+    runOnUiThread(new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            abxrQrStartInternal();
+        }
+    });
+}
+
+public void AndroidThunkJava_AbxrQrStop()
+{
+    runOnUiThread(new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            abxrQrStopInternal();
+        }
+    });
+}
+
+private synchronized void abxrQrEnsureReader()
+{
+    if (abxrQrReader != null)
+    {
+        return;
+    }
+
+    Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
+    hints.put(DecodeHintType.POSSIBLE_FORMATS, Collections.singletonList(BarcodeFormat.QR_CODE));
+    hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+    abxrQrReader = new MultiFormatReader();
+    abxrQrReader.setHints(hints);
+}
+
+private synchronized void abxrQrStartInternal()
+{
+    if (abxrQrScanning)
+    {
+        return;
+    }
+
+    nativeOnAbxrQrStatus(0, "Starting camera...");
+
+    if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
+    {
+        abxrQrStartPendingAfterPermission = true;
+        requestPermissions(new String[] { Manifest.permission.CAMERA }, ABXR_QR_PERMISSION_REQUEST);
+        nativeOnAbxrQrStatus(0, "Requesting camera permission...");
+        return;
+    }
+
+    abxrQrStartPendingAfterPermission = false;
+    abxrQrEnsureReader();
+    abxrQrStartBackgroundThread();
+
+    try
+    {
+        CameraManager cameraManager = (CameraManager)getSystemService(Context.CAMERA_SERVICE);
+        if (cameraManager == null)
+        {
+            nativeOnAbxrQrStatus(3, "CameraManager unavailable");
+            abxrQrStopInternal();
+            return;
+        }
+
+        abxrQrCameraId = abxrQrChooseCameraId(cameraManager);
+        if (abxrQrCameraId == null)
+        {
+            nativeOnAbxrQrStatus(3, "No usable camera found");
+            abxrQrStopInternal();
+            return;
+        }
+
+        abxrQrImageReader = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2);
+        abxrQrImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener()
+        {
+            @Override
+            public void onImageAvailable(ImageReader reader)
+            {
+                abxrQrHandleImage(reader);
+            }
+        }, abxrQrHandler);
+
+        cameraManager.openCamera(abxrQrCameraId, new CameraDevice.StateCallback()
+        {
+            @Override
+            public void onOpened(CameraDevice camera)
+            {
+                synchronized (GameActivity.this)
+                {
+                    abxrQrCameraDevice = camera;
+                }
+                abxrQrCreateCaptureSession();
+            }
+
+            @Override
+            public void onDisconnected(CameraDevice camera)
+            {
+                camera.close();
+                nativeOnAbxrQrStatus(3, "Camera disconnected");
+                abxrQrStopInternal();
+            }
+
+            @Override
+            public void onError(CameraDevice camera, int error)
+            {
+                camera.close();
+                nativeOnAbxrQrStatus(3, "Camera open error: " + error);
+                abxrQrStopInternal();
+            }
+        }, abxrQrHandler);
+    }
+    catch (SecurityException ex)
+    {
+        nativeOnAbxrQrStatus(2, "Camera permission denied");
+        abxrQrStopInternal();
+    }
+    catch (Exception ex)
+    {
+        nativeOnAbxrQrStatus(3, "Failed to start camera: " + ex.getMessage());
+        abxrQrStopInternal();
+    }
+}
+
+private synchronized void abxrQrCreateCaptureSession()
+{
+    if (abxrQrCameraDevice == null || abxrQrImageReader == null)
+    {
+        nativeOnAbxrQrStatus(3, "Camera session could not be created");
+        abxrQrStopInternal();
+        return;
+    }
+
+    try
+    {
+        final CaptureRequest.Builder requestBuilder = abxrQrCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+        requestBuilder.addTarget(abxrQrImageReader.getSurface());
+        requestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+        requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+
+        abxrQrCameraDevice.createCaptureSession(
+            Arrays.asList(abxrQrImageReader.getSurface()),
+            new CameraCaptureSession.StateCallback()
+            {
+                @Override
+                public void onConfigured(CameraCaptureSession session)
+                {
+                    synchronized (GameActivity.this)
+                    {
+                        abxrQrCaptureSession = session;
+                        abxrQrScanning = true;
+                        abxrQrLastDecodeAtMs = 0L;
+                        abxrQrLastPreviewAtMs = 0L;
+                    }
+
+                    try
+                    {
+                        session.setRepeatingRequest(requestBuilder.build(), null, abxrQrHandler);
+                        nativeOnAbxrQrStatus(1, "Look at QR Code");
+                    }
+                    catch (Exception ex)
+                    {
+                        nativeOnAbxrQrStatus(3, "Failed to start capture: " + ex.getMessage());
+                        abxrQrStopInternal();
+                    }
+                }
+
+                @Override
+                public void onConfigureFailed(CameraCaptureSession session)
+                {
+                    nativeOnAbxrQrStatus(3, "Camera configuration failed");
+                    abxrQrStopInternal();
+                }
+            },
+            abxrQrHandler);
+    }
+    catch (Exception ex)
+    {
+        nativeOnAbxrQrStatus(3, "Session setup failed: " + ex.getMessage());
+        abxrQrStopInternal();
+    }
+}
+
+private synchronized void abxrQrStopInternal()
+{
+    abxrQrStartPendingAfterPermission = false;
+    abxrQrScanning = false;
+    abxrQrLastDecodeAtMs = 0L;
+    abxrQrLastPreviewAtMs = 0L;
+    abxrQrReusablePreviewBuffer = null;
+
+    if (abxrQrCaptureSession != null)
+    {
+        try { abxrQrCaptureSession.stopRepeating(); } catch (Exception ignored) {}
+        try { abxrQrCaptureSession.abortCaptures(); } catch (Exception ignored) {}
+        try { abxrQrCaptureSession.close(); } catch (Exception ignored) {}
+        abxrQrCaptureSession = null;
+    }
+
+    if (abxrQrImageReader != null)
+    {
+        try { abxrQrImageReader.close(); } catch (Exception ignored) {}
+        abxrQrImageReader = null;
+    }
+
+    if (abxrQrCameraDevice != null)
+    {
+        try { abxrQrCameraDevice.close(); } catch (Exception ignored) {}
+        abxrQrCameraDevice = null;
+    }
+
+    abxrQrCameraId = null;
+    abxrQrStopBackgroundThread();
+}
+
+private void abxrQrStartBackgroundThread()
+{
+    if (abxrQrHandlerThread != null)
+    {
+        return;
+    }
+
+    abxrQrHandlerThread = new HandlerThread("AbxrQrCameraThread");
+    abxrQrHandlerThread.start();
+    abxrQrHandler = new Handler(abxrQrHandlerThread.getLooper());
+}
+
+private void abxrQrStopBackgroundThread()
+{
+    if (abxrQrHandlerThread == null)
+    {
+        abxrQrHandler = null;
+        return;
+    }
+
+    try
+    {
+        abxrQrHandlerThread.quitSafely();
+        abxrQrHandlerThread.join();
+    }
+    catch (InterruptedException ignored)
+    {
+    }
+
+    abxrQrHandlerThread = null;
+    abxrQrHandler = null;
+}
+
+private String abxrQrChooseCameraId(CameraManager cameraManager) throws CameraAccessException
+{
+    String firstId = null;
+    String backId = null;
+    String externalId = null;
+
+    for (String cameraId : cameraManager.getCameraIdList())
+    {
+        if (firstId == null)
+        {
+            firstId = cameraId;
+        }
+
+        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+        Integer lensFacing = characteristics.get(CameraCharacteristics.LENS_FACING);
+        if (lensFacing == null)
+        {
+            continue;
+        }
+
+        if (lensFacing == CameraCharacteristics.LENS_FACING_BACK && backId == null)
+        {
+            backId = cameraId;
+        }
+        else if (lensFacing == CameraCharacteristics.LENS_FACING_EXTERNAL && externalId == null)
+        {
+            externalId = cameraId;
+        }
+    }
+
+    if (backId != null) return backId;
+    if (externalId != null) return externalId;
+    return firstId;
+}
+
+private void abxrQrHandleImage(ImageReader reader)
+{
+    Image image = null;
+    try
+    {
+        image = reader.acquireLatestImage();
+        if (image == null)
+        {
+            return;
+        }
+
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+        final long nowMs = android.os.SystemClock.elapsedRealtime();
+
+        if (nowMs - abxrQrLastPreviewAtMs >= ABXR_QR_PREVIEW_INTERVAL_MS)
+        {
+            abxrQrLastPreviewAtMs = nowMs;
+            nativeOnAbxrQrFrame(abxrQrConvertYuv420888ToBgra(image), width, height);
+        }
+
+        if (nowMs - abxrQrLastDecodeAtMs >= ABXR_QR_DECODE_INTERVAL_MS)
+        {
+            abxrQrLastDecodeAtMs = nowMs;
+            String payload = abxrQrDecodeImage(image);
+            if (payload != null && payload.length() > 0)
+            {
+                nativeOnAbxrQrPayload(payload);
+                runOnUiThread(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        abxrQrStopInternal();
+                    }
+                });
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        nativeOnAbxrQrStatus(3, "Frame processing failed: " + ex.getMessage());
+        runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                abxrQrStopInternal();
+            }
+        });
+    }
+    finally
+    {
+        if (image != null)
+        {
+            image.close();
+        }
+    }
+}
+
+private String abxrQrDecodeImage(Image image)
+{
+    abxrQrEnsureReader();
+
+    final int width = image.getWidth();
+    final int height = image.getHeight();
+    final byte[] luma = abxrQrExtractLuma(image);
+    String direct = abxrQrTryDecodeLuma(luma, width, height);
+    if (direct != null) return direct;
+
+    byte[] rotated90 = abxrQrRotateLuma90(luma, width, height);
+    String rotated = abxrQrTryDecodeLuma(rotated90, height, width);
+    if (rotated != null) return rotated;
+
+    byte[] rotated270 = abxrQrRotateLuma270(luma, width, height);
+    return abxrQrTryDecodeLuma(rotated270, height, width);
+}
+
+private String abxrQrTryDecodeLuma(byte[] luma, int width, int height)
+{
+    try
+    {
+        PlanarYUVLuminanceSource source = new PlanarYUVLuminanceSource(luma, width, height, 0, 0, width, height, false);
+        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+        Result result = abxrQrReader.decodeWithState(bitmap);
+        return result != null ? result.getText() : null;
+    }
+    catch (NotFoundException ignored)
+    {
+        return null;
+    }
+    finally
+    {
+        if (abxrQrReader != null)
+        {
+            abxrQrReader.reset();
+        }
+    }
+}
+
+private byte[] abxrQrExtractLuma(Image image)
+{
+    final Image.Plane yPlane = image.getPlanes()[0];
+    final ByteBuffer yBuffer = yPlane.getBuffer();
+    final int width = image.getWidth();
+    final int height = image.getHeight();
+    final int rowStride = yPlane.getRowStride();
+    final int pixelStride = yPlane.getPixelStride();
+    final byte[] out = new byte[width * height];
+
+    int dst = 0;
+    for (int y = 0; y < height; y++)
+    {
+        final int rowStart = y * rowStride;
+        for (int x = 0; x < width; x++)
+        {
+            out[dst++] = yBuffer.get(rowStart + x * pixelStride);
+        }
+    }
+    return out;
+}
+
+private byte[] abxrQrRotateLuma90(byte[] src, int width, int height)
+{
+    byte[] out = new byte[src.length];
+    int dst = 0;
+    for (int x = 0; x < width; x++)
+    {
+        for (int y = height - 1; y >= 0; y--)
+        {
+            out[dst++] = src[y * width + x];
+        }
+    }
+    return out;
+}
+
+private byte[] abxrQrRotateLuma270(byte[] src, int width, int height)
+{
+    byte[] out = new byte[src.length];
+    int dst = 0;
+    for (int x = width - 1; x >= 0; x--)
+    {
+        for (int y = 0; y < height; y++)
+        {
+            out[dst++] = src[y * width + x];
+        }
+    }
+    return out;
+}
+
+private byte[] abxrQrConvertYuv420888ToBgra(Image image)
+{
+    final int width = image.getWidth();
+    final int height = image.getHeight();
+    final int requiredSize = width * height * 4;
+    if (abxrQrReusablePreviewBuffer == null || abxrQrReusablePreviewBuffer.length != requiredSize)
+    {
+        abxrQrReusablePreviewBuffer = new byte[requiredSize];
+    }
+
+    final Image.Plane yPlane = image.getPlanes()[0];
+    final Image.Plane uPlane = image.getPlanes()[1];
+    final Image.Plane vPlane = image.getPlanes()[2];
+
+    final ByteBuffer yBuffer = yPlane.getBuffer();
+    final ByteBuffer uBuffer = uPlane.getBuffer();
+    final ByteBuffer vBuffer = vPlane.getBuffer();
+
+    final int yRowStride = yPlane.getRowStride();
+    final int yPixelStride = yPlane.getPixelStride();
+    final int uRowStride = uPlane.getRowStride();
+    final int uPixelStride = uPlane.getPixelStride();
+    final int vRowStride = vPlane.getRowStride();
+    final int vPixelStride = vPlane.getPixelStride();
+
+    int dst = 0;
+    for (int y = 0; y < height; y++)
+    {
+        final int yRowStart = y * yRowStride;
+        final int uvRow = y >> 1;
+        final int uRowStart = uvRow * uRowStride;
+        final int vRowStart = uvRow * vRowStride;
+
+        for (int x = 0; x < width; x++)
+        {
+            final int yValue = yBuffer.get(yRowStart + x * yPixelStride) & 0xFF;
+            final int uvCol = x >> 1;
+            final int uValue = uBuffer.get(uRowStart + uvCol * uPixelStride) & 0xFF;
+            final int vValue = vBuffer.get(vRowStart + uvCol * vPixelStride) & 0xFF;
+
+            int c = yValue - 16;
+            if (c < 0) c = 0;
+            int d = uValue - 128;
+            int e = vValue - 128;
+
+            int r = (298 * c + 409 * e + 128) >> 8;
+            int g = (298 * c - 100 * d - 208 * e + 128) >> 8;
+            int b = (298 * c + 516 * d + 128) >> 8;
+
+            if (r < 0) r = 0; else if (r > 255) r = 255;
+            if (g < 0) g = 0; else if (g > 255) g = 255;
+            if (b < 0) b = 0; else if (b > 255) b = 255;
+
+            abxrQrReusablePreviewBuffer[dst++] = (byte)b;
+            abxrQrReusablePreviewBuffer[dst++] = (byte)g;
+            abxrQrReusablePreviewBuffer[dst++] = (byte)r;
+            abxrQrReusablePreviewBuffer[dst++] = (byte)0xFF;
+        }
+    }
+
+    return abxrQrReusablePreviewBuffer;
+}
+]]></insert>
+	</gameActivityClassAdditions>
+
+	<gameActivityOnPauseAdditions>
+		<insert><![CDATA[
+AndroidThunkJava_AbxrQrStop();
+]]></insert>
+	</gameActivityOnPauseAdditions>
+
+	<gameActivityOnDestroyAdditions>
+		<insert><![CDATA[
+AndroidThunkJava_AbxrQrStop();
+]]></insert>
+	</gameActivityOnDestroyAdditions>
+
+	<gameActivityOnRequestPermissionsResultAdditions>
+		<insert><![CDATA[
+if (requestCode == ABXR_QR_PERMISSION_REQUEST)
+{
+    boolean granted = grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+    if (granted)
+    {
+        if (abxrQrStartPendingAfterPermission)
+        {
+            abxrQrStartPendingAfterPermission = false;
+            abxrQrStartInternal();
+        }
+    }
+    else
+    {
+        abxrQrStartPendingAfterPermission = false;
+        nativeOnAbxrQrStatus(2, "Camera permission denied");
+        abxrQrStopInternal();
+    }
+}
+]]></insert>
+	</gameActivityOnRequestPermissionsResultAdditions>
+
 	<buildGradleAdditions>
-		<insert>
-			dependencies {
-				implementation fileTree(include: ['*.aar'], dir: 'libs')
-			}
-		</insert>
+		<insert><![CDATA[
+dependencies {
+    implementation fileTree(include: ['*.aar'], dir: 'libs')
+    implementation 'com.google.zxing:core:3.5.3'
+}
+]]></insert>
 	</buildGradleAdditions>
 </root>
