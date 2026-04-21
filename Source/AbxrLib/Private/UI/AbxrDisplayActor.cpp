@@ -24,7 +24,7 @@ void AAbxrDisplayActor::Tick(const float DeltaTime)
 	FVector CamLoc;
 	FRotator CamRot;
 	PC->GetPlayerViewPoint(CamLoc, CamRot);
-
+	
 	const FVector NewLocation = CamLoc + CamRot.Vector() * 140.0f;
 	const FRotator NewRotation = FRotator(0, CamRot.Yaw + 180.f, 0);
 	SetActorLocationAndRotation(NewLocation, NewRotation);
@@ -36,6 +36,8 @@ void AAbxrDisplayActor::BeginPlay()
 	
 	if (PopupType == EAbxrPopupType::PinPad)
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PinPad.WBP_PinPad_C"));
+	else if (PopupType == EAbxrPopupType::QRScanner)
+		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_QRScanner.WBP_QRScanner_C"));
 	else if (PopupType == EAbxrPopupType::PollMultipleChoice)
 		WidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/AbxrLib/UI/WBP_PollMulti.WBP_PollMulti_C"));
 	else if (PopupType == EAbxrPopupType::PollRating)

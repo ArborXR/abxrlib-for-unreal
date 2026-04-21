@@ -48,9 +48,10 @@ public class AbxrLib : ModuleRules
         if (Target.Platform == UnrealTargetPlatform.Android)
         {
             PrivateDependencyModuleNames.AddRange(new string[] {
-                "Launch"
+                "Launch",
+                "AndroidPermission"
             });
-			
+
             AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "..", "..", "AbxrLib_UPL.xml"));
         }
     }

@@ -532,7 +532,7 @@ void FAbxrAuthService::RequestKeyboardInput(const bool FirstAttempt)
 		Request.Prompt = Prompt ? FString::Printf(TEXT("Enter Your %s"), **Prompt) : TEXT("Enter Your Login");
 	}
 	
-	if (!FirstAttempt) Request.Prompt = TEXT("Authentication Failed\n") + Request.Prompt;
+	if (!FirstAttempt) Request.Prompt = TEXT("Authentication Failed.\n") + Request.Prompt;
 
 	// Emit an input request. This may fire multiple times as the user retries.
 	Callbacks.OnInputRequested(Request);

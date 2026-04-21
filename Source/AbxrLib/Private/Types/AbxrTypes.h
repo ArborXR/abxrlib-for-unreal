@@ -12,6 +12,7 @@ enum class EAbxrPopupType : uint8
 {
 	Keyboard,
 	PinPad,
+	QRScanner,
 	PollMultipleChoice,
 	PollRating
 };

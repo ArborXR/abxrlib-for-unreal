@@ -17,6 +17,7 @@
     }
   ],
   "Plugins": [
-    { "Name": "XRBase", "Enabled": true }
+    { "Name": "XRBase", "Enabled": true },
+    { "Name": "AndroidPermission", "Enabled": true }
   ]
 }
