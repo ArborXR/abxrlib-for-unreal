@@ -16,10 +16,6 @@
 #include "Async/Async.h"
 #include "Misc/CommandLine.h"
 #include "Types/AbxrLog.h"
-#if PLATFORM_ANDROID
-#include "Android/AndroidApplication.h"
-#include "Android/AndroidJNI.h"
-#endif
 
 bool FAbxrAuthService::ShouldRetry(const bool bOk, const FHttpResponsePtr& Response)
 {
@@ -61,7 +57,7 @@ void FAbxrAuthService::ScheduleRetry(TFunction<void()> Fn)
 }
 
 FAbxrAuthService::FAbxrAuthService(const FAbxrAuthCallbacks& callbacks, UXRDMService* InXRDMService) :
-	SessionUsedAuthHandoff(false), bAuthenticated(false), TokenExpiry(0)
+	bAuthenticated(false), TokenExpiry(0)
 {
 	Callbacks = callbacks;
 	XRDMService = InXRDMService;
@@ -109,7 +105,6 @@ void FAbxrAuthService::Authenticate()
 	}
 
 	GetConfigData();
-	if (CheckAuthHandoff()) return;
 	
 	auto KickAuthChain = [AuthPtr = AsWeak()](bool bConnected)
 	{
@@ -250,7 +245,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 				// Success
 				if (bOk && Response.IsValid() && EHttpResponseCodes::IsOk(Code))
 				{
-					if (!Self2->ParseAuthResponse(Body, false))
+					if (!Self2->ParseAuthResponse(Body))
 					{
 						OnComplete(false);
 						return;
@@ -282,7 +277,7 @@ void FAbxrAuthService::AuthRequest(TFunction<void(bool)> OnComplete)
 	DoAttempt();
 }
 
-bool FAbxrAuthService::ParseAuthResponse(const FString& Body, const bool Handoff)
+bool FAbxrAuthService::ParseAuthResponse(const FString& Body)
 {
 	FAbxrAuthResponse AuthResponse;
 	if (!FJsonObjectConverter::JsonObjectStringToUStruct<FAbxrAuthResponse>(Body, &AuthResponse, 0, 0))
@@ -300,45 +295,31 @@ bool FAbxrAuthService::ParseAuthResponse(const FString& Body, const bool Handoff
 		});
 	}
 	
-	if (Handoff)
+	TArray<FString> Parts;
+	ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
+	if (Parts.Num() >= 2)
 	{
-		TokenExpiry = FDateTime::UtcNow().ToUnixTimestamp() + FTimespan::FromHours(24).GetSeconds();
-	}
-	else
-	{
-		TArray<FString> Parts;
-		ResponseData.Token.ParseIntoArray(Parts, TEXT("."));
-		if (Parts.Num() >= 2)
-		{
-			FString PayloadB64Url = Parts[1];
-			PayloadB64Url.ReplaceInline(TEXT("-"), TEXT("+"));
-			PayloadB64Url.ReplaceInline(TEXT("_"), TEXT("/"));
-			while (PayloadB64Url.Len() % 4 != 0) PayloadB64Url.AppendChar('=');
+		FString PayloadB64Url = Parts[1];
+		PayloadB64Url.ReplaceInline(TEXT("-"), TEXT("+"));
+		PayloadB64Url.ReplaceInline(TEXT("_"), TEXT("/"));
+		while (PayloadB64Url.Len() % 4 != 0) PayloadB64Url.AppendChar('=');
 
-			FString DecodedPayloadJson;
-			if (FBase64::Decode(PayloadB64Url, DecodedPayloadJson))
+		FString DecodedPayloadJson;
+		if (FBase64::Decode(PayloadB64Url, DecodedPayloadJson))
+		{
+			TSharedPtr<FJsonObject> PayloadJson;
+			const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
+			if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
 			{
-				TSharedPtr<FJsonObject> PayloadJson;
-				const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(DecodedPayloadJson);
-				if (FJsonSerializer::Deserialize(Reader, PayloadJson) && PayloadJson.IsValid())
+				const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find(TEXT("exp"));
+				if (ValuePtr && ValuePtr->IsValid())
 				{
-					const TSharedPtr<FJsonValue>* ValuePtr = PayloadJson->Values.Find(TEXT("exp"));
-					if (ValuePtr && ValuePtr->IsValid())
-					{
-						const TSharedPtr<FJsonValue> V = *ValuePtr;
-						const int64 Exp = FCString::Atoi64(*V->AsString());
-						TokenExpiry = static_cast<int32>(Exp);
-					}
+					const TSharedPtr<FJsonValue> V = *ValuePtr;
+					const int64 Exp = FCString::Atoi64(*V->AsString());
+					TokenExpiry = static_cast<int32>(Exp);
 				}
 			}
 		}
-	}
-	
-	if (Handoff)
-	{
-		UE_LOG(LogAbxrLib, Error, TEXT("Authentication handoff successful. Modules: %d"), ResponseData.Modules.Num());
-		Callbacks.OnSucceeded();
-		SessionUsedAuthHandoff = true;
 	}
 
 	return true;
@@ -437,68 +418,6 @@ void FAbxrAuthService::GetArborData()
 		const FString Fingerprint = XRDM->GetFingerprint();
 		Payload.OrgToken = FAbxrUtil::BuildOrgToken(OrgId, Fingerprint);
 	}
-}
-
-bool FAbxrAuthService::CheckAuthHandoff()
-{
-	FString HandoffJson = GetAndroidIntentParam(TEXT("auth_handoff"));
-
-	// Fall back to command line args
-	if (HandoffJson.IsEmpty())
-	{
-		HandoffJson = GetCommandLineArg(TEXT("auth_handoff"));
-	}
-	
-	if (HandoffJson.IsEmpty()) return false;
-
-	UE_LOG(LogAbxrLib, Log, TEXT("Processing authentication handoff from external launcher"));
-	return ParseAuthResponse(HandoffJson, true);
-}
-
-FString FAbxrAuthService::GetCommandLineArg(const FString& Key)
-{
-	FString Value;
-    
-	// Unreal's built-in: handles -key=value format
-	if (FParse::Value(FCommandLine::Get(), *(Key + TEXT("=")), Value)) return Value;
-
-	// Also check for --key=value
-	if (FParse::Value(FCommandLine::Get(), *(FString(TEXT("--")) + Key + TEXT("=")), Value)) return Value;
-
-	return FString();
-}
-
-FString FAbxrAuthService::GetAndroidIntentParam(const FString& Key) const
-{
-	FString Result;
-#if PLATFORM_ANDROID
-	JNIEnv* Env = FAndroidApplication::GetJavaEnv();
-	if (!Env) return Result;
-
-	jobject Activity = FAndroidApplication::GetGameActivityThis();
-	if (!Activity) return Result;
-
-	jclass ActivityClass = Env->GetObjectClass(Activity);
-	jmethodID GetIntentMethod = Env->GetMethodID(ActivityClass, "getIntent", "()Landroid/content/Intent;");
-	jobject IntentObj = Env->CallObjectMethod(Activity, GetIntentMethod);
-	if (!IntentObj) return Result;
-
-	jclass IntentClass = Env->GetObjectClass(IntentObj);
-	jmethodID GetStringExtraMethod = Env->GetMethodID(IntentClass, "getStringExtra",
-													  "(Ljava/lang/String;)Ljava/lang/String;");
-	jstring JKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
-	jstring JVal = (jstring)Env->CallObjectMethod(IntentObj, GetStringExtraMethod, JKey);
-
-	Env->DeleteLocalRef(JKey);
-
-	if (!JVal) return Result;
-
-	const char* UtfChars = Env->GetStringUTFChars(JVal, nullptr);
-	Result = UTF8_TO_TCHAR(UtfChars);
-	Env->ReleaseStringUTFChars(JVal, UtfChars);
-	Env->DeleteLocalRef(JVal);
-#endif
-	return Result;
 }
 
 void FAbxrAuthService::AuthSucceeded()
