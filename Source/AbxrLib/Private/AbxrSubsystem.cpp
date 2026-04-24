@@ -2,7 +2,8 @@
 #include "AbxrLibAPI_Internal.h"
 #include "TimerManager.h"
 #include "Services/Config/AbxrSettings.h"
-#include "Services/Platform/XRDM/XRDMService.h"
+#include "Services/Telemetry/AbxrTelemetryService.h"
+#include "Services/Data/AbxrDataService.h"
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/AbxrUISubsystem.h"
@@ -20,7 +21,6 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	if (bInitialized) return;
 	bInitialized = true;
 	Super::Initialize(Collection);
-	AbxrLib_SetActiveSubsystem(this);
 #if PLATFORM_ANDROID
 	if (FAbxrUtil::IsPackageInstalled(TEXT("app.xrdm.client")))
 	{
@@ -42,6 +42,8 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 #endif
 	AuthService = MakeShared<FAbxrAuthService>(CreateAuthCallbacks(), XRDMService);
 	DataService = MakeShared<FAbxrDataService>(*AuthService);
+	TelemetryService = MakeShared<FAbxrTelemetryService>(GetGameInstance());
+	AbxrLib_SetActiveSubsystem(this);
 	SuperMetaData = TMap<FString, FString>();
 	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
 		this, 
@@ -76,10 +78,17 @@ void UAbxrSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 	
 	DataService->Start();
+	TelemetryService->Start();
 }
 
 void UAbxrSubsystem::Deinitialize()
 {
+	if (TelemetryService)
+	{
+		TelemetryService->Stop();
+		TelemetryService.Reset();
+	}
+	
 	if (AuthService)
 	{
 		AuthService->StopReAuthPolling();

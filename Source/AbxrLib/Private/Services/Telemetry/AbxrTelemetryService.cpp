@@ -1,6 +1,5 @@
-#include "TelemetrySubsystem.h"
+#include "AbxrTelemetryService.h"
 #include "AbxrLibAPI.h"
-#include "AbxrSubsystem.h"
 #include "Services/Config/AbxrSettings.h"
 #include "Engine/Engine.h"
 #include "Misc/App.h"
@@ -12,60 +11,70 @@
 #include "Android/AndroidPlatformMisc.h"
 #endif
 
-void UTelemetrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
+FAbxrTelemetryService::FAbxrTelemetryService(UGameInstance* InGameInstance) : GameInstance(InGameInstance) { }
+
+UWorld* FAbxrTelemetryService::GetWorld() const
 {
-    Collection.InitializeDependency<UAbxrSubsystem>();
-    Super::Initialize(Collection);
+    return GameInstance.IsValid() ? GameInstance->GetWorld() : nullptr;
+}
 
-    if (const UWorld* World = GetWorld())
+void FAbxrTelemetryService::Start()
+{
+    if (bStarted) return;
+
+    UWorld* World = GetWorld();
+    if (!World)
     {
-        if (GetDefault<UAbxrSettings>()->EnableAutomaticTelemetry)
-        {
-            World->GetTimerManager().SetTimer(
-                TelemetryTimerHandle,
-                this,
-                &UTelemetrySubsystem::CaptureTelemetry,
-                GetDefault<UAbxrSettings>()->TelemetryTrackingPeriodSeconds,
-                true // loop
-            );
-        }
-
-        World->GetTimerManager().SetTimer(
-            FrameRateTimerHandle,
-            this,
-            &UTelemetrySubsystem::CaptureFrameRate,
-            GetDefault<UAbxrSettings>()->FrameRateTrackingPeriodSeconds,
-            true // loop
-        );
-
-        if (GetDefault<UAbxrSettings>()->HeadsetControllerTracking)
-        {
-            World->GetTimerManager().SetTimer(
-                PositionDataTimerHandle,
-                this,
-                &UTelemetrySubsystem::CapturePositionData,
-                GetDefault<UAbxrSettings>()->PositionCapturePeriodSeconds,
-                true // loop
-            );
-        }
+        UE_LOG(LogAbxrLib, Warning, TEXT("TelemetryService Start failed: no valid world"));
+        return;
     }
-    else
+
+    bStarted = true;
+
+    const UAbxrSettings* Settings = GetDefault<UAbxrSettings>();
+    if (Settings->EnableAutomaticTelemetry)
     {
-        UE_LOG(LogAbxrLib, Error, TEXT("Unable to initialize TelemetrySubsystem"));
+        World->GetTimerManager().SetTimer(
+            TelemetryTimerHandle,
+            FTimerDelegate::CreateSP(AsShared(), &FAbxrTelemetryService::CaptureTelemetry),
+            Settings->TelemetryTrackingPeriodSeconds,
+            true
+        );
+    }
+
+    World->GetTimerManager().SetTimer(
+        FrameRateTimerHandle,
+        FTimerDelegate::CreateSP(AsShared(), &FAbxrTelemetryService::CaptureFrameRate),
+        Settings->FrameRateTrackingPeriodSeconds,
+        true
+    );
+
+    if (Settings->HeadsetControllerTracking)
+    {
+        World->GetTimerManager().SetTimer(
+            PositionDataTimerHandle,
+            FTimerDelegate::CreateSP(AsShared(), &FAbxrTelemetryService::CapturePositionData),
+            Settings->PositionCapturePeriodSeconds,
+            true
+        );
     }
 }
 
-void UTelemetrySubsystem::Deinitialize()
+void FAbxrTelemetryService::Stop()
 {
+    if (!bStarted) return;
+
     if (const UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearTimer(TelemetryTimerHandle);
+        World->GetTimerManager().ClearTimer(FrameRateTimerHandle);
+        World->GetTimerManager().ClearTimer(PositionDataTimerHandle);
     }
-    
-    Super::Deinitialize();
+
+    bStarted = false;
 }
 
-void UTelemetrySubsystem::CaptureFrameRate()
+void FAbxrTelemetryService::CaptureFrameRate() const
 {
     const float FPS = FApp::GetDeltaTime() > 0.f ? 1.f / FApp::GetDeltaTime() : 0.f;
     TMap<FString, FString> Meta;
@@ -73,7 +82,7 @@ void UTelemetrySubsystem::CaptureFrameRate()
     Abxr::Telemetry(TEXT("Frame Rate"), Meta);
 }
 
-void UTelemetrySubsystem::CaptureTelemetry() const
+void FAbxrTelemetryService::CaptureTelemetry() const
 {
     const FPlatformMemoryStats MemStats = FPlatformMemory::GetStats();
     TMap<FString, FString> Meta;
@@ -87,7 +96,7 @@ void UTelemetrySubsystem::CaptureTelemetry() const
 #endif
 }
 
-void UTelemetrySubsystem::CapturePositionData() const
+void FAbxrTelemetryService::CapturePositionData() const
 {
     FVector PlayerLocation = FVector::ZeroVector;
     FRotator PlayerRotation = FRotator::ZeroRotator;

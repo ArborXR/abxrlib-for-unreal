@@ -1,12 +1,13 @@
 #pragma once
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Types/AbxrTypes.h"
-#include "Services/Data/AbxrDataService.h"
-#include "Services/Platform/XRDM/XRDMService.h"
 #include "Services/Auth/AbxrAuthService.h"
+#include "Services/Platform/XRDM/XRDMService.h"
 #include "AbxrSubsystem.generated.h"
 
 class UAbxrUISubsystem;
+class FAbxrTelemetryService;
+class FAbxrDataService;
 
 UCLASS()
 class ABXRLIB_API UAbxrSubsystem : public UGameInstanceSubsystem
@@ -206,6 +207,7 @@ private:
 	
 	TSharedPtr<FAbxrAuthService> AuthService;
 	TSharedPtr<FAbxrDataService> DataService;
+	TSharedPtr<FAbxrTelemetryService> TelemetryService;
 	
 	FTimerHandle AuthenticationTimerHandle;
 	FDelegateHandle PostLoadMapHandle;

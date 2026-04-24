@@ -3,7 +3,7 @@
 #include "AbxrLibAPI_Internal.h"
 #include "Engine/GameInstance.h"
 #include "UI/AbxrUISubsystem.h"
-#include "Subsystems/AbxrSubsystem.h"
+#include "AbxrSubsystem.h"
 
 namespace
 {
