@@ -3,7 +3,9 @@
 #include "Blueprint/UserWidget.h"
 #include "AbxrWidget.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSubmitButtonClicked, const FText&, InputText);
+class UTextBlock;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSubmitButtonClicked, const FString&, CurrentInput);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScanQRButtonClicked);
 
 UCLASS()
@@ -12,10 +14,14 @@ class ABXRLIB_API UAbxrWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	virtual void NativeConstruct() override;
+	UFUNCTION(BlueprintCallable)
+	void AppendString(const FString& Input);
+
+	UFUNCTION(BlueprintCallable)
+	void Backspace();
 	
 	UFUNCTION(BlueprintCallable)
-	void SubmitInput() const { OnSubmitButtonClicked.Broadcast(InputText); }
+	void SubmitInput() const { OnSubmitButtonClicked.Broadcast(CurrentInput); }
 	
 	UFUNCTION(BlueprintCallable)
 	void ScanQR() const { OnScanQRButtonClicked.Broadcast(); }
@@ -23,9 +29,17 @@ public:
 	FOnSubmitButtonClicked OnSubmitButtonClicked;
 	FOnScanQRButtonClicked OnScanQRButtonClicked;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FText InputText;
-	
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category="Abxr|Poll")
 	void InitializePoll(const TArray<FText>& Responses);
+	
+protected:
+	virtual void NativeConstruct() override;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> InputTextBlock;
+	
+private:
+	FString CurrentInput;
+
+	void RefreshInputText() const;
 };

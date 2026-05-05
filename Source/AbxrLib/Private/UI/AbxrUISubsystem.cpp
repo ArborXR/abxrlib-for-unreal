@@ -131,11 +131,11 @@ void UAbxrUISubsystem::HideUI()
     TryProcessNextInputRequest();
 }
 
-void UAbxrUISubsystem::HandleSubmitClicked(const FText& InputText)
+void UAbxrUISubsystem::HandleSubmitClicked(const FString& CurrentInput)
 {
     if (UAbxrSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAbxrSubsystem>())
     {
-        Subsystem->SubmitResponse(InputText.ToString(), ActiveInputRequest);
+        Subsystem->SubmitResponse(CurrentInput, ActiveInputRequest);
     }
     HideUI();
 }

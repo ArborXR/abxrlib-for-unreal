@@ -32,7 +32,7 @@ private:
 	TArray<FAbxrInputRequest> PendingInputRequests;
 	
 	UFUNCTION()
-	void HandleSubmitClicked(const FText& InputText);
+	void HandleSubmitClicked(const FString& CurrentInput);
 	
 	UFUNCTION()
 	void HandleScanQRClicked();
