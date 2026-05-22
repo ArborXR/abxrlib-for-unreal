@@ -122,10 +122,18 @@ void FAbxrAuthService::Authenticate()
 				if (!Self2 || Self2->bStopping || !Self2->bAttemptActive) return;
 				if (bSuccess)
 				{
-					Self2->GetConfiguration([AuthPtr](const bool)
+					Self2->GetConfiguration([AuthPtr](const bool bConfigSuccess)
 					{
 						const TSharedPtr<FAbxrAuthService> Self3 = AuthPtr.Pin();
 						if (!Self3 || Self3->bStopping || !Self3->bAttemptActive) return;
+						
+						if (!bConfigSuccess)
+						{
+							Self3->bAttemptActive = false;
+							Self3->Callbacks.OnFailed(TEXT("Configuration request failed"));
+							return;
+						}
+						
 						if (Self3->Payload.AuthMechanism.Contains(TEXT("type")))
 						{
 							Self3->RequestKeyboardInput(true);
