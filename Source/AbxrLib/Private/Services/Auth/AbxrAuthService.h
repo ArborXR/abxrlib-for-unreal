@@ -27,9 +27,11 @@ private:
 	void CancelRetryTimer();
 	
 	void ClearAuthenticationState();
-	void AuthRequest(TFunction<void(bool)> OnComplete);
+	void AuthRequest(const TFunction<void(bool)>& OnComplete);
+	void AuthRequestAttempt(TFunction<void(bool)> OnComplete, const FString& Json, const TSharedPtr<int>& Attempt);
 	bool ParseAuthResponse(const FString& Body);
-	void GetConfiguration(TFunction<void(bool)> OnComplete);
+	void GetConfiguration(const TFunction<void(bool)>& OnComplete);
+	void GetConfigurationAttempt(TFunction<void(bool)> OnComplete, const TSharedPtr<int>& Attempt);
 	static void SetConfigFromPayload(const FAbxrConfigPayload& Payload);
 	void SetAuthHeaders(const TSharedRef<IHttpRequest>& Request) const { SetAuthHeaders(Request, TEXT("")); }
 	void GetConfigData();
