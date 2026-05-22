@@ -49,7 +49,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Config, Category="Authentication Control", meta=(DisplayName="Authentication Start Delay (seconds)"))
 	int AuthenticationStartDelay;
-	void SetAuthenticationStartDelay(const bool NewAuthenticationStartDelay) {this->AuthenticationStartDelay = NewAuthenticationStartDelay;}
+	void SetAuthenticationStartDelay(const int NewAuthenticationStartDelay) {this->AuthenticationStartDelay = NewAuthenticationStartDelay;}
 	
 	UPROPERTY(EditAnywhere, Config, Category="Authentication Control", meta=(DisplayName="Enable Auto Start Modules"))
 	bool EnableAutoStartModules;
